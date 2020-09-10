@@ -41,7 +41,13 @@ import org.primefaces.util.ComponentUtils;
 public class DataTableExcellaExporter extends DataTableExporter {
 
     private ReportBook reportBook;
-    private String templateSheetName = "DATA";
+    private String templateSheetName;
+    private static final String DEFAULT_TEMPLATE_SHEET_NAME = "DATA";
+
+    public void setTemplateSheetName(String templateSheetName) {
+        this.templateSheetName = templateSheetName;
+    }
+
     private static final String DATA_CONTAINER_KEY = "DATA_CONTAINER_KEY";
     private List<ReportProcessListener> listeners = new ArrayList<>();
 
@@ -84,12 +90,30 @@ public class DataTableExcellaExporter extends DataTableExporter {
         values.add(exportValue);
     }
 
+    private static final String DEFAULT_DATA_COLUMNS_TAG = "dataColumns";
+    private static final String DEFAULT_HEADERS_TAG = "headers";
+    private static final String DEFAULT_FOOTERS_TAG = "footers";
+    private String dataColumnsTag;
+    private String headersTag;
+    private String footersTag;
+
+    public void setDataColumnsTag(String dataColumnsTag) {
+        this.dataColumnsTag = dataColumnsTag;
+    }
+    public void setHedersTag(String headersTag) {
+        this.headersTag = headersTag;
+    }
+    public void setFootersTag(String footersTag) {
+        this.footersTag = footersTag;
+    }
+
     @Override
     protected void doExport(FacesContext facesContext, DataTable table, ExportConfiguration config, int index)
             throws IOException {
         // 一度の出力で複数のDataTableが対象となった場合、このメソッドは引数のtable, indexを変えて複数回呼ばれる。
         // このExporterでは1DataTableを1シートに出力する方針とする。
-        ReportSheet reportSheet = new ReportSheet(templateSheetName, templateSheetName + "_" + index);
+        String sheetName = Objects.requireNonNullElse(templateSheetName, DEFAULT_TEMPLATE_SHEET_NAME);
+        ReportSheet reportSheet = new ReportSheet(sheetName, sheetName + "_" + index);
         Map<String, List<String>> dataContainer = new HashMap<>();
         reportSheet.addParam(null, DATA_CONTAINER_KEY, dataContainer);
 
@@ -109,12 +133,12 @@ public class DataTableExcellaExporter extends DataTableExporter {
 
         reportSheet.removeParam(null, DATA_CONTAINER_KEY);
         Object[] columnDataParams = dataContainer.keySet().stream().map(k -> "$R[]{" + k + "}").toArray();
-        reportSheet.addParam(ColRepeatParamParser.DEFAULT_TAG, "dataColumns", columnDataParams);
+        reportSheet.addParam(ColRepeatParamParser.DEFAULT_TAG, Objects.requireNonNullElse(dataColumnsTag. DEFAULT_DATA_COLUMNS_TAG), columnDataParams);
         dataContainer.entrySet()
                 .forEach(e -> reportSheet.addParam(RowRepeatParamParser.DEFAULT_TAG, e.getKey(), e.getValue().toArray()));
 
-        reportSheet.addParam(ColRepeatParamParser.DEFAULT_TAG, "headers", columnHeader.toArray());
-        reportSheet.addParam(ColRepeatParamParser.DEFAULT_TAG, "footers", columnFooter.toArray());
+        reportSheet.addParam(ColRepeatParamParser.DEFAULT_TAG, Objects.rquireNonNullElse(headersTag, DEFAULT_HEADERS_TAG), columnHeader.toArray());
+        reportSheet.addParam(ColRepeatParamParser.DEFAULT_TAG, Objects.requireNonNulLElse(footersTag, DEFAULT_FOOTERS_TAG), columnFooter.toArray());
         boolean removeHeader = columnHeader.isEmpty();
         boolean removeFooter = columnFooter.isEmpty();
         if (removeHeader || removeFooter) {
