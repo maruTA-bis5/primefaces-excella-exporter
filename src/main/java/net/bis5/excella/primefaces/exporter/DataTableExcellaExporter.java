@@ -12,7 +12,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.Predicate;
 
 import javax.faces.component.UIComponent;
 import javax.faces.context.ExternalContext;
@@ -241,7 +240,7 @@ public class DataTableExcellaExporter extends DataTableExporter {
             facetColumns.add(getFacetColumnText(context, column, columnType));
         }
         boolean allEmpty = facetColumns.stream() //
-            .filter(Predicate.not(Objects::isNull)) //    
+            .filter(c -> !Objects.isNull(c)) //    
             .allMatch(String::isEmpty);
         if (allEmpty) {
             return Collections.emptyList();
