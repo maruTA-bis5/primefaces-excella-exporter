@@ -71,26 +71,6 @@ public class DataTableExcellaExporter extends DataTableExporter {
 
     private String footersTag;
 
-    private enum TemplateType {
-        XLS(".xls", "application/octet-stream"), XLSX(".xlsx", "application/octet-stream");
-        TemplateType(String suffix, String contentType) {
-            this.suffix = suffix;
-            this.contentType = contentType;
-        }
-
-        private String suffix;
-
-        private String contentType;
-
-        public String getSuffix() {
-            return suffix;
-        }
-
-        public String getContentType() {
-            return contentType;
-        }
-    }
-
     public void setTemplateUrl(URL templateUrl) {
         this.templateUrl = templateUrl;
     }
@@ -240,7 +220,7 @@ public class DataTableExcellaExporter extends DataTableExporter {
             facetColumns.add(getFacetColumnText(context, column, columnType));
         }
         boolean allEmpty = facetColumns.stream() //
-            .filter(c -> !Objects.isNull(c)) //    
+            .filter(c -> !Objects.isNull(c)) //
             .allMatch(String::isEmpty);
         if (allEmpty) {
             return Collections.emptyList();
