@@ -189,7 +189,7 @@ public class TreeTableExcellaExporter extends TreeTableExporter {
     private void setExportParameters(ReportSheet reportSheet, List<String> columnHeader, List<String> columnFooter,
             Map<String, List<String>> dataContainer) {
 
-        List<Integer> levels = dataContainer.remove(TREE_LEVEL_KEY)
+        List<Integer> levels = nonNull(dataContainer.remove(TREE_LEVEL_KEY), Collections.<String>emptyList())
             .stream()
             .map(Integer::valueOf)
             .collect(Collectors.toList());
