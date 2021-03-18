@@ -45,7 +45,7 @@ import org.primefaces.util.ComponentUtils;
 
 public class TreeTableExcellaExporter extends TreeTableExporter {
 
-    private String templateSheetName; // TODO getter setter
+    private String templateSheetName;
 
     private static final String DEFAULT_TEMPLATE_SHEET_NAME = "DATA";
 
@@ -101,6 +101,10 @@ public class TreeTableExcellaExporter extends TreeTableExporter {
 
     public void setTemplateUrl(URL url) {
         templateUrl = url;
+    }
+
+    public void setTemplateSheetName(String name) {
+        templateSheetName = name;
     }
 
     @Override
