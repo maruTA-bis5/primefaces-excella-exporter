@@ -2,6 +2,7 @@ package net.bis5.excella.primefaces.exporter;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -59,6 +60,8 @@ public class DataTableExcellaExporter extends DataTableExporter {
 
     private URL templateUrl;
 
+    private Path templatePath;
+
     private String templateSheetName;
 
     private TemplateType templateType;
@@ -70,6 +73,10 @@ public class DataTableExcellaExporter extends DataTableExporter {
     private String headersTag;
 
     private String footersTag;
+
+    public void setTemplatePath(Path templatePath) {
+        this.templatePath = templatePath;
+    }
 
     public void setTemplateUrl(URL templateUrl) {
         this.templateUrl = templateUrl;
@@ -281,10 +288,18 @@ public class DataTableExcellaExporter extends DataTableExporter {
         listeners.clear();
     }
 
+    private URL getTemplateFileUrl() throws MalformedURLException {
+        if (templatePath != null) {
+            return templatePath.toUri().toURL();
+        } else if (templateUrl != null) {
+            return templateUrl;
+        }
+        return DEFAULT_TEMPLATE_URL;
+    }
     private Path processExport() throws IOException {
         ReportProcessor processor = new ReportProcessor();
         listeners.forEach(processor::addReportProcessListener);
-        reportBook.setTemplateFileURL(templateUrl != null ? templateUrl : DEFAULT_TEMPLATE_URL);
+        reportBook.setTemplateFileURL(getTemplateFileUrl());
         reportBook.setConfigurations(new ConvertConfiguration(ExcelExporter.FORMAT_TYPE));
         Path outputFile = Files.createTempFile(null, null);
         reportBook.setOutputFileName(outputFile.toString());

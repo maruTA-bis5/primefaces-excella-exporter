@@ -2,6 +2,7 @@ package net.bis5.excella.primefaces.exporter;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -76,6 +77,8 @@ public class TreeTableExcellaExporter extends TreeTableExporter {
 
     private URL templateUrl;
 
+    private Path templatePath;
+
     public void setDataColumnsTag(String tag) {
         dataColumnsTag = tag;
     }
@@ -90,6 +93,10 @@ public class TreeTableExcellaExporter extends TreeTableExporter {
 
     public void setTemplateType(TemplateType type) {
         templateType = type;
+    }
+
+    public void setTemplatePath(Path path) {
+        templatePath = path;
     }
 
     public void setTemplateUrl(URL url) {
@@ -130,10 +137,14 @@ public class TreeTableExcellaExporter extends TreeTableExporter {
         listeners.clear();
     }
 
+    private URL getTemplateFileUrl() throws MalformedURLException {
+        return nonNull(templatePath.toUri().toURL(), nonNull(templateUrl, DEFAULT_TEMPLATE_URL));
+    }
+
     private Path processExport() throws IOException {
         ReportProcessor processor = new ReportProcessor();
         listeners.forEach(processor::addReportProcessListener);
-        reportBook.setTemplateFileURL(nonNull(templateUrl, DEFAULT_TEMPLATE_URL));
+        reportBook.setTemplateFileURL(getTemplateFileUrl());
         reportBook.setConfigurations(new ConvertConfiguration(ExcelExporter.FORMAT_TYPE));
         Path outputFile = Files.createTempFile(null, null);
         reportBook.setOutputFileName(outputFile.toString());
