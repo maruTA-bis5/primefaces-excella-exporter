@@ -147,8 +147,16 @@ public class DataTableExcellaExporter extends DataTableExporter {
         this.dataColumnsTag = dataColumnsTag;
     }
 
-    public void setHedersTag(String headersTag) {
+    public void setHeadersTag(String headersTag) {
         this.headersTag = headersTag;
+    }
+
+    /**
+     * @deprecated Use {@link #setHeadersTag(String)} instead.
+     */
+    @Deprecated
+    public void setHedersTag(String headersTag) {
+        setHeadersTag(headersTag);
     }
 
     public void setFootersTag(String footersTag) {
