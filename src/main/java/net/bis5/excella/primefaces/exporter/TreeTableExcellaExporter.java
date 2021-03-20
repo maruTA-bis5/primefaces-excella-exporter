@@ -214,28 +214,6 @@ public class TreeTableExcellaExporter extends TreeTableExporter {
 
         reportSheet.addParam(ColRepeatParamParser.DEFAULT_TAG, nonNull(headersTag, DEFAULT_HEADERS_TAG), columnHeader.toArray());
         reportSheet.addParam(ColRepeatParamParser.DEFAULT_TAG, nonNull(footersTag, DEFAULT_FOOTERS_TAG), columnFooter.toArray());
-        boolean removeHeader = columnHeader.isEmpty();
-        boolean removeFooter = columnFooter.isEmpty();
-
-        if (removeHeader || removeFooter) {
-            listeners.add(new ReportProcessAdaptor() {
-                @Override
-                public void postParse(Sheet sheet, SheetParser sheetParser, SheetData sheetData) {
-                    if (!Objects.equals(sheetData.getSheetName(), reportSheet.getSheetName())) {
-                        return;
-                    }
-                    if (removeHeader) {
-                        // XXX 最初の行がフッターとは限らないだろう
-                        sheet.removeRow(sheet.getRow(0));
-                    }
-                    if (removeFooter) {
-                        // XXX 最終行がフッターとは限らないだろう
-                        sheet.removeRow(sheet.getRow(sheet.getLastRowNum()));
-                    }
-                }
-            });
-        }
-
         listeners.add(new ReportProcessAdaptor() {
             @Override
             public void postParse(Sheet sheet, SheetParser sheetParser, SheetData sheetData) throws org.bbreak.excella.core.exception.ParseException {

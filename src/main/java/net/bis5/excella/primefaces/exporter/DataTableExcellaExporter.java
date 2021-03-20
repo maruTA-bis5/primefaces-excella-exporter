@@ -19,10 +19,7 @@ import javax.faces.context.ExternalContext;
 import javax.faces.context.FacesContext;
 
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
-import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
-import org.bbreak.excella.core.SheetData;
-import org.bbreak.excella.core.SheetParser;
 import org.bbreak.excella.reports.exporter.ExcelExporter;
 import org.bbreak.excella.reports.listener.ReportProcessAdaptor;
 import org.bbreak.excella.reports.listener.ReportProcessListener;
@@ -37,6 +34,7 @@ import org.primefaces.component.api.UIColumn;
 import org.primefaces.component.datatable.DataTable;
 import org.primefaces.component.datatable.export.DataTableExporter;
 import org.primefaces.component.export.ExportConfiguration;
+import org.primefaces.component.export.Exporter;
 import org.primefaces.util.ComponentUtils;
 
 /**
@@ -196,28 +194,10 @@ public class DataTableExcellaExporter extends DataTableExporter {
         dataContainer.entrySet()
                 .forEach(e -> reportSheet.addParam(RowRepeatParamParser.DEFAULT_TAG, e.getKey(), e.getValue().toArray()));
 
-        reportSheet.addParam(ColRepeatParamParser.DEFAULT_TAG, headersTag != null ? headersTag : DEFAULT_HEADERS_TAG, columnHeader.toArray());
-        reportSheet.addParam(ColRepeatParamParser.DEFAULT_TAG, footersTag != null ? footersTag : DEFAULT_FOOTERS_TAG, columnFooter.toArray());
-        boolean removeHeader = columnHeader.isEmpty();
-        boolean removeFooter = columnFooter.isEmpty();
-        if (removeHeader || removeFooter) {
-            listeners.add(new ReportProcessAdaptor() {
-                @Override
-                public void postParse(Sheet sheet, SheetParser sheetParser, SheetData sheetData) {
-                    if (!Objects.equals(sheetData.getSheetName(), reportSheet.getSheetName())) {
-                        return;
-                    }
-                    if (removeHeader) {
-                        // XXX 最初の行がフッターとは限らないだろう
-                        sheet.removeRow(sheet.getRow(0));
-                    }
-                    if (removeFooter) {
-                        // XXX 最終行がフッターとは限らないだろう
-                        sheet.removeRow(sheet.getRow(sheet.getLastRowNum()));
-                    }
-                }
-            });
-        }
+        String headersTagName = headersTag != null ? headersTag : DEFAULT_HEADERS_TAG;
+        String footersTagName = footersTag != null ? footersTag : DEFAULT_FOOTERS_TAG;
+        reportSheet.addParam(ColRepeatParamParser.DEFAULT_TAG, headersTagName, columnHeader.toArray());
+        reportSheet.addParam(ColRepeatParamParser.DEFAULT_TAG, footersTagName, columnFooter.toArray());
 
         reportBook.addReportSheet(reportSheet);
     }
