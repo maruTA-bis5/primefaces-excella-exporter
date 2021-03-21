@@ -9,17 +9,27 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import javax.faces.component.UIComponent;
 import javax.faces.context.ExternalContext;
 import javax.faces.context.FacesContext;
 
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.util.CellRangeAddress;
 import org.bbreak.excella.reports.exporter.ExcelExporter;
 import org.bbreak.excella.reports.listener.ReportProcessAdaptor;
 import org.bbreak.excella.reports.listener.ReportProcessListener;
@@ -31,11 +41,13 @@ import org.bbreak.excella.reports.tag.ColRepeatParamParser;
 import org.bbreak.excella.reports.tag.RowRepeatParamParser;
 import org.primefaces.component.api.DynamicColumn;
 import org.primefaces.component.api.UIColumn;
+import org.primefaces.component.columngroup.ColumnGroup;
 import org.primefaces.component.datatable.DataTable;
 import org.primefaces.component.datatable.export.DataTableExporter;
 import org.primefaces.component.export.ExportConfiguration;
 import org.primefaces.component.export.Exporter;
 import org.primefaces.util.ComponentUtils;
+import org.primefaces.util.Constants;
 
 /**
  * ExCella Reportsを用いてDataTableのデータを出力する{@link Exporter}実装
@@ -53,6 +65,9 @@ public class DataTableExcellaExporter extends DataTableExporter {
     private static final String DEFAULT_FOOTERS_TAG = "footers";
 
     private static final URL DEFAULT_TEMPLATE_URL = DataTableExcellaExporter.class.getResource("/DefaultTemplate.xlsx");
+
+    private static final String MERGE_TO_LEFT_MARKER = DataTableExcellaExporter.class.getCanonicalName()+".MergeToLeft";
+    private static final String MERGE_TO_UP_MARKER = DataTableExcellaExporter.class.getCanonicalName()+".MergeToUp";
 
     private ReportBook reportBook;
 
@@ -107,8 +122,7 @@ public class DataTableExcellaExporter extends DataTableExporter {
     @Override
     protected void exportCells(DataTable table, Object document) {
         ReportSheet sheet = (ReportSheet) document;
-        @SuppressWarnings("unchecked")
-        Map<String, List<String>> dataContainer = (Map<String, List<String>>) sheet.getParam(null, DATA_CONTAINER_KEY);
+        Map<String, List<String>> dataContainer = getDataContainer(sheet);
         int colIndex = 0;
         for (UIColumn column : table.getColumns()) {
             if (column instanceof DynamicColumn) {
@@ -171,7 +185,7 @@ public class DataTableExcellaExporter extends DataTableExporter {
         Map<String, List<String>> dataContainer = new LinkedHashMap<>();
         reportSheet.addParam(null, DATA_CONTAINER_KEY, dataContainer);
 
-        List<String> columnHeader = exportFacet(facesContext, table, DataTableExporter.ColumnType.HEADER);
+        List<String> columnHeader = exportFacet(facesContext, table, DataTableExporter.ColumnType.HEADER, reportSheet);
 
         if (config.isPageOnly()) {
             exportPageOnly(facesContext, table, reportSheet);
@@ -181,13 +195,22 @@ public class DataTableExcellaExporter extends DataTableExporter {
             exportAll(facesContext, table, reportSheet);
         }
 
-        List<String> columnFooter = exportFacet(facesContext, table, DataTableExporter.ColumnType.FOOTER);
+        List<String> columnFooter = exportFacet(facesContext, table, DataTableExporter.ColumnType.FOOTER, reportSheet);
 
         reportSheet.removeParam(null, DATA_CONTAINER_KEY);
 
         setExportParameters(reportSheet, columnHeader, columnFooter, dataContainer);
     }
 
+    public Map<String, List<String>> getDataContainer(ReportSheet reportSheet) {
+        @SuppressWarnings("unchecked")
+        Map<String, List<String>> dataContainer = (Map<String, List<String>>) reportSheet.getParam(null, DATA_CONTAINER_KEY);
+        if (dataContainer == null) {
+            dataContainer = new HashMap<>();
+            reportSheet.addParam(null, DATA_CONTAINER_KEY, dataContainer);
+        }
+        return dataContainer;
+    }
     private void setExportParameters(ReportSheet reportSheet, List<String> columnHeader, List<String> columnFooter, Map<String, List<String>> dataContainer) {
         Object[] columnDataParams = dataContainer.keySet().stream().map(k -> "$R[]{" + k + "}").toArray();
         reportSheet.addParam(ColRepeatParamParser.DEFAULT_TAG, dataColumnsTag != null ? dataColumnsTag : DEFAULT_DATA_COLUMNS_TAG, columnDataParams);
@@ -200,10 +223,59 @@ public class DataTableExcellaExporter extends DataTableExporter {
         reportSheet.addParam(ColRepeatParamParser.DEFAULT_TAG, footersTagName, columnFooter.toArray());
 
         reportBook.addReportSheet(reportSheet);
+
+        listeners.add(new ReportProcessAdaptor() {
+            @Override
+            public void postBookParse(Workbook workbook, ReportBook reportBook) {
+                IntStream.range(0, workbook.getNumberOfSheets())
+                    .mapToObj(workbook::getSheetAt)
+                    .forEach(this::mergeCells);
+            }
+
+            private void mergeCells(Sheet sheet) {
+                for (Row row : sheet) {
+                    for (Cell cell : row) {
+                        try {
+                            String value = cell.getStringCellValue();
+                            if (MERGE_TO_LEFT_MARKER.equals(value)) {
+                                cell.setCellValue((String)null);
+                                List<CellRangeAddress> mergedRegions = sheet.getMergedRegions();
+                                Optional<CellRangeAddress> leftCellMergedRegion = findMergedRegion(sheet, cell.getRowIndex(), cell.getColumnIndex() - 1);
+                                leftCellMergedRegion.ifPresent(r -> sheet.removeMergedRegion(mergedRegions.indexOf(r)));
+                                CellRangeAddress newMergedRegion = leftCellMergedRegion.map(r -> new CellRangeAddress(r.getFirstRow(), r.getLastRow(), r.getFirstColumn(), r.getLastColumn() + 1))
+                                    .orElseGet(() -> new CellRangeAddress(cell.getRowIndex(), cell.getRowIndex(), cell.getColumnIndex() - 1, cell.getColumnIndex()));
+                                sheet.addMergedRegion(newMergedRegion);
+                            } else if (MERGE_TO_UP_MARKER.equals(value)) {
+                                cell.setCellValue((String)null);
+                                List<CellRangeAddress> mergedRegions = sheet.getMergedRegions();
+                                Optional<CellRangeAddress> leftCellMergedRegion = findMergedRegion(sheet, cell.getRowIndex() - 1, cell.getColumnIndex());
+                                leftCellMergedRegion.ifPresent(r -> sheet.removeMergedRegion(mergedRegions.indexOf(r)));
+                                CellRangeAddress newMergedRegion = leftCellMergedRegion.map(r -> new CellRangeAddress(r.getFirstRow(), r.getLastRow() + 1, r.getFirstColumn(), r.getLastColumn()))
+                                    .orElseGet(() -> new CellRangeAddress(cell.getRowIndex() - 1, cell.getRowIndex(), cell.getColumnIndex(), cell.getColumnIndex()));
+                                sheet.addMergedRegion(newMergedRegion);
+                            }
+                        } catch (RuntimeException ignore) {
+                            // noop
+                        }
+                    }
+                }
+            }
+
+            private Optional<CellRangeAddress> findMergedRegion(Sheet sheet, int rowIndex, int colIndex) {
+                return sheet.getMergedRegions().stream()
+                    .filter(r -> r.isInRange(rowIndex, colIndex))
+                    .findAny();
+            }
+        });
     }
 
-    private List<String> exportFacet(FacesContext context, DataTable table, DataTableExporter.ColumnType columnType) {
+    private List<String> exportFacet(FacesContext context, DataTable table, ColumnType columnType, ReportSheet reportSheet) {
         List<String> facetColumns = new ArrayList<>();
+
+        ColumnGroup group = table.getColumnGroup(columnType == ColumnType.HEADER ? "header" : "footer");
+        if (group != null && group.isRendered()) {
+            return exportColumnGroup(context, group, columnType, reportSheet);
+        }
 
         for (UIColumn column : table.getColumns()) {
             if (column instanceof DynamicColumn) {
@@ -221,6 +293,131 @@ public class DataTableExcellaExporter extends DataTableExporter {
             return Collections.emptyList();
         }
         return facetColumns;
+    }
+
+    private List<String> exportColumnGroup(FacesContext context, ColumnGroup columnGroup, ColumnType columnType, ReportSheet reportSheet) {
+        List<String> facetColumns = new ArrayList<>();
+        context.getAttributes().put(Constants.HELPER_RENDERER, "columnGroup");
+
+        for (UIComponent child : columnGroup.getChildren()) {
+            if (!child.isRendered()) {
+                continue;
+            }
+            if (child instanceof org.primefaces.component.row.Row) {
+                if (columnGroup.getChildren().size() > 1) {
+                    return exportColumnGroupMultiRow(context, columnGroup, columnType, reportSheet);
+                }
+                for (UIComponent rowChild : child.getChildren()) {
+                    UIColumn column = (UIColumn) rowChild;
+                    if (!column.isRendered()) {
+                        continue;
+                    }
+                    facetColumns.add(getFacetColumnText(context, column, columnType));
+                    if (column.getColspan() > 1) {
+                        IntStream.rangeClosed(2, column.getColspan())
+                            .forEach(x -> facetColumns.add(MERGE_TO_LEFT_MARKER));
+                    }
+                }
+            } else if (child instanceof UIColumn) {
+                UIColumn column = (UIColumn)child;
+                facetColumns.add(getFacetColumnText(context, column, columnType));
+                if (column.getColspan() > 1) {
+                    IntStream.rangeClosed(2, column.getColspan())
+                        .forEach(x -> facetColumns.add(MERGE_TO_LEFT_MARKER));
+                }
+            } else {
+                // ignore
+                continue;
+            }
+        }
+
+        context.getAttributes().remove(Constants.HELPER_RENDERER);
+        return facetColumns;
+    }
+
+    private static class RowMergedArea {
+        private final int rowStart;
+        private final int colIndex;
+        private final int rowEnd;
+        private RowMergedArea(int rowStart, int colIndex, int rowspan) {
+            this.rowStart= rowStart;
+            this.colIndex = colIndex;
+            this.rowEnd = rowStart + rowspan - 1;
+        }
+        public boolean isInRowspanRange(int rowIndex, int colIndex) {
+            return colIndex == this.colIndex && this.rowStart <= rowIndex && rowIndex <= this.rowEnd;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (!(obj instanceof RowMergedArea)) {
+                return false;
+            }
+            if (this == obj) {
+                return true;
+            }
+            RowMergedArea other = (RowMergedArea)obj;
+            return this.rowStart == other.rowStart && this.colIndex == other.colIndex;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(rowStart, colIndex);
+        }
+    }
+    private List<String> exportColumnGroupMultiRow(FacesContext context, ColumnGroup columnGroup,ColumnType columnType,
+            ReportSheet reportSheet) {
+
+        Map</*colindex*/Integer, List<String>> headerContents = new HashMap<>();
+        Set<RowMergedArea> rowMergedAreas = new HashSet<>();
+        int rowIndex = 0;
+        for (UIComponent child : columnGroup.getChildren()) {
+            if (!child.isRendered() || !(child instanceof org.primefaces.component.row.Row)) {
+                continue;
+            }
+            org.primefaces.component.row.Row row = (org.primefaces.component.row.Row)child;
+            int colIndex = 0;
+            for (UIComponent rowChild : row.getChildren()) {
+                while (true) {
+                    boolean whileBreak = true;
+                    for (RowMergedArea mergedArea : rowMergedAreas) {
+                        if (mergedArea.isInRowspanRange(rowIndex, colIndex)) {
+                            List<String> columnContents = headerContents.computeIfAbsent(colIndex, c -> new ArrayList<>());
+                            columnContents.add(MERGE_TO_UP_MARKER);
+                            colIndex++;
+                            whileBreak = false;
+                            break;
+                        }
+                    }
+                    if (whileBreak) {
+                        break;
+                    }
+                }
+                if (!rowChild.isRendered() || !(rowChild instanceof UIColumn)) {
+                    continue;
+                }
+                UIColumn column = (UIColumn)rowChild;
+                List<String> columnContents = headerContents.computeIfAbsent(colIndex, c -> new ArrayList<>());
+                columnContents.add(getFacetColumnText(context, column, columnType));
+                if (column.getRowspan() > 1) {
+                    RowMergedArea mergedArea = new RowMergedArea(rowIndex, colIndex, column.getRowspan());
+                    rowMergedAreas.add(mergedArea);
+                }
+                if (column.getColspan() > 1) {
+                    IntStream.range(colIndex + 1, colIndex + column.getColspan())
+                        .mapToObj(i -> headerContents.computeIfAbsent(i, c -> new ArrayList<>()))
+                        .forEach(c -> c.add(MERGE_TO_LEFT_MARKER));
+                    colIndex += column.getColspan() - 1;
+                }
+                colIndex++;
+            }
+            rowIndex++;
+        }
+        headerContents.entrySet().forEach(e -> reportSheet.addParam(RowRepeatParamParser.DEFAULT_TAG, "header" + e.getKey(), e.getValue().toArray()));
+
+        return headerContents.keySet().stream()
+            .map(i -> "$R[]{header" + i + "}")
+            .collect(Collectors.toList());
     }
 
     private String getFacetColumnText(FacesContext context, UIColumn column, DataTableExporter.ColumnType columnType) {
