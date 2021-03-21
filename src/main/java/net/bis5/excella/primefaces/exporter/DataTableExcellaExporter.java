@@ -7,8 +7,12 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -22,8 +26,10 @@ import java.util.stream.IntStream;
 
 import javax.el.ValueExpression;
 import javax.faces.component.UIComponent;
+import javax.faces.component.ValueHolder;
 import javax.faces.context.ExternalContext;
 import javax.faces.context.FacesContext;
+import javax.faces.convert.Converter;
 
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
@@ -42,6 +48,7 @@ import org.bbreak.excella.reports.tag.ColRepeatParamParser;
 import org.bbreak.excella.reports.tag.RowRepeatParamParser;
 import org.primefaces.component.api.DynamicColumn;
 import org.primefaces.component.api.UIColumn;
+import org.primefaces.component.celleditor.CellEditor;
 import org.primefaces.component.columngroup.ColumnGroup;
 import org.primefaces.component.datatable.DataTable;
 import org.primefaces.component.datatable.export.DataTableExporter;
@@ -49,6 +56,8 @@ import org.primefaces.component.export.ExportConfiguration;
 import org.primefaces.component.export.Exporter;
 import org.primefaces.util.ComponentUtils;
 import org.primefaces.util.Constants;
+
+import net.bis5.excella.primefaces.exporter.convert.ExporterConverter;
 
 /**
  * ExCella Reportsを用いてDataTableのデータを出力する{@link Exporter}実装
@@ -123,7 +132,7 @@ public class DataTableExcellaExporter extends DataTableExporter {
     @Override
     protected void exportCells(DataTable table, Object document) {
         ReportSheet sheet = (ReportSheet) document;
-        Map<String, List<String>> dataContainer = getDataContainer(sheet);
+        Map<String, List<Object>> dataContainer = getDataContainer(sheet);
         int colIndex = 0;
         for (UIColumn column : table.getColumns()) {
             if (column instanceof DynamicColumn) {
@@ -136,13 +145,15 @@ public class DataTableExcellaExporter extends DataTableExporter {
         }
     }
 
-    private void addCellValue(FacesContext context, Map<String, List<String>> dataContainer, int colIndex,
+    private void addCellValue(FacesContext context, Map<String, List<Object>> dataContainer, int colIndex,
             UIColumn column) {
         String columnKey = "data" + colIndex;
 
-        String exportValue;
+        Object exportValue;
         if (column.getExportFunction() != null) {
             exportValue = exportColumnByFunction(context, column);
+        } else if (column.getChildren().size() == 1) {
+            exportValue = exportObjectValue(context, column.getChildren().get(0));
         } else {
             List<UIComponent> components = column.getChildren();
             StringBuilder builder = new StringBuilder();
@@ -152,7 +163,7 @@ public class DataTableExcellaExporter extends DataTableExporter {
             exportValue = builder.toString();
         }
 
-        List<String> values = dataContainer.computeIfAbsent(columnKey, ignore -> new ArrayList<>());
+        List<Object> values = dataContainer.computeIfAbsent(columnKey, ignore -> new ArrayList<>());
         values.add(exportValue);
     }
 
@@ -165,6 +176,36 @@ public class DataTableExcellaExporter extends DataTableExporter {
             return String.valueOf(ve.getValue(context.getELContext()));
         }
         return value;
+    }
+
+    public Object exportObjectValue(FacesContext context, UIComponent component) {
+        if (component instanceof ValueHolder) {
+            ValueHolder valueHolder = (ValueHolder)component;
+            Object value = valueHolder.getValue();
+            if (value == null) {
+                return null;
+            }
+            Converter<?> converter = valueHolder.getConverter();
+            if (converter == null) {
+                Class<?> valueClass = value.getClass();
+                converter = context.getApplication().createConverter(valueClass);
+            }
+            if (converter == null || converter instanceof ExporterConverter){
+                return exportValue(context, component);
+            }
+
+            if (value instanceof Number) {
+                String strValue = exportValue(context, component);
+                if (strValue != null && strValue.endsWith("%")) {
+                    // percentage number output as string
+                    return strValue;
+                }
+            }
+            return value;
+        } else if (component instanceof CellEditor) {
+            return exportObjectValue(context, component.getFacet("output"));
+        }
+        return exportValue(context, component);
     }
 
     public void setDataColumnsTag(String dataColumnsTag) {
@@ -194,7 +235,7 @@ public class DataTableExcellaExporter extends DataTableExporter {
         // このExporterでは1DataTableを1シートに出力する方針とする。
         String sheetName = templateSheetName != null ? templateSheetName : DEFAULT_TEMPLATE_SHEET_NAME;
         ReportSheet reportSheet = new ReportSheet(sheetName, sheetName + "_" + index);
-        Map<String, List<String>> dataContainer = new LinkedHashMap<>();
+        Map<String, List<Object>> dataContainer = new LinkedHashMap<>();
         reportSheet.addParam(null, DATA_CONTAINER_KEY, dataContainer);
 
         List<String> columnHeader = exportFacet(facesContext, table, DataTableExporter.ColumnType.HEADER, reportSheet);
@@ -214,16 +255,16 @@ public class DataTableExcellaExporter extends DataTableExporter {
         setExportParameters(reportSheet, columnHeader, columnFooter, dataContainer);
     }
 
-    public Map<String, List<String>> getDataContainer(ReportSheet reportSheet) {
+    public Map<String, List<Object>> getDataContainer(ReportSheet reportSheet) {
         @SuppressWarnings("unchecked")
-        Map<String, List<String>> dataContainer = (Map<String, List<String>>) reportSheet.getParam(null, DATA_CONTAINER_KEY);
+        Map<String, List<Object>> dataContainer = (Map<String, List<Object>>) reportSheet.getParam(null, DATA_CONTAINER_KEY);
         if (dataContainer == null) {
             dataContainer = new HashMap<>();
             reportSheet.addParam(null, DATA_CONTAINER_KEY, dataContainer);
         }
         return dataContainer;
     }
-    private void setExportParameters(ReportSheet reportSheet, List<String> columnHeader, List<String> columnFooter, Map<String, List<String>> dataContainer) {
+    private void setExportParameters(ReportSheet reportSheet, List<String> columnHeader, List<String> columnFooter, Map<String, List<Object>> dataContainer) {
         Object[] columnDataParams = dataContainer.keySet().stream().map(k -> "$R[]{" + k + "}").toArray();
         reportSheet.addParam(ColRepeatParamParser.DEFAULT_TAG, dataColumnsTag != null ? dataColumnsTag : DEFAULT_DATA_COLUMNS_TAG, columnDataParams);
         dataContainer.entrySet()
