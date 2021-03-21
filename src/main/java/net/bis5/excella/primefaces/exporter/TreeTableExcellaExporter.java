@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import javax.el.ValueExpression;
 import javax.faces.component.UIComponent;
 import javax.faces.context.ExternalContext;
 import javax.faces.context.FacesContext;
@@ -339,4 +340,14 @@ public class TreeTableExcellaExporter extends TreeTableExporter {
         values.add(exportValue);
     }
 
+    @Override
+    public String exportValue(FacesContext context, UIComponent component) {
+        String value = super.exportValue(context, component);
+        if (component.getClass().getSimpleName().equals("UIInstructions")) {
+            // evaluate el expr
+            ValueExpression ve = context.getApplication().getExpressionFactory().createValueExpression(context.getELContext(), value, Object.class);
+            return String.valueOf(ve.getValue(context.getELContext()));
+        }
+        return value;
+    }
 }
