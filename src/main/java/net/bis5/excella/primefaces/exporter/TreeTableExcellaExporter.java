@@ -361,6 +361,7 @@ public class TreeTableExcellaExporter extends TreeTableExporter {
         return value;
     }
 
+    @SuppressWarnings("unchecked")
     public Object exportObjectValue(FacesContext context, UIComponent component) {
         if (component instanceof ValueHolder) {
             ValueHolder valueHolder = (ValueHolder)component;
@@ -368,13 +369,13 @@ public class TreeTableExcellaExporter extends TreeTableExporter {
             if (value == null) {
                 return null;
             }
-            Converter<?> converter = valueHolder.getConverter();
+            Converter<Object> converter = valueHolder.getConverter();
             if (converter == null) {
                 Class<?> valueClass = value.getClass();
                 converter = context.getApplication().createConverter(valueClass);
             }
-            if (converter == null || converter instanceof ExporterConverter){
-                return exportValue(context, component);
+            if (converter instanceof ExporterConverter){
+                return converter.getAsString(context, component, value);
             }
 
             if (value instanceof Number) {
