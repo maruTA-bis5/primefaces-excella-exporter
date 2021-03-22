@@ -201,7 +201,9 @@ public class DataTableExcellaExporter extends DataTableExporter {
                     return strValue;
                 }
             }
-            return value;
+            if (value instanceof Number || value instanceof Date || value instanceof Calendar || value instanceof LocalDate || value instanceof LocalDateTime) {
+                return value;
+            }
         } else if (component instanceof CellEditor) {
             return exportObjectValue(context, component.getFacet("output"));
         }
