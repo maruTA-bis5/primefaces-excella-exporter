@@ -230,9 +230,8 @@ public class TreeTableExcellaExporter extends TreeTableExporter {
                 if (!reportSheet.getSheetName().equals(sheetData.getSheetName())) {
                     return;
                 }
-                int lastRowNum = sheet.getLastRowNum();
 
-                for (int i = 1; i < lastRowNum; i++) {
+                for (int i = 1; i <= levels.size(); i++) {
                     int level = levels.get(i-1);
                     Row row = sheet.getRow(i);
                     if (row == null) {
