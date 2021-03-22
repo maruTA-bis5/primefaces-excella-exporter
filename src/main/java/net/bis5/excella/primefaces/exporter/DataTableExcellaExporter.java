@@ -521,10 +521,11 @@ public class DataTableExcellaExporter extends DataTableExporter {
             }
             rowIndex++;
         }
-        headerContents.entrySet().forEach(e -> reportSheet.addParam(RowRepeatParamParser.DEFAULT_TAG, "header" + e.getKey(), e.getValue().toArray()));
+        String tagPrefix = columnType == ColumnType.HEADER ? "header" : "footer";
+        headerContents.entrySet().forEach(e -> reportSheet.addParam(RowRepeatParamParser.DEFAULT_TAG, tagPrefix + e.getKey(), e.getValue().toArray()));
 
         return headerContents.keySet().stream()
-            .map(i -> "$R[]{header" + i + "}")
+            .map(i -> "$R[]{" + tagPrefix + i + "}")
             .collect(Collectors.toList());
     }
 
