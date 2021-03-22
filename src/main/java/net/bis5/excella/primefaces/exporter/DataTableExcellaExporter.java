@@ -332,6 +332,13 @@ public class DataTableExcellaExporter extends DataTableExporter {
         if (group != null && group.isRendered()) {
             return exportColumnGroup(context, group, columnType, reportSheet);
         }
+        if (table.getFrozenColumns() > 0) {
+            ColumnGroup frozenGroup = table.getColumnGroup(columnType == ColumnType.HEADER ? "frozenHeader" : "frozenFooter");
+            ColumnGroup scrollableGroup = table.getColumnGroup(columnType == ColumnType.HEADER ? "scrollableHeader" : "scrollableFooter");
+            if (frozenGroup != null && scrollableGroup != null && frozenGroup.isRendered() && scrollableGroup.isRendered()) {
+                return exportFrozenScrollableGroup(context, columnType, frozenGroup, scrollableGroup, reportSheet);
+            }
+        }
 
         for (UIColumn column : table.getColumns()) {
             if (column instanceof DynamicColumn) {
@@ -383,11 +390,49 @@ public class DataTableExcellaExporter extends DataTableExporter {
                 }
             } else {
                 // ignore
-                continue;
             }
         }
 
         context.getAttributes().remove(Constants.HELPER_RENDERER);
+        return facetColumns;
+    }
+
+    private List<String> exportFrozenScrollableGroup(FacesContext context, ColumnType columnType,
+            ColumnGroup frozenGroup, ColumnGroup scrollableGroup, ReportSheet reportSheet) {
+        List<String> facetColumns = new ArrayList<>();
+
+        for (UIComponent child : frozenGroup.getChildren()) {
+            if (child instanceof org.primefaces.component.row.Row) {
+                if (frozenGroup.getChildren().size() > 1) {
+                    facetColumns.addAll(exportColumnGroupMultiRow(context, frozenGroup, columnType, reportSheet));
+                    break;
+                } else {
+                    facetColumns.addAll(exportColumnGroup(context, frozenGroup, columnType, reportSheet));
+                }
+            } else if (child instanceof UIColumn) {
+                facetColumns.addAll(exportColumnGroup(context, frozenGroup, columnType, reportSheet));
+            } else {
+                // ignore
+            }
+        }
+
+        int frozenColumns = facetColumns.size();
+
+        for (UIComponent child : scrollableGroup.getChildren()) {
+            if (child instanceof org.primefaces.component.row.Row) {
+                if (scrollableGroup.getChildren().size() > 1) {
+                    facetColumns.addAll(exportColumnGroupMultiRow(context, scrollableGroup, columnType, reportSheet, frozenColumns));
+                    break;
+                } else {
+                    facetColumns.addAll(exportColumnGroup(context, scrollableGroup, columnType, reportSheet));
+                }
+            } else if (child instanceof UIColumn) {
+                facetColumns.addAll(exportColumnGroup(context, scrollableGroup, columnType, reportSheet));
+            } else {
+                // ignore
+            }
+        }
+
         return facetColumns;
     }
 
@@ -421,8 +466,15 @@ public class DataTableExcellaExporter extends DataTableExporter {
             return Objects.hash(rowStart, colIndex);
         }
     }
-    private List<String> exportColumnGroupMultiRow(FacesContext context, ColumnGroup columnGroup,ColumnType columnType,
+
+    private List<String> exportColumnGroupMultiRow(FacesContext context, ColumnGroup columnGroup, ColumnType columnType,
             ReportSheet reportSheet) {
+
+        return exportColumnGroupMultiRow(context, columnGroup, columnType, reportSheet, 0);
+    }
+
+    private List<String> exportColumnGroupMultiRow(FacesContext context, ColumnGroup columnGroup, ColumnType columnType,
+            ReportSheet reportSheet, int beginColIndex) {
 
         Map</*colindex*/Integer, List<String>> headerContents = new HashMap<>();
         Set<RowMergedArea> rowMergedAreas = new HashSet<>();
@@ -432,7 +484,7 @@ public class DataTableExcellaExporter extends DataTableExporter {
                 continue;
             }
             org.primefaces.component.row.Row row = (org.primefaces.component.row.Row)child;
-            int colIndex = 0;
+            int colIndex = beginColIndex;
             for (UIComponent rowChild : row.getChildren()) {
                 while (true) {
                     boolean whileBreak = true;
