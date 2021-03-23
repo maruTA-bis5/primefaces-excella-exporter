@@ -9,18 +9,24 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.YearMonth;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -33,10 +39,15 @@ import javax.faces.convert.Converter;
 
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.DataFormat;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellRangeAddress;
+import org.apache.poi.ss.util.CellUtil;
+import org.bbreak.excella.core.SheetData;
+import org.bbreak.excella.core.SheetParser;
 import org.bbreak.excella.reports.exporter.ExcelExporter;
 import org.bbreak.excella.reports.listener.ReportProcessAdaptor;
 import org.bbreak.excella.reports.listener.ReportProcessListener;
@@ -178,6 +189,80 @@ public class DataTableExcellaExporter extends DataTableExporter {
         return value;
     }
 
+    enum ValueType {
+        YEAR_MONTH, DATE, DATE_TIME, TIME, DECIMAL, INTEGER
+    }
+
+    private Map<ValueType, CellStyle> styles = new EnumMap<>(ValueType.class);
+
+    private void initStyles(Workbook workbook) {
+        DataFormat dataFormat = workbook.createDataFormat();
+
+        CellStyle yearMonthStyle = workbook.createCellStyle();
+        yearMonthStyle.setDataFormat(dataFormat.getFormat("yy/m"));
+        styles.put(ValueType.YEAR_MONTH, yearMonthStyle);
+
+        CellStyle dateStyle = workbook.createCellStyle();
+        dateStyle.setDataFormat((short)0xe);
+        styles.put(ValueType.DATE, dateStyle);
+
+        CellStyle dateTimeStyle = workbook.createCellStyle();
+        dateTimeStyle.setDataFormat((short)0x16);
+        styles.put(ValueType.DATE_TIME, dateTimeStyle);
+
+        CellStyle timeStyle = workbook.createCellStyle();
+        timeStyle.setDataFormat((short)0x14);
+        styles.put(ValueType.TIME, timeStyle);
+
+        CellStyle decimalStyle = workbook.createCellStyle();
+        decimalStyle.setDataFormat((short)0x4);
+        styles.put(ValueType.DECIMAL, decimalStyle);
+
+        CellStyle integerStyle = workbook.createCellStyle();
+        integerStyle.setDataFormat((short)0x3);
+        styles.put(ValueType.INTEGER, integerStyle);
+    }
+
+    private final Pattern timePattern = Pattern.compile("^[0-9]+:[0-9][0-9]$");
+
+    private ValueType detectValueType(List<Object> values) {
+        Set<ValueType> types = values.stream().map(this::detectValueType).collect(Collectors.toSet());
+        if (types.isEmpty()) {
+            return null;
+        }
+        if (types.contains(ValueType.INTEGER) && types.contains(ValueType.DECIMAL)) {
+            return ValueType.DECIMAL;
+        }
+        if (types.contains(ValueType.DATE) && types.contains(ValueType.DATE_TIME)) {
+            return ValueType.DATE_TIME;
+        }
+        return types.iterator().next();
+    }
+
+    private ValueType detectValueType(Object value) {
+        if (value instanceof LocalDate) {
+            return ValueType.DATE;
+        }
+        if (value instanceof LocalTime || (value instanceof String && timePattern.matcher((String)value).matches())) {
+            return ValueType.TIME;
+        }
+        if (value instanceof LocalDateTime || value instanceof Date || value instanceof Calendar) {
+            return ValueType.DATE_TIME;
+        }
+        if (value instanceof YearMonth) {
+            return ValueType.YEAR_MONTH;
+        }
+        if (value instanceof Number) {
+            Number number = (Number)value;
+            if (Objects.equals(number.intValue(), number)) {
+                return ValueType.INTEGER;
+            } else {
+                return ValueType.DECIMAL;
+            }
+        }
+        return null;
+    }
+
     @SuppressWarnings("unchecked")
     public Object exportObjectValue(FacesContext context, UIComponent component) {
         if (component instanceof ValueHolder) {
@@ -281,6 +366,47 @@ public class DataTableExcellaExporter extends DataTableExporter {
         reportBook.addReportSheet(reportSheet);
 
         listeners.add(new ReportProcessAdaptor() {
+
+            @Override
+            public void preBookParse(Workbook workbook, ReportBook reportBook) {
+                initStyles(workbook);
+            }
+
+            @Override
+            public void postParse(Sheet sheet, SheetParser sheetParser, SheetData sheetData) {
+                if (dataContainer.isEmpty() || !sheetData.getSheetName().equals(reportSheet.getSheetName())) {
+                    return;
+                }
+                Object[] headers = (Object[]) reportSheet.getParam(RowRepeatParamParser.DEFAULT_TAG, "header0");
+                int headerSize = 1;
+                if (headers != null) {
+                    headerSize = headers.length;
+                }
+                for (Entry<String, List<Object>> entry : dataContainer.entrySet()) {
+                    String columnTag = getColumnTag(entry.getKey());
+                    List<Object> values = entry.getValue();
+                    ValueType valueType = detectValueType(values);
+                    if (valueType == null) {
+                        continue;
+                    }
+                    CellStyle style = styles.get(valueType);
+                    int colIndex = Arrays.asList(columnDataParams).indexOf(columnTag);
+                    IntStream.rangeClosed(headerSize, values.size())
+                        .mapToObj(sheet::getRow)
+                        .filter(Objects::nonNull)
+                        .map(r -> r.getCell(colIndex))
+                        .filter(Objects::nonNull)
+                        .forEach(c -> setCellStyle(c, style));
+                }
+            }
+
+            private void setCellStyle(Cell cell, CellStyle style) {
+                CellUtil.setCellStyleProperty(cell, CellUtil.DATA_FORMAT, style.getDataFormat());
+            }
+            private String getColumnTag(String key) {
+                return "$R[]{" + key + "}";
+            }
+
             @Override
             public void postBookParse(Workbook workbook, ReportBook reportBook) {
                 IntStream.range(0, workbook.getNumberOfSheets())
