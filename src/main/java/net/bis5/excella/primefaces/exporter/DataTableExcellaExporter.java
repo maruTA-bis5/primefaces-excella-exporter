@@ -185,7 +185,8 @@ public class DataTableExcellaExporter extends DataTableExporter {
         if (component.getClass().getSimpleName().equals("UIInstructions")) {
             // evaluate el expr
             ValueExpression ve = context.getApplication().getExpressionFactory().createValueExpression(context.getELContext(), value, Object.class);
-            return String.valueOf(ve.getValue(context.getELContext()));
+            Object objValue = ve.getValue(context.getELContext());
+            return objValue != null ? String.valueOf(objValue) : null;
         }
         return value;
     }

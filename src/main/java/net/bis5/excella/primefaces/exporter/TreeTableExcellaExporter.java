@@ -480,7 +480,8 @@ public class TreeTableExcellaExporter extends TreeTableExporter {
         if (component.getClass().getSimpleName().equals("UIInstructions")) {
             // evaluate el expr
             ValueExpression ve = context.getApplication().getExpressionFactory().createValueExpression(context.getELContext(), value, Object.class);
-            return String.valueOf(ve.getValue(context.getELContext()));
+            Object objValue = ve.getValue(context.getELContext());
+            return objValue != null ? String.valueOf(ve.getValue(context.getELContext())) : null;
         }
         return value;
     }
