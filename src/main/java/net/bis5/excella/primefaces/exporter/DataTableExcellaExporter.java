@@ -169,6 +169,7 @@ public class DataTableExcellaExporter extends DataTableExporter {
             List<UIComponent> components = column.getChildren();
             StringBuilder builder = new StringBuilder();
             components.stream() //
+                    .filter(UIComponent::isRendered) //
                     .map(c -> exportValue(context, c)) //
                     .map(v -> v == null ? "" : v).forEach(builder::append);
             exportValue = builder.toString();
@@ -265,6 +266,9 @@ public class DataTableExcellaExporter extends DataTableExporter {
 
     @SuppressWarnings("unchecked")
     public Object exportObjectValue(FacesContext context, UIComponent component) {
+        if (!component.isRendered()) {
+            return false;
+        }
         if (component instanceof ValueHolder) {
             ValueHolder valueHolder = (ValueHolder)component;
             Object value = valueHolder.getValue();

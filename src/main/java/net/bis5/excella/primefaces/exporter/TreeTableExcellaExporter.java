@@ -463,6 +463,7 @@ public class TreeTableExcellaExporter extends TreeTableExporter {
             List<UIComponent> components = column.getChildren();
             StringBuilder builder = new StringBuilder();
             components.stream()
+                .filter(UIComponent::isRendered)
                 .map(c -> exportValue(context, c))
                 .map(v -> v == null ? "" : v)
                 .forEach(builder::append);
@@ -486,6 +487,9 @@ public class TreeTableExcellaExporter extends TreeTableExporter {
 
     @SuppressWarnings("unchecked")
     public Object exportObjectValue(FacesContext context, UIComponent component) {
+        if (!component.isRendered()) {
+            return null;
+        }
         if (component instanceof ValueHolder) {
             ValueHolder valueHolder = (ValueHolder)component;
             Object value = valueHolder.getValue();
