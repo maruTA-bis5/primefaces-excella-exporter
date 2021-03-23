@@ -354,21 +354,30 @@ public class TreeTableExcellaExporter extends TreeTableExporter {
         if (value instanceof LocalTime || (value instanceof String && timePattern.matcher((String)value).matches())) {
             return ValueType.TIME;
         }
-        if (value instanceof LocalDateTime || value instanceof Date || value instanceof Calendar) {
+        if (value instanceof LocalDateTime || (value instanceof Date && hasTime((Date)value)) || (value instanceof Calendar && hasTime((Calendar)value))) {
             return ValueType.DATE_TIME;
         }
         if (value instanceof YearMonth) {
             return ValueType.YEAR_MONTH;
         }
         if (value instanceof Number) {
-            Number number = (Number)value;
-            if (Objects.equals(number.intValue(), number)) {
+            if (value instanceof Long || value instanceof Integer) {
                 return ValueType.INTEGER;
             } else {
                 return ValueType.DECIMAL;
             }
         }
         return null;
+    }
+
+    private boolean hasTime(Date date) {
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(date);
+        return hasTime(cal);
+    }
+
+    private boolean hasTime(Calendar cal) {
+        return cal.get(Calendar.HOUR_OF_DAY) != 0 && cal.get(Calendar.MINUTE) != 0 && cal.get(Calendar.SECOND) != 0;
     }
 
     private <T> T nonNull(T obj, T defaultValue) {
@@ -513,7 +522,7 @@ public class TreeTableExcellaExporter extends TreeTableExporter {
                     return strValue;
                 }
             }
-            if (value instanceof Number || value instanceof Date || value instanceof Calendar || value instanceof LocalDate || value instanceof LocalDateTime) {
+            if (value instanceof Number || value instanceof Date || value instanceof Calendar || value instanceof LocalDate || value instanceof LocalDateTime || value instanceof LocalTime || value instanceof YearMonth) {
                 return value;
             }
         } else if (component instanceof CellEditor) {
