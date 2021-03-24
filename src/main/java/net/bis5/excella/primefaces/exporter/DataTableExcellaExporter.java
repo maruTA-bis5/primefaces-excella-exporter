@@ -159,7 +159,7 @@ public class DataTableExcellaExporter extends DataTableExporter {
         }
     }
 
-    private void addCellValue(FacesContext context, Map<String, List<Object>> dataContainer, int colIndex,
+    protected void addCellValue(FacesContext context, Map<String, List<Object>> dataContainer, int colIndex,
             UIColumn column) {
         String columnKey = "data" + colIndex;
 
@@ -194,7 +194,7 @@ public class DataTableExcellaExporter extends DataTableExporter {
         return value;
     }
 
-    enum ValueType {
+    public enum ValueType {
         YEAR_MONTH, DATE, DATE_TIME, TIME, DECIMAL, INTEGER
     }
 
@@ -244,7 +244,7 @@ public class DataTableExcellaExporter extends DataTableExporter {
         return types.iterator().next();
     }
 
-    private ValueType detectValueType(Object value) {
+    protected ValueType detectValueType(Object value) {
         if (value instanceof LocalDateTime || (value instanceof Date && hasTime((Date)value)) || (value instanceof Calendar && hasTime((Calendar)value))) {
             return ValueType.DATE_TIME;
         }
@@ -397,7 +397,7 @@ public class DataTableExcellaExporter extends DataTableExporter {
         return new AbstractMap.SimpleEntry<>(entry.getKey(), normalizedValues);
     }
 
-    private Object normalizeValue(Object rawValue) {
+    protected Object normalizeValue(Object rawValue) {
         if (rawValue instanceof LocalDate) {
             LocalDate localDate = (LocalDate)rawValue;
             return Date.from(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
@@ -723,7 +723,7 @@ public class DataTableExcellaExporter extends DataTableExporter {
             .collect(Collectors.toList());
     }
 
-    private String getFacetColumnText(FacesContext context, UIColumn column, DataTableExporter.ColumnType columnType) {
+    protected String getFacetColumnText(FacesContext context, UIColumn column, DataTableExporter.ColumnType columnType) {
         UIComponent facet = column.getFacet(columnType.facet());
         String text;
         if (columnType == DataTableExporter.ColumnType.HEADER) {

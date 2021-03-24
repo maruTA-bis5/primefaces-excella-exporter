@@ -245,7 +245,7 @@ public class TreeTableExcellaExporter extends TreeTableExporter {
         return new AbstractMap.SimpleEntry<>(entry.getKey(), normalizedValues);
     }
 
-    private Object normalizeValue(Object rawValue) {
+    protected Object normalizeValue(Object rawValue) {
         if (rawValue instanceof LocalDate) {
             LocalDate localDate = (LocalDate)rawValue;
             return Date.from(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
@@ -341,7 +341,7 @@ public class TreeTableExcellaExporter extends TreeTableExporter {
         reportBook.addReportSheet(reportSheet);
     }
 
-    enum ValueType {
+    public enum ValueType {
         YEAR_MONTH, DATE, DATE_TIME, TIME, DECIMAL, INTEGER
     }
 
@@ -391,7 +391,7 @@ public class TreeTableExcellaExporter extends TreeTableExporter {
         return types.iterator().next();
     }
 
-    private ValueType detectValueType(Object value) {
+    protected ValueType detectValueType(Object value) {
         if (value instanceof LocalDateTime || (value instanceof Date && hasTime((Date)value)) || (value instanceof Calendar && hasTime((Calendar)value))) {
             return ValueType.DATE_TIME;
         }
@@ -450,7 +450,7 @@ public class TreeTableExcellaExporter extends TreeTableExporter {
         super.exportNode(table, document, node, level);
     }
 
-    private List<String> exportFacet(FacesContext context, TreeTable table, ColumnType columnType) {
+    protected List<String> exportFacet(FacesContext context, TreeTable table, ColumnType columnType) {
         List<String> facetColumns = new ArrayList<>();
 
         for (UIColumn column : table.getColumns()) {
@@ -471,7 +471,7 @@ public class TreeTableExcellaExporter extends TreeTableExporter {
         return facetColumns;
     }
 
-    private String getFacetColumnText(FacesContext context, UIColumn column, ColumnType columnType) {
+    protected String getFacetColumnText(FacesContext context, UIColumn column, ColumnType columnType) {
         UIComponent facet = column.getFacet(columnType.facet());
         String text;
         if (columnType == TreeTableExporter.ColumnType.HEADER) {
@@ -510,7 +510,7 @@ public class TreeTableExcellaExporter extends TreeTableExporter {
 
     }
 
-    private void addCellValue(FacesContext context, Map<String, List<Object>> dataContainer, int colIndex,
+    protected void addCellValue(FacesContext context, Map<String, List<Object>> dataContainer, int colIndex,
             UIColumn column) {
         String columnKey = "data" + colIndex;
 
