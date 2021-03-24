@@ -378,7 +378,11 @@ public class TreeTableExcellaExporter extends TreeTableExporter {
     private final Pattern timePattern = Pattern.compile("^[0-9]+:[0-9][0-9]$");
 
     private ValueType detectValueType(List<Object> values) {
-        Set<ValueType> types = values.stream().map(this::detectValueType).collect(Collectors.toSet());
+        Set<ValueType> types = values.stream()
+            .map(this::detectValueType)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toSet());
+
         if (types.isEmpty()) {
             return null;
         }
