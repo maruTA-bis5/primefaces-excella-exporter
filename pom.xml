@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>net.bis5.excella</groupId>
   <artifactId>primefaces-excella-exporter</artifactId>
-  <version>1.6.0</version>
+  <version>1.6.1-SNAPSHOT</version>
 
   <name>PrimeFaces ExCella Exporter</name>
   <description>Exporter implementations</description>
@@ -18,7 +18,7 @@
     <url>https://github.com/maruTA-bis5/primefaces-excella-exporter.git</url>
     <connection>scm:git:git://github.com/maruTA-bis5/primefaces-excella-exporter.git</connection>
     <developerConnection>scm:git:git@github.com:maruTA-bis5/primefaces-excella-exporter.git</developerConnection>
-    <tag>v1.6.0</tag>
+    <tag>HEAD</tag>
   </scm>
   <developers>
     <developer>
