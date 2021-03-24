@@ -2,6 +2,7 @@ package net.bis5.excella.primefaces.exporter;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.math.BigDecimal;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -11,6 +12,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.YearMonth;
+import java.time.ZoneId;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -242,14 +245,14 @@ public class DataTableExcellaExporter extends DataTableExporter {
     }
 
     private ValueType detectValueType(Object value) {
-        if (value instanceof LocalDate) {
+        if (value instanceof LocalDateTime || (value instanceof Date && hasTime((Date)value)) || (value instanceof Calendar && hasTime((Calendar)value))) {
+            return ValueType.DATE_TIME;
+        }
+        if (value instanceof LocalDate || value instanceof Date || value instanceof Calendar) {
             return ValueType.DATE;
         }
         if (value instanceof LocalTime || (value instanceof String && timePattern.matcher((String)value).matches())) {
             return ValueType.TIME;
-        }
-        if (value instanceof LocalDateTime || (value instanceof Date && hasTime((Date)value)) || (value instanceof Calendar && hasTime((Calendar)value))) {
-            return ValueType.DATE_TIME;
         }
         if (value instanceof YearMonth) {
             return ValueType.YEAR_MONTH;
@@ -257,6 +260,13 @@ public class DataTableExcellaExporter extends DataTableExporter {
         if (value instanceof Number) {
             if (value instanceof Long || value instanceof Integer) {
                 return ValueType.INTEGER;
+            } else if (value instanceof BigDecimal) {
+                BigDecimal bigDecimal = (BigDecimal)value;
+                if (bigDecimal.compareTo(BigDecimal.valueOf(bigDecimal.longValue())) == 0) {
+                    return ValueType.INTEGER;
+                } else {
+                    return ValueType.DECIMAL;
+                }
             } else {
                 return ValueType.DECIMAL;
             }
@@ -366,11 +376,56 @@ public class DataTableExcellaExporter extends DataTableExporter {
         }
         return dataContainer;
     }
+
+    private Map<String, ValueType> detectValueTypes(Map<String, List<Object>> dataContainer) {
+        Map<String, ValueType> valueTypes = new HashMap<>();
+        for(Entry<String, List<Object>> entry : dataContainer.entrySet()) {
+            String key = entry.getKey();
+            List<Object> values = entry.getValue();
+            ValueType type = detectValueType(values);
+            valueTypes.put(key, type);
+        }
+        return valueTypes;
+    }
+
+    private Entry<String, List<Object>> normalizeValues(Entry<String, List<Object>> entry) {
+        // excella-coreのPoiUtil#setCellValueが特定の型以外はnoopなので予め型変換しておく
+        List<Object> rawValues = entry.getValue();
+        List<Object> normalizedValues = rawValues.stream()
+            .map(this::normalizeValue)
+            .collect(Collectors.toList());
+        return new AbstractMap.SimpleEntry<>(entry.getKey(), normalizedValues);
+    }
+
+    private Object normalizeValue(Object rawValue) {
+        if (rawValue instanceof LocalDate) {
+            LocalDate localDate = (LocalDate)rawValue;
+            return Date.from(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
+        }
+        if (rawValue instanceof LocalDateTime) {
+            LocalDateTime localDateTime = (LocalDateTime)rawValue;
+            return Date.from(localDateTime.atZone(ZoneId.systemDefault()).toInstant());
+        }
+        if (rawValue instanceof YearMonth) {
+            YearMonth yearMonth = (YearMonth)rawValue;
+            return Date.from(yearMonth.atDay(1).atStartOfDay(ZoneId.systemDefault()).toInstant());
+        }
+        return rawValue;
+    }
+
+    private <T> T nonNull(T obj, T defaultValue) {
+        return obj != null ? obj : defaultValue;
+    }
+
     private void setExportParameters(ReportSheet reportSheet, List<String> columnHeader, List<String> columnFooter, Map<String, List<Object>> dataContainer) {
         Object[] columnDataParams = dataContainer.keySet().stream().map(k -> "$R[]{" + k + "}").toArray();
         reportSheet.addParam(ColRepeatParamParser.DEFAULT_TAG, dataColumnsTag != null ? dataColumnsTag : DEFAULT_DATA_COLUMNS_TAG, columnDataParams);
+
+        Map<String, ValueType> valueTypes = detectValueTypes(dataContainer);
         dataContainer.entrySet()
-                .forEach(e -> reportSheet.addParam(RowRepeatParamParser.DEFAULT_TAG, e.getKey(), e.getValue().toArray()));
+            .stream()
+            .map(this::normalizeValues)
+            .forEach(e -> reportSheet.addParam(RowRepeatParamParser.DEFAULT_TAG, e.getKey(), e.getValue().toArray()));
 
         String headersTagName = headersTag != null ? headersTag : DEFAULT_HEADERS_TAG;
         String footersTagName = footersTag != null ? footersTag : DEFAULT_FOOTERS_TAG;
@@ -396,16 +451,15 @@ public class DataTableExcellaExporter extends DataTableExporter {
                 if (headers != null) {
                     headerSize = headers.length;
                 }
-                for (Entry<String, List<Object>> entry : dataContainer.entrySet()) {
+                for (Entry<String, ValueType> entry : valueTypes.entrySet()) {
                     String columnTag = getColumnTag(entry.getKey());
-                    List<Object> values = entry.getValue();
-                    ValueType valueType = detectValueType(values);
+                    ValueType valueType = entry.getValue();
                     if (valueType == null) {
                         continue;
                     }
                     CellStyle style = styles.get(valueType);
                     int colIndex = Arrays.asList(columnDataParams).indexOf(columnTag);
-                    IntStream.rangeClosed(headerSize, values.size())
+                    IntStream.rangeClosed(headerSize, nonNull(dataContainer.get(entry.getKey()), Collections.emptyList()).size())
                         .mapToObj(sheet::getRow)
                         .filter(Objects::nonNull)
                         .map(r -> r.getCell(colIndex))

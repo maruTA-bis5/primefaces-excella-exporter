@@ -2,6 +2,7 @@ package net.bis5.excella.primefaces.exporter;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.math.BigDecimal;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -11,12 +12,15 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.YearMonth;
+import java.time.ZoneId;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -221,6 +225,42 @@ public class TreeTableExcellaExporter extends TreeTableExporter {
         setExportParameters(reportSheet, columnHeader, columnFooter, dataContainer);
     }
 
+    private Map<String, ValueType> detectValueTypes(Map<String, List<Object>> dataContainer) {
+        Map<String, ValueType> valueTypes = new HashMap<>();
+        for(Entry<String, List<Object>> entry : dataContainer.entrySet()) {
+            String key = entry.getKey();
+            List<Object> values = entry.getValue();
+            ValueType type = detectValueType(values);
+            valueTypes.put(key, type);
+        }
+        return valueTypes;
+    }
+
+    private Entry<String, List<Object>> normalizeValues(Entry<String, List<Object>> entry) {
+        // excella-coreのPoiUtil#setCellValueが特定の型以外はnoopなので予め型変換しておく
+        List<Object> rawValues = entry.getValue();
+        List<Object> normalizedValues = rawValues.stream()
+            .map(this::normalizeValue)
+            .collect(Collectors.toList());
+        return new AbstractMap.SimpleEntry<>(entry.getKey(), normalizedValues);
+    }
+
+    private Object normalizeValue(Object rawValue) {
+        if (rawValue instanceof LocalDate) {
+            LocalDate localDate = (LocalDate)rawValue;
+            return Date.from(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
+        }
+        if (rawValue instanceof LocalDateTime) {
+            LocalDateTime localDateTime = (LocalDateTime)rawValue;
+            return Date.from(localDateTime.atZone(ZoneId.systemDefault()).toInstant());
+        }
+        if (rawValue instanceof YearMonth) {
+            YearMonth yearMonth = (YearMonth)rawValue;
+            return Date.from(yearMonth.atDay(1).atStartOfDay(ZoneId.systemDefault()).toInstant());
+        }
+        return rawValue;
+    }
+
     private void setExportParameters(ReportSheet reportSheet, List<String> columnHeader, List<String> columnFooter,
             Map<String, List<Object>> dataContainer) {
 
@@ -230,7 +270,12 @@ public class TreeTableExcellaExporter extends TreeTableExporter {
             .collect(Collectors.toList());
         Object[] columnDataParams = dataContainer.keySet().stream().map(k -> "$R[]{" + k + "}").toArray();
         reportSheet.addParam(ColRepeatParamParser.DEFAULT_TAG, nonNull(dataColumnsTag, DEFAULT_DATA_COLUMNS_TAG), columnDataParams);
-        dataContainer.entrySet().forEach(e -> reportSheet.addParam(RowRepeatParamParser.DEFAULT_TAG, e.getKey(), e.getValue().toArray()));
+
+        Map<String, ValueType> valueTypes = detectValueTypes(dataContainer);
+        dataContainer.entrySet()
+            .stream()
+            .map(this::normalizeValues)
+            .forEach(e -> reportSheet.addParam(RowRepeatParamParser.DEFAULT_TAG, e.getKey(), e.getValue().toArray()));
 
         reportSheet.addParam(ColRepeatParamParser.DEFAULT_TAG, nonNull(headersTag, DEFAULT_HEADERS_TAG), columnHeader.toArray());
         reportSheet.addParam(ColRepeatParamParser.DEFAULT_TAG, nonNull(footersTag, DEFAULT_FOOTERS_TAG), columnFooter.toArray());
@@ -266,16 +311,15 @@ public class TreeTableExcellaExporter extends TreeTableExporter {
                 if (headers != null) {
                     headerSize = headers.length;
                 }
-                for (Entry<String, List<Object>> entry : dataContainer.entrySet()) {
+                for (Entry<String, ValueType> entry : valueTypes.entrySet()) {
                     String columnTag = getColumnTag(entry.getKey());
-                    List<Object> values = entry.getValue();
-                    ValueType valueType = detectValueType(values);
+                    ValueType valueType = entry.getValue();
                     if (valueType == null) {
                         continue;
                     }
                     CellStyle style = styles.get(valueType);
                     int colIndex = Arrays.asList(columnDataParams).indexOf(columnTag);
-                    IntStream.rangeClosed(headerSize, values.size())
+                    IntStream.rangeClosed(headerSize, nonNull(dataContainer.get(entry.getKey()), Collections.emptyList()).size())
                         .mapToObj(sheet::getRow)
                         .filter(Objects::nonNull)
                         .map(r -> r.getCell(colIndex))
@@ -307,7 +351,7 @@ public class TreeTableExcellaExporter extends TreeTableExporter {
         DataFormat dataFormat = workbook.createDataFormat();
 
         CellStyle yearMonthStyle = workbook.createCellStyle();
-        yearMonthStyle.setDataFormat(dataFormat.getFormat("yy/m"));
+        yearMonthStyle.setDataFormat(dataFormat.getFormat("yyyy/m"));
         styles.put(ValueType.YEAR_MONTH, yearMonthStyle);
 
         CellStyle dateStyle = workbook.createCellStyle();
@@ -348,14 +392,14 @@ public class TreeTableExcellaExporter extends TreeTableExporter {
     }
 
     private ValueType detectValueType(Object value) {
-        if (value instanceof LocalDate) {
+        if (value instanceof LocalDateTime || (value instanceof Date && hasTime((Date)value)) || (value instanceof Calendar && hasTime((Calendar)value))) {
+            return ValueType.DATE_TIME;
+        }
+        if (value instanceof LocalDate || value instanceof Date || value instanceof Calendar) {
             return ValueType.DATE;
         }
         if (value instanceof LocalTime || (value instanceof String && timePattern.matcher((String)value).matches())) {
             return ValueType.TIME;
-        }
-        if (value instanceof LocalDateTime || (value instanceof Date && hasTime((Date)value)) || (value instanceof Calendar && hasTime((Calendar)value))) {
-            return ValueType.DATE_TIME;
         }
         if (value instanceof YearMonth) {
             return ValueType.YEAR_MONTH;
@@ -363,6 +407,13 @@ public class TreeTableExcellaExporter extends TreeTableExporter {
         if (value instanceof Number) {
             if (value instanceof Long || value instanceof Integer) {
                 return ValueType.INTEGER;
+            } else if (value instanceof BigDecimal) {
+                BigDecimal bigDecimal = (BigDecimal)value;
+                if (bigDecimal.compareTo(BigDecimal.valueOf(bigDecimal.longValue())) == 0) {
+                    return ValueType.INTEGER;
+                } else {
+                    return ValueType.DECIMAL;
+                }
             } else {
                 return ValueType.DECIMAL;
             }
