@@ -461,7 +461,7 @@ public class TreeTableExcellaExporter extends TreeTableExporter {
             if (column instanceof DynamicColumn) {
                 ((DynamicColumn)column).applyStatelessModel();
             }
-            if (!column.isRendered() || !column.isExportable()) {
+            if (!isExportable(context, column)) {
                 continue;
             }
             facetColumns.add(getFacetColumnText(context, column, columnType));
@@ -473,6 +473,10 @@ public class TreeTableExcellaExporter extends TreeTableExporter {
             return Collections.emptyList();
         }
         return facetColumns;
+    }
+
+    protected boolean isExportable(FacesContext context, UIColumn column) {
+        return column.isRendered() && column.isExportable();
     }
 
     protected String getFacetColumnText(FacesContext context, UIColumn column, ColumnType columnType) {
@@ -506,7 +510,7 @@ public class TreeTableExcellaExporter extends TreeTableExporter {
             if (column instanceof DynamicColumn) {
                 ((DynamicColumn)column).applyStatelessModel();
             }
-            if (!(column.isRendered() && column.isExportable())) {
+            if (!isExportable(FacesContext.getCurrentInstance(), column)) {
                 continue;
             }
             addCellValue(FacesContext.getCurrentInstance(), dataContainer, colIndex++, column);

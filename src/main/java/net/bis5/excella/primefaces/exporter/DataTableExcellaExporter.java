@@ -152,7 +152,7 @@ public class DataTableExcellaExporter extends DataTableExporter {
             if (column instanceof DynamicColumn) {
                 ((DynamicColumn) column).applyStatelessModel();
             }
-            if (!(column.isRendered() && column.isExportable())) {
+            if (!isExportable(FacesContext.getCurrentInstance(), column)) {
                 continue;
             }
             addCellValue(FacesContext.getCurrentInstance(), dataContainer, colIndex++, column);
@@ -542,7 +542,7 @@ public class DataTableExcellaExporter extends DataTableExporter {
             if (column instanceof DynamicColumn) {
                 ((DynamicColumn)column).applyStatelessModel();
             }
-            if (!column.isRendered() || !column.isExportable()) {
+            if (!isExportable(context, column)) {
                 continue;
             }
             facetColumns.add(getFacetColumnText(context, column, columnType));
@@ -554,6 +554,10 @@ public class DataTableExcellaExporter extends DataTableExporter {
             return Collections.emptyList();
         }
         return facetColumns;
+    }
+
+    protected boolean isExportable(FacesContext context, UIColumn column) {
+        return column.isRendered() && column.isExportable();
     }
 
     private List<String> exportColumnGroup(FacesContext context, ColumnGroup columnGroup, ColumnType columnType, ReportSheet reportSheet) {
@@ -570,7 +574,7 @@ public class DataTableExcellaExporter extends DataTableExporter {
                 }
                 for (UIComponent rowChild : child.getChildren()) {
                     UIColumn column = (UIColumn) rowChild;
-                    if (!column.isRendered()) {
+                    if (!isExportable(context, column)) {
                         continue;
                     }
                     facetColumns.add(getFacetColumnText(context, column, columnType));
@@ -581,6 +585,9 @@ public class DataTableExcellaExporter extends DataTableExporter {
                 }
             } else if (child instanceof UIColumn) {
                 UIColumn column = (UIColumn)child;
+		if (!isExportable(context, column)) {
+                    continue;
+                }
                 facetColumns.add(getFacetColumnText(context, column, columnType));
                 if (column.getColspan() > 1) {
                     IntStream.rangeClosed(2, column.getColspan())
@@ -703,6 +710,9 @@ public class DataTableExcellaExporter extends DataTableExporter {
                     continue;
                 }
                 UIColumn column = (UIColumn)rowChild;
+                if (!isExportable(context, column)) {
+                    continue;
+                }
                 List<String> columnContents = headerContents.computeIfAbsent(colIndex, c -> new ArrayList<>());
                 columnContents.add(getFacetColumnText(context, column, columnType));
                 if (column.getRowspan() > 1) {
