@@ -32,6 +32,13 @@ ExCella Reports (https://github.com/excella-core/excella-reports) を利用し�
         exporter="#{exporters.dataTableExporter}" />
     ```
 
+### Version matrix
+
+|primefaces-excella-exporter version|Compatible PrimeFaces version|
+|---|---|
+|1.x|8.x|
+|2.x (Plan)|10.x|
+
 ## Development
 - build
     ```shellscript
