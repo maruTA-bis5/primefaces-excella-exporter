@@ -36,7 +36,7 @@ jobs:
     - name: Build with Maven
       run: mvn -B package --file pom.xml
     - name: SonarCloud Scan
-      if: github.repository == 'maruTA-bis5/primefaces-excella-exporter' && github.ref == 'refs/heads/master'
+      if: github.repository == 'maruTA-bis5/primefaces-excella-exporter'
       run: mvn -B clean org.jacoco:jacoco-maven-plugin:prepare-agent verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=maruTA-bis5_primefaces-excella-exporter -Dsonar.organization=maruta-bis5-github -Dsonar.host.url=https://sonarcloud.io -Dsonar.login=${{secrets.SONAR_TOKEN}}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
