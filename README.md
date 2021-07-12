@@ -1,10 +1,13 @@
 # PrimeFaces ExCella Exporter
 
-ExCella Reports (https://github.com/excella-core/excella-reports) を利用してExcelファイルを出力する、PrimeFacesのExporter実装
+[ExCella Reports](https://github.com/excella-core/excella-reports) を利用してExcelファイルを出力する、PrimeFacesのExporter実装  
+This library provides the implementation of PrimeFaces' Exporter using [ExCella Reports](https://github.com/excella-core/excella-reports).
+
 
 [![build](https://github.com/maruTA-bis5/primefaces-excella-exporter/actions/workflows/build.yml/badge.svg)](https://github.com/maruTA-bis5/primefaces-excella-exporter/actions/workflows/build.yml)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/net.bis5.excella/primefaces-excella-exporter/badge.svg)](https://maven-badges.herokuapp.com/maven-central/net.bis5.excella/primefaces-excella-exporter)
 [![Javadocs](http://javadoc.io/badge/net.bis5.excella/primefaces-excella-exporter.svg)](http://javadoc.io/doc/net.bis5.excella/primefaces-excella-exporter)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=maruTA-bis5_primefaces-excella-exporter&metric=alert_status)](https://sonarcloud.io/dashboard?id=maruTA-bis5_primefaces-excella-exporter)
 
 ## Usage
 1. Add primefaces-excella-exporter to your project.
@@ -54,6 +57,10 @@ ExCella Reports (https://github.com/excella-core/excella-reports) を利用し�
 1. Commit your changes (git commit -am 'Add some feature')
 1. Push to the branch (git push origin my-new-feature)
 1. Create new Pull Request
+
+## Contact
+- Create GitHub Issue (https://github.com/maruTA-bis5/primefaces-excella-exporter/issues/new)
+- or Start new Discussion (https://github.com/maruTA-bis5/primefaces-excella-exporter/discussions/new)
 
 ## License
 MIT
