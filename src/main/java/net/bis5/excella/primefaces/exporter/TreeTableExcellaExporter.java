@@ -61,6 +61,7 @@ import org.primefaces.component.api.DynamicColumn;
 import org.primefaces.component.api.UIColumn;
 import org.primefaces.component.celleditor.CellEditor;
 import org.primefaces.component.export.ExportConfiguration;
+import org.primefaces.component.link.Link;
 import org.primefaces.component.treetable.TreeTable;
 import org.primefaces.model.TreeNode;
 import org.primefaces.util.ComponentUtils;
@@ -554,40 +555,64 @@ public class TreeTableExcellaExporter extends TreeTableExporter {
         return value;
     }
 
-    @SuppressWarnings("unchecked")
     public Object exportObjectValue(FacesContext context, UIComponent component) {
         if (!component.isRendered()) {
             return null;
         }
-        if (component instanceof ValueHolder) {
-            ValueHolder valueHolder = (ValueHolder)component;
-            Object value = valueHolder.getValue();
-            if (value == null) {
+        if (component instanceof Link) {
+            Link link = (Link)component;
+            if (link.getValue() != null) {
+                return link.getValue();
+            }
+            List<Object> values = link.getChildren().stream()
+                .map(c -> exportObjectValue(context, c))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+            if (values.isEmpty()) {
                 return null;
             }
-            Converter<Object> converter = valueHolder.getConverter();
-            if (converter == null) {
-                Class<?> valueClass = value.getClass();
-                converter = context.getApplication().createConverter(valueClass);
+            if (values.size() == 1) {
+                return values.get(0);
             }
-            if (converter instanceof ExporterConverter){
-                return converter.getAsString(context, component, value);
-            }
-
-            if (value instanceof Number) {
-                String strValue = exportValue(context, component);
-                if (strValue != null && strValue.endsWith("%")) {
-                    // percentage number output as string
-                    return strValue;
-                }
-            }
-            if (value instanceof Number || value instanceof Date || value instanceof Calendar || value instanceof LocalDate || value instanceof LocalDateTime || value instanceof LocalTime || value instanceof YearMonth) {
-                return value;
-            }
+            return values.stream()
+                .map(Object::toString)
+                .collect(Collectors.joining());
+        } else if (component instanceof ValueHolder) {
+            ValueHolder valueHolder = (ValueHolder)component;
+            return getComponentValue(context, valueHolder);
         } else if (component instanceof CellEditor) {
             return exportObjectValue(context, component.getFacet("output"));
         }
         return exportValue(context, component);
+    }
+
+    @SuppressWarnings("unchecked")
+    private Object getComponentValue(FacesContext context, ValueHolder valueHolder) {
+        Object value = valueHolder.getValue();
+        if (value == null) {
+            return null;
+        }
+        UIComponent component = (UIComponent)valueHolder;
+        Converter<Object> converter = valueHolder.getConverter();
+        if (converter == null) {
+            Class<?> valueClass = value.getClass();
+            converter = context.getApplication().createConverter(valueClass);
+        }
+        if (converter instanceof ExporterConverter){
+            return converter.getAsString(context, component, value);
+        }
+
+        if (value instanceof Number) {
+            String strValue = exportValue(context, component);
+            if (strValue != null && strValue.endsWith("%")) {
+                // percentage number output as string
+                return strValue;
+            }
+        }
+        if (value instanceof Number || value instanceof Date || value instanceof Calendar || value instanceof LocalDate || value instanceof LocalDateTime || value instanceof LocalTime || value instanceof YearMonth) {
+            return value;
+        }
+        return value.toString();
     }
 
 }
