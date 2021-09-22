@@ -33,6 +33,7 @@ import java.util.stream.IntStream;
 
 import javax.el.ValueExpression;
 import javax.faces.component.UIComponent;
+import javax.faces.component.UIParameter;
 import javax.faces.component.ValueHolder;
 import javax.faces.context.ExternalContext;
 import javax.faces.context.FacesContext;
@@ -565,6 +566,7 @@ public class TreeTableExcellaExporter extends TreeTableExporter {
                 return link.getValue();
             }
             List<Object> values = link.getChildren().stream()
+                .filter(c -> !UIParameter.class.isAssignableFrom(c.getClass()))
                 .map(c -> exportObjectValue(context, c))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
