@@ -1,0 +1,13 @@
+target
+.classpath
+.project
+.settings
+nbactions.xml
+.vscode
+layout.classpath
+.sass-cache
+layout.css
+layout.css.map
+.DS_STORE
+bin
+docker-compose/downloads/
