@@ -1,0 +1,15 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+  xmlns:h="http://xmlns.jcp.org/jsf/html"
+  xmlns:p="http://primefaces.org/ui"
+  xmlns:composite="http://xmlns.jcp.org/jsf/composite">
+
+  <composite:interface>
+    <composite:attribute name="labelValue" />
+    <composite:attribute name="textValue" />
+  </composite:interface>
+
+  <composite:implementation>
+    <p:outputLabel for="@next" value="#{cc.attrs.labelValue}" />
+    <h:outputText value="#{cc.attrs.textValue}" />
+  </composite:implementation>
+</html>

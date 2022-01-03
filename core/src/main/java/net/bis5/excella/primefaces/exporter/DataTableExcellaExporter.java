@@ -35,6 +35,7 @@ import java.util.stream.IntStream;
 
 import javax.el.ValueExpression;
 import javax.faces.component.UIComponent;
+import javax.faces.component.UINamingContainer;
 import javax.faces.component.UIParameter;
 import javax.faces.component.ValueHolder;
 import javax.faces.context.ExternalContext;
@@ -184,6 +185,21 @@ public class DataTableExcellaExporter extends DataTableExporter {
         values.add(exportValue);
     }
 
+    protected Object getFacetValue(FacesContext context, UIComponent facet) {
+        if (!facet.isRendered()) {
+            return null;
+        }
+        if (facet.getChildren().size() == 1) {
+            return exportObjectValue(context, facet.getChildren().get(0));
+        } else {
+            return facet.getChildren().stream()
+                .filter(UIComponent::isRendered)
+                .map(c -> exportValue(context, c))
+                .filter(Objects::nonNull)
+                .collect(Collectors.joining());
+        }
+    }
+
     @Override
     public String exportValue(FacesContext context, UIComponent component) {
         String value = super.exportValue(context, component);
@@ -318,6 +334,14 @@ public class DataTableExcellaExporter extends DataTableExporter {
             return getComponentValue(context, valueHolder);
         } else if (component instanceof CellEditor) {
             return exportObjectValue(context, component.getFacet("output"));
+        } else if (component instanceof UINamingContainer) {
+            UINamingContainer container = (UINamingContainer)component;
+            if (UIComponent.isCompositeComponent(container)) {
+                UIComponent facet = container.getFacet(UIComponent.COMPOSITE_FACET_NAME);
+                return getFacetValue(context, facet);
+            } else {
+                throw new InternalError("CCの判定が違う?"); // FIXME 動作確認用。消せ
+            }
         }
         return exportValue(context, component);
     }

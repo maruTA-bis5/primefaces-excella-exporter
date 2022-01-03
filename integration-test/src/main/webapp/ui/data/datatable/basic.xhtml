@@ -5,6 +5,7 @@
       xmlns:ui="http://java.sun.com/jsf/facelets"
       xmlns:p="http://primefaces.org/ui"
       xmlns:sc="http://primefaces.org/ui/showcase"
+      xmlns:comp="http://xmlns.jcp.org/jsf/composite/components"
       lang="en">
 
     <h:head>
@@ -73,6 +74,13 @@
                       <h:outputText value="#{row.bigDecimalDecimalProperty}" />
                       <f:param name="param" value="value" />
                   </p:link>
+              </p:column>
+              <p:column headerText="Composite Component">
+                <comp:compositeOutput labelValue="foo" textValue="bar" />
+              </p:column>
+              <p:column headerText="Composite + Normal Component">
+                <comp:compositeOutput labelValue="foo" textValue="bar" />
+                <h:outputText value="(note)" />
               </p:column>
           </p:dataTable>
       </h:form>
