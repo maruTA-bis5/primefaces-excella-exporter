@@ -12,7 +12,7 @@
   <packaging>war</packaging>
 
   <properties>
-    <primefaces-selenium.version>11.0.0-RC1</primefaces-selenium.version>
+    <primefaces-selenium.version>11.0.0</primefaces-selenium.version>
     <wildfly-jar-maven-plugin.version>5.0.1.Final</wildfly-jar-maven-plugin.version>
     <maven-failsafe-plugin.version>3.0.0-M5</maven-failsafe-plugin.version>
     <wildfly.version>24.0.1.Final</wildfly.version>
@@ -59,11 +59,6 @@
       <artifactId>primefaces-selenium-components</artifactId>
       <version>${primefaces-selenium.version}</version>
       <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.primefaces</groupId>
-      <artifactId>primefaces-selenium-runtime</artifactId>
-      <version>${primefaces-selenium.version}</version>
     </dependency>
   </dependencies>
 
@@ -177,5 +172,25 @@
       </plugin>
     </plugins>
   </build>
+
+  <profiles>
+    <profile>
+      <id>debug</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.wildfly.plugins</groupId>
+            <artifactId>wildfly-jar-maven-plugin</artifactId>
+            <version>${wildfly-jar-maven-plugin.version}</version>
+            <configuration>
+              <jvmArguments>
+                <arg>-agentlib:jdwp=transport=dt_socket,address=8787,server=y,suspend=n</arg>
+              </jvmArguments>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 
 </project>

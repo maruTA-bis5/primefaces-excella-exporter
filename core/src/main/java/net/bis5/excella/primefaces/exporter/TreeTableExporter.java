@@ -1,6 +1,7 @@
 package net.bis5.excella.primefaces.exporter;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.lang.reflect.Array;
 import java.util.Collection;
 import java.util.List;
@@ -22,6 +23,8 @@ import org.primefaces.model.TreeNode;
 
 public abstract class TreeTableExporter implements Exporter<TreeTable> {
 
+    private OutputStream outputStream;
+
     static class ExportLogicDelegate extends DataTableExporter {
 
         @Override
@@ -40,6 +43,18 @@ public abstract class TreeTableExporter implements Exporter<TreeTable> {
         @Override
         public String exportColumnByFunction(FacesContext context, UIColumn column) {
             return super.exportColumnByFunction(context, column);
+        }
+
+        @Override
+        public String getContentType() {
+            // NOOP
+            return null;
+        }
+
+        @Override
+        public String getFileExtension() {
+            // NOOP
+            return null;
         }
     }
     private final ExportLogicDelegate delegate = new ExportLogicDelegate();
@@ -65,8 +80,10 @@ public abstract class TreeTableExporter implements Exporter<TreeTable> {
     }
 
     @Override
-    public void export(FacesContext facesContext, List<TreeTable> tables, ExportConfiguration config)
-            throws IOException {
+    public void export(FacesContext facesContext, List<TreeTable> tables, OutputStream outputStream,
+            ExportConfiguration config) throws IOException {
+        this.outputStream = outputStream;
+
         preExport(facesContext, config);
 
         int index = 0;
@@ -76,6 +93,8 @@ public abstract class TreeTableExporter implements Exporter<TreeTable> {
             index += nbTables;
         }
         postExport(facesContext, config);
+
+        this.outputStream = null;
     }
 
     protected void preExport(FacesContext context, ExportConfiguration config) {
@@ -196,5 +215,9 @@ public abstract class TreeTableExporter implements Exporter<TreeTable> {
 
     protected String exportColumnByFunction(FacesContext context, UIColumn column) {
         return delegate.exportColumnByFunction(context, column);
+    }
+
+    protected OutputStream getOutputStream() {
+        return outputStream;
     }
 }

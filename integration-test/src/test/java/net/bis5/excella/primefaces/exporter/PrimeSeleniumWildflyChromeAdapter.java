@@ -11,6 +11,7 @@ import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.logging.LogType;
 import org.openqa.selenium.logging.LoggingPreferences;
 import org.openqa.selenium.remote.RemoteWebDriver;
+import org.primefaces.selenium.internal.ConfigProvider;
 import org.primefaces.selenium.spi.DeploymentAdapter;
 import org.primefaces.selenium.spi.WebDriverAdapter;
 
@@ -55,6 +56,11 @@ public class PrimeSeleniumWildflyChromeAdapter implements WebDriverAdapter, Depl
 
     @Override
     public void shutdown() throws Exception {
+        // no op
+    }
+
+    @Override
+    public void initialize(ConfigProvider configProvider) {
         // no op
     }
 
