@@ -65,7 +65,7 @@ import org.primefaces.component.celleditor.CellEditor;
 import org.primefaces.component.export.ExportConfiguration;
 import org.primefaces.component.link.Link;
 import org.primefaces.component.treetable.TreeTable;
-import org.primefaces.model.TreeNode;
+import org.primefaces.component.treetable.export.TreeTableExporter;
 import org.primefaces.util.ComponentUtils;
 
 import net.bis5.excella.primefaces.exporter.convert.ExporterConverter;
@@ -77,8 +77,6 @@ public class TreeTableExcellaExporter extends TreeTableExporter {
     private static final String DEFAULT_TEMPLATE_SHEET_NAME = "DATA";
 
     private static final String DATA_CONTAINER_KEY = "DATA_CONTAINER_KEY";
-
-    private static final String MAX_LEVEL_KEY = "MAX_LEVEL_KEY";
 
     private static final String TREE_LEVEL_KEY = "TREE_LEVEL_KEY";
 
@@ -442,21 +440,6 @@ public class TreeTableExcellaExporter extends TreeTableExporter {
         return obj != null ? obj : defaultValue;
     }
 
-    @Override
-    protected void exportNode(TreeTable table, Object document, TreeNode node, int level) {
-        ReportSheet reportSheet = (ReportSheet) document;
-        int maxLevel = nonNull((Integer)reportSheet.getParam(null, MAX_LEVEL_KEY), 0);
-        maxLevel = Math.max(maxLevel, level);
-        reportSheet.addParam(null, MAX_LEVEL_KEY, maxLevel);
-
-        @SuppressWarnings("unchecked")
-        Map<String, List<Object>> dataContainer = (Map<String, List<Object>>) reportSheet.getParam(null, DATA_CONTAINER_KEY);
-        dataContainer.computeIfAbsent(TREE_LEVEL_KEY, ignore -> new ArrayList<>())
-            .add(level);
-
-        super.exportNode(table, document, node, level);
-    }
-
     protected List<String> exportFacet(FacesContext context, TreeTable table, ColumnType columnType) {
         List<String> facetColumns = new ArrayList<>();
 
@@ -503,7 +486,7 @@ public class TreeTableExcellaExporter extends TreeTableExporter {
     }
 
     @Override
-    protected void exportCells(TreeTable table, Object document, TreeNode node) {
+    protected void exportCells(TreeTable table, Object document) {
         ReportSheet sheet = (ReportSheet) document;
 
         @SuppressWarnings("unchecked")
