@@ -35,20 +35,20 @@ import org.primefaces.model.TreeNode;
 @ViewScoped
 public class BasicView implements Serializable {
 
-    public TreeNode getRoot() {
+    public TreeNode<DataTypeCheck> getRoot() {
         return root;
     }
 
-    public void setRoot(TreeNode root) {
+    public void setRoot(TreeNode<DataTypeCheck> root) {
         this.root = root;
     }
 
-    private TreeNode root = new DefaultTreeNode();
+    private TreeNode<DataTypeCheck> root = new DefaultTreeNode<>();
 
     @PostConstruct
     public void initialize() {
-        TreeNode parent = new DefaultTreeNode(new DataTypeCheck(), root);
-        new DefaultTreeNode(new DataTypeCheck("Ch-"), parent);
+        TreeNode<DataTypeCheck> parent = new DefaultTreeNode<>(new DataTypeCheck(), root);
+        new DefaultTreeNode<>(new DataTypeCheck("Ch-"), parent);
         parent.setExpanded(true);
     }
 

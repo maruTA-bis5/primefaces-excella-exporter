@@ -44,8 +44,8 @@ class BasicIT extends AbstractPrimePageTest {
     void exportExcella(Page page) throws EncryptedDocumentException, IOException {
         BasicView backingBean = new BasicView();
         backingBean.initialize();
-        TreeNode parentNode = backingBean.getRoot().getChildren().get(0);
-        TreeNode childNode = parentNode.getChildren().get(0);
+        TreeNode<DataTypeCheck> parentNode = backingBean.getRoot().getChildren().get(0);
+        TreeNode<DataTypeCheck> childNode = parentNode.getChildren().get(0);
 
         DataTypeCheck parentRecord = (DataTypeCheck) parentNode.getData();
         DataTypeCheck childRecord = (DataTypeCheck) childNode.getData();
