@@ -45,7 +45,7 @@ This library provides the implementation of PrimeFaces' Exporter using [ExCella 
 |primefaces-excella-exporter version|Compatible PrimeFaces version|
 |---|---|
 |1.x|8.x|
-|2.x (Plan)|10.x|
+|2.x|11.x|
 
 ## Development
 - build
