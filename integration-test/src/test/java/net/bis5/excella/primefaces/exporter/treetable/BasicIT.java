@@ -21,6 +21,7 @@ import org.openqa.selenium.support.FindBy;
 import org.primefaces.model.TreeNode;
 import org.primefaces.selenium.AbstractPrimePage;
 import org.primefaces.selenium.AbstractPrimePageTest;
+import org.primefaces.selenium.PrimeSelenium;
 import org.primefaces.selenium.component.CommandLink;
 import org.primefaces.showcase.view.data.treetable.BasicView;
 import org.primefaces.showcase.view.data.treetable.BasicView.DataTypeCheck;
@@ -53,6 +54,7 @@ class BasicIT extends AbstractPrimePageTest {
 
         CommandLink link = page.commandLinkAjax;
         link.click();
+        PrimeSelenium.wait(1000);
 
         assertFileContent(parentRecord, childRecord, "tt-cars-ajax.xlsx");
     }

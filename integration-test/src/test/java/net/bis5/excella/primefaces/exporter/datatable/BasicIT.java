@@ -20,6 +20,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.openqa.selenium.support.FindBy;
 import org.primefaces.selenium.AbstractPrimePage;
 import org.primefaces.selenium.AbstractPrimePageTest;
+import org.primefaces.selenium.PrimeSelenium;
 import org.primefaces.selenium.component.CommandLink;
 import org.primefaces.showcase.view.data.datatable.BasicView;
 import org.primefaces.showcase.view.data.datatable.BasicView.DataTypeCheck;
@@ -47,6 +48,7 @@ public class BasicIT extends AbstractPrimePageTest {
 
         CommandLink link = page.commandLinkAjax;
         link.click();
+        PrimeSelenium.wait(1000);
 
         assertFileContent(record, "cars-ajax.xlsx");
     }
