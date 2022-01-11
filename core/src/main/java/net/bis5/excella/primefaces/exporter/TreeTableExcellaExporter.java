@@ -39,6 +39,7 @@ import javax.faces.context.ExternalContext;
 import javax.faces.context.FacesContext;
 import javax.faces.convert.Converter;
 
+import org.apache.commons.math3.util.Pair;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
@@ -66,6 +67,7 @@ import org.primefaces.component.export.ExportConfiguration;
 import org.primefaces.component.link.Link;
 import org.primefaces.component.treetable.TreeTable;
 import org.primefaces.component.treetable.export.TreeTableExporter;
+import org.primefaces.model.TreeNode;
 import org.primefaces.util.ComponentUtils;
 
 import net.bis5.excella.primefaces.exporter.convert.ExporterConverter;
@@ -486,6 +488,19 @@ public class TreeTableExcellaExporter extends TreeTableExporter {
     }
 
     @Override
+    protected void exportRow(FacesContext context, TreeTable table, Object document, int rowIndex) {
+        super.exportRow(context, table, document, rowIndex);
+
+        ReportSheet sheet = (ReportSheet) document;
+
+        Pair<TreeNode<?>, Integer> currentNode = traverseTreeNode(table.getValue(), rowIndex);
+        @SuppressWarnings("unchecked")
+        Map<String, List<Object>> dataContainer = (Map<String, List<Object>>) sheet.getParam(null, DATA_CONTAINER_KEY);
+        dataContainer.computeIfAbsent(TREE_LEVEL_KEY, ignore -> new ArrayList<>())
+            .add(currentNode.getValue());
+    }
+
+    @Override
     protected void exportCells(TreeTable table, Object document) {
         ReportSheet sheet = (ReportSheet) document;
 
@@ -599,6 +614,59 @@ public class TreeTableExcellaExporter extends TreeTableExporter {
             return value;
         }
         return value.toString();
+    }
+
+    protected static Pair<TreeNode<?>, Integer> traverseTreeNode(TreeNode<?> node, int rowIndex) {
+        return traverseTreeNode(node, new MutableInt(rowIndex), 0);
+    }
+
+    /**
+     * Traverses a tree and visitis all children until it finds the one with row index i
+     *
+     * @param node
+     * @param rowIndex
+     * @return data of found treenode
+     */
+    protected static Pair<TreeNode<?>, Integer> traverseTreeNode(TreeNode<?> node, MutableInt rowIndex, int level) {
+
+        int index = rowIndex.getValue();
+        rowIndex.decrement();
+        if (index <= 0) {
+            return Pair.create(node, level);
+        }
+
+        if (node.getChildren() != null) {
+            Pair<TreeNode<?>, Integer> returnNode = null;
+            for (TreeNode<?> childNode : node.getChildren()) {
+                returnNode = traverseTreeNode(childNode, rowIndex, level + 1);
+                if (returnNode != null) {
+                    break;
+                }
+            }
+            return returnNode;
+        }
+        else {
+            return null;
+        }
+
+    }
+
+    private static class MutableInt {
+
+        private int value;
+
+        public MutableInt(int value) {
+            super();
+            this.value = value;
+        }
+
+        public int getValue() {
+            return this.value;
+        }
+
+        public void decrement() {
+            value--;
+        }
     }
 
     @Override
