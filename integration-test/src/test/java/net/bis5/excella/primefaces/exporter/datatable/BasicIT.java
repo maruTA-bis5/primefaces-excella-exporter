@@ -41,7 +41,7 @@ public class BasicIT extends AbstractPrimePageTest {
     }
 
     @Test
-    public void exportExcellaAjax(Page page) throws EncryptedDocumentException, IOException {
+    void exportExcellaAjax(Page page) throws EncryptedDocumentException, IOException {
         BasicView backingBean = new BasicView();
         DataTypeCheck record = backingBean.getDataTypes().get(0);
 
@@ -52,7 +52,7 @@ public class BasicIT extends AbstractPrimePageTest {
     }
 
     @Test
-    public void exportExcellaNonAjax(Page page) throws EncryptedDocumentException, IOException {
+    void exportExcellaNonAjax(Page page) throws EncryptedDocumentException, IOException {
         BasicView backingBean = new BasicView();
         DataTypeCheck record = backingBean.getDataTypes().get(0);
 

@@ -40,8 +40,9 @@ class BasicIT extends AbstractPrimePageTest {
             () -> assertEquals(expectedValue, actualValueMapper.apply(cell), "cell value")
         );
     }
+
     @Test
-    void exportExcella(Page page) throws EncryptedDocumentException, IOException {
+    void exportExcellaAjax(Page page) throws EncryptedDocumentException, IOException {
         BasicView backingBean = new BasicView();
         backingBean.initialize();
         TreeNode<DataTypeCheck> parentNode = backingBean.getRoot().getChildren().get(0);
@@ -50,10 +51,30 @@ class BasicIT extends AbstractPrimePageTest {
         DataTypeCheck parentRecord = (DataTypeCheck) parentNode.getData();
         DataTypeCheck childRecord = (DataTypeCheck) childNode.getData();
 
-        CommandLink link = page.commandLink;
+        CommandLink link = page.commandLinkAjax;
+        link.click();
+
+        assertFileContent(parentRecord, childRecord, "tt-cars-ajax.xlsx");
+    }
+
+    @Test
+    void exportExcellaNonAjax(Page page) throws EncryptedDocumentException, IOException {
+        BasicView backingBean = new BasicView();
+        backingBean.initialize();
+        TreeNode<DataTypeCheck> parentNode = backingBean.getRoot().getChildren().get(0);
+        TreeNode<DataTypeCheck> childNode = parentNode.getChildren().get(0);
+
+        DataTypeCheck parentRecord = (DataTypeCheck) parentNode.getData();
+        DataTypeCheck childRecord = (DataTypeCheck) childNode.getData();
+
+        CommandLink link = page.commandLinkNonAjax;
         link.getRoot().click();
 
-        try (Workbook workbook = WorkbookFactory.create(new File(getBaseDir()+"/docker-compose/downloads/tt-cars.xlsx"), null, true)) {
+        assertFileContent(parentRecord, childRecord, "tt-cars-non-ajax.xlsx");
+    }
+
+    private void assertFileContent(DataTypeCheck parentRecord, DataTypeCheck childRecord, String fileName) throws EncryptedDocumentException, IOException {
+        try (Workbook workbook = WorkbookFactory.create(new File(getBaseDir()+"/docker-compose/downloads/" + fileName), null, true)) {
             Sheet sheet = workbook.getSheetAt(0);
             List<String> headers = List.of("String", "YearMonth", "j.u.Date (date)", "j.u.Date (datetime)", "LocalDate", "LocalDateTime", "Integer (int)", "Integer (BigDecimal scale=2)", "Decimal (double)", "Decimal (BigDecimal)", "Link (value specified)", "Link (value not specified)");
 
@@ -84,7 +105,7 @@ class BasicIT extends AbstractPrimePageTest {
                     () -> assertCell("Link value not specified", parentNodeRow.getCell(11), CellType.NUMERIC, parentRecord.getBigDecimalDecimalProperty().doubleValue(), Cell::getNumericCellValue)
                 ),
                 () -> assertAll("Child node raw",
-                    () -> assertEquals(1, childNodeRow.getCell(0).getCellStyle().getIndention()),
+                    () -> assertEquals(1, childNodeRow.getCell(0).getCellStyle().getIndention(), "indention"),
                     () -> assertCell("String cell", childNodeRow.getCell(0), CellType.STRING, childRecord.getStringProperty(), Cell::getStringCellValue),
                     () -> assertCell("YearMonth cell", childNodeRow.getCell(1), CellType.NUMERIC, childRecord.getYearMonthProperty().atDay(1).atStartOfDay(), Cell::getLocalDateTimeCellValue),
                     () -> assertCell("Date cell", childNodeRow.getCell(2), CellType.NUMERIC, childRecord.getDateProperty(), Cell::getDateCellValue),
@@ -104,8 +125,11 @@ class BasicIT extends AbstractPrimePageTest {
 
     public static class Page extends AbstractPrimePage {
 
-        @FindBy(id = "form:excellaExport")
-        CommandLink commandLink;
+        @FindBy(id = "form:excellaExportNonAjax")
+        CommandLink commandLinkNonAjax;
+
+        @FindBy(id = "form:excellaExportAjax")
+        CommandLink commandLinkAjax;
 
         @Override
         public String getLocation() {
