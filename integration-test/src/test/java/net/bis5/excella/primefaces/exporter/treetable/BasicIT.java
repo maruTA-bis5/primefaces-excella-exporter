@@ -28,7 +28,7 @@ import org.primefaces.showcase.view.data.treetable.BasicView.DataTypeCheck;
 import net.bis5.excella.primefaces.exporter.TakeScreenShotAfterFailure;
 
 @ExtendWith(TakeScreenShotAfterFailure.class)
-public class BasicIT extends AbstractPrimePageTest {
+class BasicIT extends AbstractPrimePageTest {
 
     private String getBaseDir() {
         return System.getProperty("basedir");
@@ -41,7 +41,7 @@ public class BasicIT extends AbstractPrimePageTest {
         );
     }
     @Test
-    public void exportExcella(Page page) throws EncryptedDocumentException, IOException {
+    void exportExcella(Page page) throws EncryptedDocumentException, IOException {
         BasicView backingBean = new BasicView();
         backingBean.initialize();
         TreeNode parentNode = backingBean.getRoot().getChildren().get(0);
