@@ -617,16 +617,9 @@ public class TreeTableExcellaExporter extends TreeTableExporter {
     }
 
     protected static Pair<TreeNode<?>, Integer> traverseTreeNode(TreeNode<?> node, int rowIndex) {
-        return traverseTreeNode(node, new MutableInt(rowIndex), 0);
+        return Objects.requireNonNull(traverseTreeNode(node, new MutableInt(rowIndex), 0), () -> "Node for rowIndex " + rowIndex + " is not found");
     }
 
-    /**
-     * Traverses a tree and visitis all children until it finds the one with row index i
-     *
-     * @param node
-     * @param rowIndex
-     * @return data of found treenode
-     */
     protected static Pair<TreeNode<?>, Integer> traverseTreeNode(TreeNode<?> node, MutableInt rowIndex, int level) {
 
         int index = rowIndex.getValue();
