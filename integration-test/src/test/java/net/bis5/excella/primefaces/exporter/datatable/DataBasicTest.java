@@ -28,7 +28,7 @@ import org.primefaces.showcase.view.data.datatable.BasicView.DataTypeCheck;
 import net.bis5.excella.primefaces.exporter.TakeScreenShotAfterFailure;
 
 @ExtendWith(TakeScreenShotAfterFailure.class)
-public class BasicIT extends AbstractPrimePageTest {
+public class DataBasicTest extends AbstractPrimePageTest {
 
     private String getBaseDir() {
         return System.getProperty("basedir");

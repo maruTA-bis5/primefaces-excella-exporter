@@ -29,7 +29,7 @@ import org.primefaces.showcase.view.data.treetable.BasicView.DataTypeCheck;
 import net.bis5.excella.primefaces.exporter.TakeScreenShotAfterFailure;
 
 @ExtendWith(TakeScreenShotAfterFailure.class)
-class BasicIT extends AbstractPrimePageTest {
+class TreeBasicTest extends AbstractPrimePageTest {
 
     private String getBaseDir() {
         return System.getProperty("basedir");
