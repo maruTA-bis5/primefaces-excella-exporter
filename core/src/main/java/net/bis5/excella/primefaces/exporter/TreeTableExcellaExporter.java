@@ -302,7 +302,7 @@ public class TreeTableExcellaExporter extends TreeTableExporter {
                     }
                     Cell indexCell = row.getCell(0);
                     if (indexCell != null) {
-                        CellUtil.setCellStyleProperty(indexCell, CellUtil.INDENTION, (short)level);
+                        CellUtil.setCellStyleProperty(indexCell, CellUtil.INDENTION, (short)level - 1);
                     }
                 }
 
@@ -616,8 +616,8 @@ public class TreeTableExcellaExporter extends TreeTableExporter {
         return value.toString();
     }
 
-    protected static Pair<TreeNode<?>, Integer> traverseTreeNode(TreeNode<?> node, int rowIndex) {
-        return Objects.requireNonNull(traverseTreeNode(node, new MutableInt(rowIndex), 0), () -> "Node for rowIndex " + rowIndex + " is not found");
+    protected static Pair<TreeNode<?>, Integer> traverseTreeNode(TreeNode<?> node, int dataRowIndex) {
+        return Objects.requireNonNull(traverseTreeNode(node, new MutableInt(dataRowIndex + 1), 0), () -> "Node for dataRowIndex " + dataRowIndex + " is not found");
     }
 
     protected static Pair<TreeNode<?>, Integer> traverseTreeNode(TreeNode<?> node, MutableInt rowIndex, int level) {

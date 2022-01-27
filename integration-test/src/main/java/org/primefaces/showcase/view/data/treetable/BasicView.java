@@ -45,11 +45,34 @@ public class BasicView implements Serializable {
 
     private TreeNode<DataTypeCheck> root = new DefaultTreeNode<>();
 
+    public static class EvenOddNode<T> extends DefaultTreeNode<T> {
+        private final boolean even;
+        EvenOddNode(T data, TreeNode<T> parent, boolean even) {
+            super(data, parent);
+            this.even = even;
+        }
+
+        public boolean isEven() {
+            return even;
+        }
+
+        public boolean isOdd() {
+            return !isEven();
+        }
+    }
+
     @PostConstruct
     public void initialize() {
-        TreeNode<DataTypeCheck> parent = new DefaultTreeNode<>(new DataTypeCheck(), root);
-        new DefaultTreeNode<>(new DataTypeCheck("Ch-"), parent);
+        TreeNode<DataTypeCheck> parent = createTreeNode("P1-", 1, root, false);
+        createTreeNode("C1-", 2, parent, true);
         parent.setExpanded(true);
+        parent = createTreeNode("P2-", 3, root, false);
+        createTreeNode("C2-", 4, parent, true);
+        parent.setExpanded(true);
+    }
+
+    private TreeNode<DataTypeCheck> createTreeNode(String namePrefix, int rownum, TreeNode<DataTypeCheck> parent, boolean even) {
+        return new EvenOddNode<>(new DataTypeCheck(namePrefix), parent, even);
     }
 
     public static class DataTypeCheck implements Serializable {
