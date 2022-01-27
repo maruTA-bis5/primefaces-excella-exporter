@@ -58,7 +58,7 @@ class TreeBasicTest extends AbstractPrimePageTest {
         link.click();
         PrimeSelenium.wait(1000);
 
-        assertFileContent(parentRecord1, childRecord1, parentRecord2, childRecord2, "tt-cars-non-ajax.xlsx");
+        assertFileContent(parentRecord1, childRecord1, parentRecord2, childRecord2, "tt-cars-ajax.xlsx");
     }
 
     @Test
