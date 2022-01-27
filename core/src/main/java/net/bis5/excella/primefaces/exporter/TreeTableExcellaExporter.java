@@ -489,15 +489,30 @@ public class TreeTableExcellaExporter extends TreeTableExporter {
 
     @Override
     protected void exportRow(FacesContext context, TreeTable table, Object document, int rowIndex) {
+        Pair<TreeNode<?>, Integer> currentNode = traverseTreeNode(table.getValue(), rowIndex);
+        Map<String, Object> requestMap = context.getExternalContext().getRequestMap();
+        String nodeVar = table.getNodeVar();
+        Object origNodeVar = null;
+        if (nodeVar != null) {
+            origNodeVar = requestMap.get(nodeVar);
+            requestMap.put(nodeVar, currentNode.getFirst());
+        }
+
         super.exportRow(context, table, document, rowIndex);
 
         ReportSheet sheet = (ReportSheet) document;
-
-        Pair<TreeNode<?>, Integer> currentNode = traverseTreeNode(table.getValue(), rowIndex);
         @SuppressWarnings("unchecked")
         Map<String, List<Object>> dataContainer = (Map<String, List<Object>>) sheet.getParam(null, DATA_CONTAINER_KEY);
         dataContainer.computeIfAbsent(TREE_LEVEL_KEY, ignore -> new ArrayList<>())
             .add(currentNode.getValue());
+
+        if (nodeVar != null) {
+            if (origNodeVar != null) {
+                requestMap.put(nodeVar, origNodeVar);
+            } else {
+                requestMap.remove(nodeVar);
+            }
+        }
     }
 
     @Override
