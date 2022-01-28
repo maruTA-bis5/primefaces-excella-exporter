@@ -35,21 +35,44 @@ import org.primefaces.model.TreeNode;
 @ViewScoped
 public class BasicView implements Serializable {
 
-    public TreeNode getRoot() {
+    public TreeNode<DataTypeCheck> getRoot() {
         return root;
     }
 
-    public void setRoot(TreeNode root) {
+    public void setRoot(TreeNode<DataTypeCheck> root) {
         this.root = root;
     }
 
-    private TreeNode root = new DefaultTreeNode();
+    private TreeNode<DataTypeCheck> root = new DefaultTreeNode<>();
+
+    public static class EvenOddNode<T> extends DefaultTreeNode<T> {
+        private final boolean even;
+        EvenOddNode(T data, TreeNode<T> parent, boolean even) {
+            super(data, parent);
+            this.even = even;
+        }
+
+        public boolean isEven() {
+            return even;
+        }
+
+        public boolean isOdd() {
+            return !isEven();
+        }
+    }
 
     @PostConstruct
     public void initialize() {
-        TreeNode parent = new DefaultTreeNode(new DataTypeCheck(), root);
-        new DefaultTreeNode(new DataTypeCheck("Ch-"), parent);
+        TreeNode<DataTypeCheck> parent = createTreeNode("P1-", 1, root, false);
+        createTreeNode("C1-", 2, parent, true);
         parent.setExpanded(true);
+        parent = createTreeNode("P2-", 3, root, false);
+        createTreeNode("C2-", 4, parent, true);
+        parent.setExpanded(true);
+    }
+
+    private TreeNode<DataTypeCheck> createTreeNode(String namePrefix, int rownum, TreeNode<DataTypeCheck> parent, boolean even) {
+        return new EvenOddNode<>(new DataTypeCheck(namePrefix), parent, even);
     }
 
     public static class DataTypeCheck implements Serializable {

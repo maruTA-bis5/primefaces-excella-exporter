@@ -61,6 +61,7 @@ import org.bbreak.excella.reports.model.ReportSheet;
 import org.bbreak.excella.reports.processor.ReportProcessor;
 import org.bbreak.excella.reports.tag.ColRepeatParamParser;
 import org.bbreak.excella.reports.tag.RowRepeatParamParser;
+import org.primefaces.PrimeFaces;
 import org.primefaces.component.api.DynamicColumn;
 import org.primefaces.component.api.UIColumn;
 import org.primefaces.component.celleditor.CellEditor;
@@ -798,16 +799,16 @@ public class DataTableExcellaExporter extends DataTableExporter {
     }
 
     private void writeResponse(FacesContext context, Path outputFile, ExportConfiguration config) throws IOException {
-        ExternalContext externalContext = context.getExternalContext();
-        externalContext.setResponseContentType(templateType.getContentType());
+        if (!PrimeFaces.current().isAjaxRequest()) {
+            // overwrite response header by actual information
+            ExternalContext externalContext = context.getExternalContext();
+            externalContext.setResponseContentType(templateType.getContentType());
 
-        externalContext.setResponseHeader("Content-disposition",
+            externalContext.setResponseHeader("Content-disposition",
                 ComponentUtils.createContentDisposition("attachment", config.getOutputFileName() + templateType.getSuffix()));
+        }
 
-        // TODO PF 9.0
-        // addResponseCookie(context); // NOSONAR
-
-        OutputStream out = externalContext.getResponseOutputStream();
+        OutputStream out = getOutputStream();
         Files.copy(outputFile, out); // どうせOutputStreamに吐き出すんだから一時ファイル経由したくない気持ちもありつつ
         out.flush();
     }
@@ -839,6 +840,22 @@ public class DataTableExcellaExporter extends DataTableExporter {
         }
         // ExCellaが拡張子を付けるので注意
         return Paths.get(outputFile.toString() + templateType.getSuffix());
+    }
+
+    @Override
+    public String getContentType() {
+        return "application/octet-stream";
+    }
+
+    @Override
+    public String getFileExtension() {
+        String url;
+        try {
+            url = getTemplateFileUrl().toString();
+        } catch (MalformedURLException e) {
+            throw new IllegalStateException(e);
+        }
+        return url.substring(url.lastIndexOf("."), url.length());
     }
 
 }

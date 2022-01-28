@@ -39,6 +39,7 @@ import javax.faces.context.ExternalContext;
 import javax.faces.context.FacesContext;
 import javax.faces.convert.Converter;
 
+import org.apache.commons.math3.util.Pair;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
@@ -58,12 +59,14 @@ import org.bbreak.excella.reports.model.ReportSheet;
 import org.bbreak.excella.reports.processor.ReportProcessor;
 import org.bbreak.excella.reports.tag.ColRepeatParamParser;
 import org.bbreak.excella.reports.tag.RowRepeatParamParser;
+import org.primefaces.PrimeFaces;
 import org.primefaces.component.api.DynamicColumn;
 import org.primefaces.component.api.UIColumn;
 import org.primefaces.component.celleditor.CellEditor;
 import org.primefaces.component.export.ExportConfiguration;
 import org.primefaces.component.link.Link;
 import org.primefaces.component.treetable.TreeTable;
+import org.primefaces.component.treetable.export.TreeTableExporter;
 import org.primefaces.model.TreeNode;
 import org.primefaces.util.ComponentUtils;
 
@@ -76,8 +79,6 @@ public class TreeTableExcellaExporter extends TreeTableExporter {
     private static final String DEFAULT_TEMPLATE_SHEET_NAME = "DATA";
 
     private static final String DATA_CONTAINER_KEY = "DATA_CONTAINER_KEY";
-
-    private static final String MAX_LEVEL_KEY = "MAX_LEVEL_KEY";
 
     private static final String TREE_LEVEL_KEY = "TREE_LEVEL_KEY";
 
@@ -188,16 +189,16 @@ public class TreeTableExcellaExporter extends TreeTableExporter {
     }
 
     private void writeResponse(FacesContext context, Path outputFile, ExportConfiguration config) throws IOException {
-        ExternalContext externalContext = context.getExternalContext();
-        externalContext.setResponseContentType(templateType.getContentType());
+        if (!PrimeFaces.current().isAjaxRequest()) {
+            // overwrite response header by actual information
+            ExternalContext externalContext = context.getExternalContext();
+            externalContext.setResponseContentType(templateType.getContentType());
 
-        externalContext.setResponseHeader("Content-disposition",
+            externalContext.setResponseHeader("Content-disposition",
                 ComponentUtils.createContentDisposition("attachment", config.getOutputFileName() + templateType.getSuffix()));
+        }
 
-        // TODO PF 9.0
-        // addResponseCookie(context); // NOSONAR
-
-        OutputStream out = externalContext.getResponseOutputStream();
+        OutputStream out = getOutputStream();
         Files.copy(outputFile, out); // どうせOutputStreamに吐き出すんだから一時ファイル経由したくない気持ちもありつつ
         out.flush();
     }
@@ -301,7 +302,7 @@ public class TreeTableExcellaExporter extends TreeTableExporter {
                     }
                     Cell indexCell = row.getCell(0);
                     if (indexCell != null) {
-                        CellUtil.setCellStyleProperty(indexCell, CellUtil.INDENTION, (short)level);
+                        CellUtil.setCellStyleProperty(indexCell, CellUtil.INDENTION, (short)level - 1);
                     }
                 }
 
@@ -441,21 +442,6 @@ public class TreeTableExcellaExporter extends TreeTableExporter {
         return obj != null ? obj : defaultValue;
     }
 
-    @Override
-    protected void exportNode(TreeTable table, Object document, TreeNode node, int level) {
-        ReportSheet reportSheet = (ReportSheet) document;
-        int maxLevel = nonNull((Integer)reportSheet.getParam(null, MAX_LEVEL_KEY), 0);
-        maxLevel = Math.max(maxLevel, level);
-        reportSheet.addParam(null, MAX_LEVEL_KEY, maxLevel);
-
-        @SuppressWarnings("unchecked")
-        Map<String, List<Object>> dataContainer = (Map<String, List<Object>>) reportSheet.getParam(null, DATA_CONTAINER_KEY);
-        dataContainer.computeIfAbsent(TREE_LEVEL_KEY, ignore -> new ArrayList<>())
-            .add(level);
-
-        super.exportNode(table, document, node, level);
-    }
-
     protected List<String> exportFacet(FacesContext context, TreeTable table, ColumnType columnType) {
         List<String> facetColumns = new ArrayList<>();
 
@@ -502,7 +488,35 @@ public class TreeTableExcellaExporter extends TreeTableExporter {
     }
 
     @Override
-    protected void exportCells(TreeTable table, Object document, TreeNode node) {
+    protected void exportRow(FacesContext context, TreeTable table, Object document, int rowIndex) {
+        Pair<TreeNode<?>, Integer> currentNode = traverseTreeNode(table.getValue(), rowIndex);
+        Map<String, Object> requestMap = context.getExternalContext().getRequestMap();
+        String nodeVar = table.getNodeVar();
+        Object origNodeVar = null;
+        if (nodeVar != null) {
+            origNodeVar = requestMap.get(nodeVar);
+            requestMap.put(nodeVar, currentNode.getFirst());
+        }
+
+        super.exportRow(context, table, document, rowIndex);
+
+        ReportSheet sheet = (ReportSheet) document;
+        @SuppressWarnings("unchecked")
+        Map<String, List<Object>> dataContainer = (Map<String, List<Object>>) sheet.getParam(null, DATA_CONTAINER_KEY);
+        dataContainer.computeIfAbsent(TREE_LEVEL_KEY, ignore -> new ArrayList<>())
+            .add(currentNode.getValue());
+
+        if (nodeVar != null) {
+            if (origNodeVar != null) {
+                requestMap.put(nodeVar, origNodeVar);
+            } else {
+                requestMap.remove(nodeVar);
+            }
+        }
+    }
+
+    @Override
+    protected void exportCells(TreeTable table, Object document) {
         ReportSheet sheet = (ReportSheet) document;
 
         @SuppressWarnings("unchecked")
@@ -615,6 +629,68 @@ public class TreeTableExcellaExporter extends TreeTableExporter {
             return value;
         }
         return value.toString();
+    }
+
+    protected static Pair<TreeNode<?>, Integer> traverseTreeNode(TreeNode<?> node, int dataRowIndex) {
+        return Objects.requireNonNull(traverseTreeNode(node, new MutableInt(dataRowIndex + 1), 0), () -> "Node for dataRowIndex " + dataRowIndex + " is not found");
+    }
+
+    protected static Pair<TreeNode<?>, Integer> traverseTreeNode(TreeNode<?> node, MutableInt rowIndex, int level) {
+
+        int index = rowIndex.getValue();
+        rowIndex.decrement();
+        if (index <= 0) {
+            return Pair.create(node, level);
+        }
+
+        if (node.getChildren() != null) {
+            Pair<TreeNode<?>, Integer> returnNode = null;
+            for (TreeNode<?> childNode : node.getChildren()) {
+                returnNode = traverseTreeNode(childNode, rowIndex, level + 1);
+                if (returnNode != null) {
+                    break;
+                }
+            }
+            return returnNode;
+        }
+        else {
+            return null;
+        }
+
+    }
+
+    private static class MutableInt {
+
+        private int value;
+
+        public MutableInt(int value) {
+            super();
+            this.value = value;
+        }
+
+        public int getValue() {
+            return this.value;
+        }
+
+        public void decrement() {
+            value--;
+        }
+    }
+
+    @Override
+    public String getContentType() {
+        return "application/octet-stream";
+    }
+
+    @Override
+    public String getFileExtension() {
+        String url;
+        try {
+            url = getTemplateFileUrl().toString();
+        } catch (MalformedURLException e) {
+            throw new IllegalStateException(e);
+        }
+        return url.substring(url.lastIndexOf("."), url.length());
     }
 
 }

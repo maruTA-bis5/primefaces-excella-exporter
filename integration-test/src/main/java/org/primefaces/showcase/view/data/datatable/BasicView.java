@@ -27,9 +27,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
-import javax.annotation.PostConstruct;
 import javax.faces.view.ViewScoped;
-import javax.inject.Inject;
 import javax.inject.Named;
 
 
@@ -59,7 +57,7 @@ public class BasicView implements Serializable {
         private final BigDecimal bigDecimalDecimalProperty = new BigDecimal("204.89");
 
         private static Date newDate() {
-            return Date.from(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant());
+            return Date.from(LocalDate.of(2021, 10, 24).atStartOfDay(ZoneId.systemDefault()).toInstant());
         }
         public String getStringProperty() {
             return stringProperty;

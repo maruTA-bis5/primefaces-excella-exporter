@@ -2,7 +2,6 @@ package net.bis5.excella.primefaces.exporter.datatable;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.File;
 import java.io.IOException;
@@ -21,6 +20,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.openqa.selenium.support.FindBy;
 import org.primefaces.selenium.AbstractPrimePage;
 import org.primefaces.selenium.AbstractPrimePageTest;
+import org.primefaces.selenium.PrimeSelenium;
 import org.primefaces.selenium.component.CommandLink;
 import org.primefaces.showcase.view.data.datatable.BasicView;
 import org.primefaces.showcase.view.data.datatable.BasicView.DataTypeCheck;
@@ -28,7 +28,7 @@ import org.primefaces.showcase.view.data.datatable.BasicView.DataTypeCheck;
 import net.bis5.excella.primefaces.exporter.TakeScreenShotAfterFailure;
 
 @ExtendWith(TakeScreenShotAfterFailure.class)
-public class BasicIT extends AbstractPrimePageTest {
+public class DataBasicTest extends AbstractPrimePageTest {
 
     private String getBaseDir() {
         return System.getProperty("basedir");
@@ -40,15 +40,32 @@ public class BasicIT extends AbstractPrimePageTest {
             () -> assertEquals(expectedValue, actualValueMapper.apply(cell), "cell value")
         );
     }
+
     @Test
-    public void exportExcella(Page page) throws EncryptedDocumentException, IOException {
+    void exportExcellaAjax(Page page) throws EncryptedDocumentException, IOException {
         BasicView backingBean = new BasicView();
         DataTypeCheck record = backingBean.getDataTypes().get(0);
 
-        CommandLink link = page.commandLink;
+        CommandLink link = page.commandLinkAjax;
+        link.click();
+        PrimeSelenium.wait(1000);
+
+        assertFileContent(record, "cars-ajax.xlsx");
+    }
+
+    @Test
+    void exportExcellaNonAjax(Page page) throws EncryptedDocumentException, IOException {
+        BasicView backingBean = new BasicView();
+        DataTypeCheck record = backingBean.getDataTypes().get(0);
+
+        CommandLink link = page.commandLinkNonAjax;
         link.getRoot().click();
 
-        try (Workbook workbook = WorkbookFactory.create(new File(getBaseDir()+"/docker-compose/downloads/cars.xlsx"), null, true)) {
+        assertFileContent(record, "cars-non-ajax.xlsx");
+    }
+
+    private void assertFileContent(DataTypeCheck record, String outputFileName) throws EncryptedDocumentException, IOException {
+        try (Workbook workbook = WorkbookFactory.create(new File(getBaseDir()+"/docker-compose/downloads/" + outputFileName), null, true)) {
             Sheet sheet = workbook.getSheetAt(0);
             List<String> headers = List.of("String", "YearMonth", "j.u.Date (date)", "j.u.Date (datetime)", "LocalDate", "LocalDateTime", "Integer (int)", "Integer (BigDecimal scale=2)", "Decimal (double)", "Decimal (BigDecimal)", "Link (value specified)", "Link (value not specified)");
 
@@ -82,8 +99,11 @@ public class BasicIT extends AbstractPrimePageTest {
 
     public static class Page extends AbstractPrimePage {
 
-        @FindBy(id = "form:excellaExport")
-        CommandLink commandLink;
+        @FindBy(id = "form:excellaExportNonAjax")
+        CommandLink commandLinkNonAjax;
+
+        @FindBy(id = "form:excellaExportAjax")
+        CommandLink commandLinkAjax;
 
         @Override
         public String getLocation() {
