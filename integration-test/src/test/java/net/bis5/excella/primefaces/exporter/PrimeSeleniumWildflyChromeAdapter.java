@@ -2,6 +2,7 @@ package net.bis5.excella.primefaces.exporter;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Collections;
 import java.util.Map;
 import java.util.logging.Level;
 
@@ -25,7 +26,7 @@ public class PrimeSeleniumWildflyChromeAdapter implements WebDriverAdapter, Depl
         options.addArguments("--disable-dev-shm-usage");
         options.addArguments("--no-sandbox");
         options.addArguments("--remote-debugging-port=9222");
-        Map<String, Object> prefs = Map.of("download.default_directory", "/tmp/downloads");
+        Map<String, Object> prefs = Collections.singletonMap("download.default_directory", "/tmp/downloads");
         options.setExperimentalOption("prefs", prefs);
         LoggingPreferences logPrefs = new LoggingPreferences();
         logPrefs.enable(LogType.BROWSER, Level.ALL);

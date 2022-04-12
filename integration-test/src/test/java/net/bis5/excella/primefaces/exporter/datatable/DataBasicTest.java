@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
 
@@ -67,7 +68,7 @@ public class DataBasicTest extends AbstractPrimePageTest {
     private void assertFileContent(DataTypeCheck record, String outputFileName) throws EncryptedDocumentException, IOException {
         try (Workbook workbook = WorkbookFactory.create(new File(getBaseDir()+"/docker-compose/downloads/" + outputFileName), null, true)) {
             Sheet sheet = workbook.getSheetAt(0);
-            List<String> headers = List.of("String", "YearMonth", "j.u.Date (date)", "j.u.Date (datetime)", "LocalDate", "LocalDateTime", "Integer (int)", "Integer (BigDecimal scale=2)", "Decimal (double)", "Decimal (BigDecimal)", "Link (value specified)", "Link (value not specified)");
+            List<String> headers = Arrays.asList("String", "YearMonth", "j.u.Date (date)", "j.u.Date (datetime)", "LocalDate", "LocalDateTime", "Integer (int)", "Integer (BigDecimal scale=2)", "Decimal (double)", "Decimal (BigDecimal)", "Link (value specified)", "Link (value not specified)");
 
             Row headerRow = sheet.getRow(0);
             Row dataRow = sheet.getRow(1);
