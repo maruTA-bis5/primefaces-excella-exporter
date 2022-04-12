@@ -1,0 +1,124 @@
+package net.bis5.excella.primefaces.exporter.datatable;
+
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.function.Function;
+
+import org.apache.poi.EncryptedDocumentException;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.apache.poi.ss.util.CellRangeAddress;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.openqa.selenium.support.FindBy;
+import org.primefaces.selenium.AbstractPrimePage;
+import org.primefaces.selenium.AbstractPrimePageTest;
+import org.primefaces.selenium.PrimeSelenium;
+import org.primefaces.selenium.component.CommandLink;
+import org.primefaces.showcase.view.data.datatable.BasicView;
+import org.primefaces.showcase.view.data.datatable.BasicView.DataTypeCheck;
+
+import net.bis5.excella.primefaces.exporter.TakeScreenShotAfterFailure;
+
+@ExtendWith(TakeScreenShotAfterFailure.class)
+public class ColumnGroupHeaderTest extends AbstractPrimePageTest {
+
+    private String getBaseDir() {
+        return System.getProperty("basedir");
+    }
+
+    private <T> void assertCell(String description, Cell cell, CellType expectedType, T expectedValue, Function<Cell, T> actualValueMapper) {
+        assertAll(description,
+            () -> assertEquals(expectedType, cell.getCellType(), "cell type"),
+            () -> assertEquals(expectedValue, actualValueMapper.apply(cell), "cell value")
+        );
+    }
+
+    @Test
+    void exportExcellaAjax(Page page) throws EncryptedDocumentException, IOException {
+        BasicView backingBean = new BasicView();
+        DataTypeCheck record = backingBean.getDataTypes().get(0);
+
+        CommandLink link = page.commandLinkAjax;
+        link.click();
+        PrimeSelenium.wait(1000);
+
+        assertFileContent(record, "group-ajax.xlsx");
+    }
+
+    @Test
+    void exportExcellaNonAjax(Page page) throws EncryptedDocumentException, IOException {
+        BasicView backingBean = new BasicView();
+        DataTypeCheck record = backingBean.getDataTypes().get(0);
+
+        CommandLink link = page.commandLinkNonAjax;
+        link.getRoot().click();
+
+        assertFileContent(record, "group-non-ajax.xlsx");
+    }
+
+    private void assertMergedRegion(Sheet sheet, int fromRowIndex, int fromColIndex, int toRowIndex, int toColIndex) {
+        CellRangeAddress expectedRange = new CellRangeAddress(fromRowIndex, toRowIndex, fromColIndex, toColIndex);
+        List<CellRangeAddress> mergedRegions = sheet.getMergedRegions();
+        assertTrue(mergedRegions.contains(expectedRange), () -> "Cell range [" + expectedRange + "] is not merged. merged regions: " + mergedRegions);
+    }
+
+    private void assertFileContent(DataTypeCheck record, String outputFileName) throws EncryptedDocumentException, IOException {
+        try (Workbook workbook = WorkbookFactory.create(new File(getBaseDir()+"/docker-compose/downloads/" + outputFileName), null, true)) {
+            Sheet sheet = workbook.getSheetAt(0);
+            List<String> detailHeaders = Arrays.asList("headerText B-1", "headerText B-2");
+
+            Row groupedHeaderRow = sheet.getRow(0);
+            Row detailHeaderRow = sheet.getRow(1);
+            Row dataRow = sheet.getRow(2);
+            assertAll(
+                () -> assertAll("Grouped Header row", () -> {
+                    Cell cell = groupedHeaderRow.getCell(0);
+                    assertEquals("rowspan", cell.getStringCellValue());
+                    cell = groupedHeaderRow.getCell(1);
+                    assertEquals("colspan", cell.getStringCellValue());
+                    assertMergedRegion(sheet, 0, 0, 1, 0);
+                    assertMergedRegion(sheet, 0, 1, 0, 2);
+                }),
+                () -> assertAll("Detail Header row", () -> {
+                    for (int i = 0; i < detailHeaders.size(); i++) {
+                        Cell cell = detailHeaderRow.getCell(i + 1);
+                        assertEquals(CellType.STRING, cell.getCellType());
+                        assertEquals(detailHeaders.get(i), cell.getStringCellValue());
+                    }
+                }),
+                () -> assertAll("Data row",
+                    () -> assertCell("String cell", dataRow.getCell(0), CellType.STRING, record.getStringProperty(), Cell::getStringCellValue),
+                    () -> assertCell("YearMonth cell", dataRow.getCell(1), CellType.NUMERIC, record.getYearMonthProperty().atDay(1).atStartOfDay(), Cell::getLocalDateTimeCellValue),
+                    () -> assertCell("LocalDate cell", dataRow.getCell(2), CellType.NUMERIC, record.getLocalDateProperty().atStartOfDay(), Cell::getLocalDateTimeCellValue)
+                )
+            );
+        }
+    }
+
+    public static class Page extends AbstractPrimePage {
+
+        @FindBy(id = "form:excellaExportNonAjax")
+        CommandLink commandLinkNonAjax;
+
+        @FindBy(id = "form:excellaExportAjax")
+        CommandLink commandLinkAjax;
+
+        @Override
+        public String getLocation() {
+            return "ui/data/datatable/columnGroup.xhtml";
+        }
+
+    }
+
+}
