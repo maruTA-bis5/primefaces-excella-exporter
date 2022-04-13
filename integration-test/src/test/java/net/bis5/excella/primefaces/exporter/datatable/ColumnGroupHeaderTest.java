@@ -31,7 +31,7 @@ import org.primefaces.showcase.view.data.datatable.BasicView.DataTypeCheck;
 import net.bis5.excella.primefaces.exporter.TakeScreenShotAfterFailure;
 
 @ExtendWith(TakeScreenShotAfterFailure.class)
-public class ColumnGroupHeaderTest extends AbstractPrimePageTest {
+class ColumnGroupHeaderTest extends AbstractPrimePageTest {
 
     private String getBaseDir() {
         return System.getProperty("basedir");
