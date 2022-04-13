@@ -2,6 +2,7 @@ package net.bis5.excella.primefaces.exporter.datatable;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
@@ -16,6 +17,7 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.apache.poi.ss.util.CellRangeAddress;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.openqa.selenium.support.FindBy;
@@ -29,7 +31,7 @@ import org.primefaces.showcase.view.data.datatable.BasicView.DataTypeCheck;
 import net.bis5.excella.primefaces.exporter.TakeScreenShotAfterFailure;
 
 @ExtendWith(TakeScreenShotAfterFailure.class)
-public class DataBasicTest extends AbstractPrimePageTest {
+class ColumnGroupHeaderTest extends AbstractPrimePageTest {
 
     private String getBaseDir() {
         return System.getProperty("basedir");
@@ -51,7 +53,7 @@ public class DataBasicTest extends AbstractPrimePageTest {
         link.click();
         PrimeSelenium.wait(1000);
 
-        assertFileContent(record, "cars-ajax.xlsx");
+        assertFileContent(record, "group-ajax.xlsx");
     }
 
     @Test
@@ -62,37 +64,43 @@ public class DataBasicTest extends AbstractPrimePageTest {
         CommandLink link = page.commandLinkNonAjax;
         link.getRoot().click();
 
-        assertFileContent(record, "cars-non-ajax.xlsx");
+        assertFileContent(record, "group-non-ajax.xlsx");
+    }
+
+    private void assertMergedRegion(Sheet sheet, int fromRowIndex, int fromColIndex, int toRowIndex, int toColIndex) {
+        CellRangeAddress expectedRange = new CellRangeAddress(fromRowIndex, toRowIndex, fromColIndex, toColIndex);
+        List<CellRangeAddress> mergedRegions = sheet.getMergedRegions();
+        assertTrue(mergedRegions.contains(expectedRange), () -> "Cell range [" + expectedRange + "] is not merged. merged regions: " + mergedRegions);
     }
 
     private void assertFileContent(DataTypeCheck record, String outputFileName) throws EncryptedDocumentException, IOException {
         try (Workbook workbook = WorkbookFactory.create(new File(getBaseDir()+"/docker-compose/downloads/" + outputFileName), null, true)) {
             Sheet sheet = workbook.getSheetAt(0);
-            List<String> headers = Arrays.asList("String", "YearMonth", "j.u.Date (date)", "j.u.Date (datetime)", "LocalDate", "LocalDateTime", "Integer (int)", "Integer (BigDecimal scale=2)", "Decimal (double)", "Decimal (BigDecimal)", "Link (value specified)", "Link (value not specified)");
+            List<String> detailHeaders = Arrays.asList("headerText B-1", "headerText B-2");
 
-            Row headerRow = sheet.getRow(0);
-            Row dataRow = sheet.getRow(1);
+            Row groupedHeaderRow = sheet.getRow(0);
+            Row detailHeaderRow = sheet.getRow(1);
+            Row dataRow = sheet.getRow(2);
             assertAll(
-                () -> assertAll("Header row", () -> {
-                    for (int i = 0; i < headers.size(); i++) {
-                        Cell cell = headerRow.getCell(i);
+                () -> assertAll("Grouped Header row", () -> {
+                    Cell cell = groupedHeaderRow.getCell(0);
+                    assertEquals("rowspan", cell.getStringCellValue());
+                    cell = groupedHeaderRow.getCell(1);
+                    assertEquals("colspan", cell.getStringCellValue());
+                    assertMergedRegion(sheet, 0, 0, 1, 0);
+                    assertMergedRegion(sheet, 0, 1, 0, 2);
+                }),
+                () -> assertAll("Detail Header row", () -> {
+                    for (int i = 0; i < detailHeaders.size(); i++) {
+                        Cell cell = detailHeaderRow.getCell(i + 1);
                         assertEquals(CellType.STRING, cell.getCellType());
-                        assertEquals(headers.get(i), cell.getStringCellValue());
+                        assertEquals(detailHeaders.get(i), cell.getStringCellValue());
                     }
                 }),
                 () -> assertAll("Data row",
                     () -> assertCell("String cell", dataRow.getCell(0), CellType.STRING, record.getStringProperty(), Cell::getStringCellValue),
                     () -> assertCell("YearMonth cell", dataRow.getCell(1), CellType.NUMERIC, record.getYearMonthProperty().atDay(1).atStartOfDay(), Cell::getLocalDateTimeCellValue),
-                    () -> assertCell("Date cell", dataRow.getCell(2), CellType.NUMERIC, record.getDateProperty(), Cell::getDateCellValue),
-                    () -> assertCell("Date time cell", dataRow.getCell(3), CellType.NUMERIC, record.getDateTimeProperty(), Cell::getDateCellValue),
-                    () -> assertCell("LocalDate cell", dataRow.getCell(4), CellType.NUMERIC, record.getLocalDateProperty().atStartOfDay(), Cell::getLocalDateTimeCellValue),
-                    () -> assertCell("LocalDateTime cell", dataRow.getCell(5), CellType.NUMERIC, record.getLocalDateTimeProperty(), Cell::getLocalDateTimeCellValue),
-                    () -> assertCell("integer cell", dataRow.getCell(6), CellType.NUMERIC, Double.valueOf(record.getIntProperty()), Cell::getNumericCellValue),
-                    () -> assertCell("BigDecimal as integer cell", dataRow.getCell(7), CellType.NUMERIC, record.getBigDecimalIntProperty().doubleValue(), Cell::getNumericCellValue),
-                    () -> assertCell("decimal cell", dataRow.getCell(8), CellType.NUMERIC, record.getDoubleProperty(), Cell::getNumericCellValue),
-                    () -> assertCell("BigDecimal as decimal cell", dataRow.getCell(9), CellType.NUMERIC, record.getBigDecimalDecimalProperty().doubleValue(), Cell::getNumericCellValue),
-                    () -> assertCell("Link value specified", dataRow.getCell(10), CellType.STRING, "Link", Cell::getStringCellValue),
-                    () -> assertCell("Link value not specified", dataRow.getCell(11), CellType.NUMERIC, record.getBigDecimalDecimalProperty().doubleValue(), Cell::getNumericCellValue)
+                    () -> assertCell("LocalDate cell", dataRow.getCell(2), CellType.NUMERIC, record.getLocalDateProperty().atStartOfDay(), Cell::getLocalDateTimeCellValue)
                 )
             );
         }
@@ -108,7 +116,7 @@ public class DataBasicTest extends AbstractPrimePageTest {
 
         @Override
         public String getLocation() {
-            return "ui/data/datatable/basic.xhtml";
+            return "ui/data/datatable/columnGroup.xhtml";
         }
 
     }
