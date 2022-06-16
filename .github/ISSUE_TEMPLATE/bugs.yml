@@ -18,12 +18,12 @@ body:
   - type: textarea
     id: reproducer-xhtml
     attributes:
-      label: Reproducer: XHTML
+      label: "Reproducer: XHTML"
       description: バグを再現できるFacelet (XHTML) を記載してください。Please describe a Facelet (XHTML) that can reproduce the bug.
   - type: textarea
     id: reproducer-backingbean
     attributes:
-      label: Reproducer: Backing Bean
+      label: "Reproducer: Backing Bean"
       description: バグを再現できるバッキングビーンを記載してください。Please describe a backing bean that can reproduce the bug.
   - type: textarea
     id: expected-observed
