@@ -1,0 +1,58 @@
+name: Bug Report
+description: 不具合報告 / Bug Report
+title: (TreeTable or DataTable): title
+labels: "bug"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        バグ報告は日本語又は英語のみ受け付けています。他の言語で作成されたIssueは、無条件でクローズします。
+        Bug reports are only accepted in Japanese or English. Issues written in other languages will close unconditionally.
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the bug
+      description: バグの内容を説明してください。Please describe the bug you found.
+    validations:
+      required: true
+  - type: textarea
+    id: reproducer-xhtml
+    attributes:
+      label: Reproducer: XHTML
+      description: バグを再現できるFacelet (XHTML) を記載してください。Please describe a Facelet (XHTML) that can reproduce the bug.
+  - type: textarea
+    id: reproducer-backingbean
+    attributes:
+      label: Reproducer: Backing Bean
+      description: バグを再現できるバッキングビーンを記載してください。Please describe a backing bean that can reproduce the bug.
+  - type: textarea
+    id: expected-observed
+    attributes:
+      label: Expected / Observed behavior
+      description: 期待する出力結果と実際の出力結果を記載してください。Please describe the expected output result and the actual output result.
+  - type: markdown
+    attributes:
+      value: |
+        <h3>Environment</h3>
+        バグを確認した環境について記載してください。Please describe the environment in which the bug was confirmed.
+  - type: input
+    id: env-faces-impl
+    attributes:
+      label: Jakarta Faces (JSF) Implementation / Version
+      description: |
+        使用したJSF実装とバージョンを記載してください。不明な場合は、アプリケーションサーバーを記載してください (GlassFish, WildFly, etc...)
+        Describe the JSF implementation and version used. If in doubt, list the application server (GlassFish, WildFly, etc ...)
+    validations:
+      required: true
+  - type: input
+    id: env-primefaces
+    attributes:
+      label: PrimeFaces Version
+    validations:
+      required: true
+  - type: input
+    id: env-exporter
+    attributes:
+      label: PrimeFaces ExCella Exporter Version
+    validations:
+      required: true
