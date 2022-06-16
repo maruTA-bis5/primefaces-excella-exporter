@@ -1,6 +1,6 @@
 name: Bug Report
 description: 不具合報告 / Bug Report
-title: TreeTable or DataTable: title
+title: "TreeTable or DataTable: title"
 labels: "bug"
 body:
   - type: markdown
