@@ -183,6 +183,8 @@ public class TreeTableExcellaExporter extends TreeTableExporter {
             processor.process(reportBook);
         } catch (Exception e) {
             throw new IllegalStateException("Unexpected exception", e); // XXX そもそもthrows Exception宣言しているのがおかしい
+        } finally {
+            Files.delete(outputFile);
         }
         // ExCellaが拡張子を付けるので注意
         return Paths.get(outputFile.toString() + templateType.getSuffix());
