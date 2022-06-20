@@ -32,7 +32,7 @@
       <scope>compile</scope>
     </dependency>
     <dependency>
-      <groupId>org.primefaces</groupId>
+      <groupId>com.github.primefaces.primefaces</groupId>
       <artifactId>primefaces</artifactId>
       <scope>compile</scope>
     </dependency>
