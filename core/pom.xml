@@ -20,7 +20,7 @@
       <artifactId>excella-reports</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.github.primefaces.primefaces</groupId>
+      <groupId>org.primefaces</groupId>
       <artifactId>primefaces</artifactId>
       <scope>provided</scope>
     </dependency>

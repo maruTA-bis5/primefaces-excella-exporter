@@ -12,7 +12,7 @@
   <packaging>war</packaging>
 
   <properties>
-    <primefaces-selenium.version>11.0.0</primefaces-selenium.version>
+    <primefaces-selenium.version>${primefaces.version}</primefaces-selenium.version>
     <wildfly-jar-maven-plugin.version>5.0.1.Final</wildfly-jar-maven-plugin.version>
     <maven-failsafe-plugin.version>3.0.0-M5</maven-failsafe-plugin.version>
     <wildfly.version>24.0.1.Final</wildfly.version>
@@ -32,7 +32,7 @@
       <scope>compile</scope>
     </dependency>
     <dependency>
-      <groupId>com.github.primefaces.primefaces</groupId>
+      <groupId>org.primefaces</groupId>
       <artifactId>primefaces</artifactId>
       <scope>compile</scope>
     </dependency>
