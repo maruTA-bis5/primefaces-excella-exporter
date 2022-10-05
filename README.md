@@ -23,6 +23,16 @@ This library provides the implementation of PrimeFaces' Exporter using [ExCella 
       <version>${excella-reports.version}</version>
     </dependency>
     ```
+1. Add excella's repository
+    ```xml
+    <repositories>
+      <repository>
+        <id>excella.bbreak.org</id>
+        <name>bBreak Systems Excella</name>
+        <url>https://excella-core.github.io/maven2/</url>    
+      </repository>
+    </repositories>
+    ````
 1. Create backing bean provides exporter instance.
     ```java
     @Model
