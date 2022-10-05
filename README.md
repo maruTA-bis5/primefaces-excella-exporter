@@ -19,8 +19,8 @@ This library provides the implementation of PrimeFaces' Exporter using [ExCella 
     </dependency>
     <dependency>
       <groupId>org.bbreak.excella</groupId>
-      <artifactId>excella-exporter</artifactId>
-      <version>${excella-exporter.version}</version>
+      <artifactId>excella-reports</artifactId>
+      <version>${excella-reports.version}</version>
     </dependency>
     ```
 1. Create backing bean provides exporter instance.
