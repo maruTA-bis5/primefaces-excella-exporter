@@ -29,6 +29,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -44,7 +45,6 @@ import javax.faces.convert.Converter;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
-import org.apache.poi.ss.usermodel.DataFormat;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -198,36 +198,49 @@ public class DataTableExcellaExporter extends DataTableExporter {
     }
 
     public enum ValueType {
-        YEAR_MONTH, DATE, DATE_TIME, TIME, DECIMAL, INTEGER
+        YEAR_MONTH(w -> w.createDataFormat().getFormat("yy/m")),
+        DATE(w -> 0xe),
+        DATE_TIME(w -> 0x16),
+        TIME(w -> 0x14),
+        DECIMAL(w -> 0x4),
+        INTEGER(w -> 0x3);
+
+        private final Function<Workbook, Short> dataFormat;
+
+        ValueType(Function<Workbook, Short> dataFormat) {
+            this.dataFormat = dataFormat;
+        }
+
+        public short getFormat(Workbook workbook) {
+            return dataFormat.apply(workbook);
+        }
     }
 
     private Map<ValueType, CellStyle> styles = new EnumMap<>(ValueType.class);
 
     private void initStyles(Workbook workbook) {
-        DataFormat dataFormat = workbook.createDataFormat();
-
         CellStyle yearMonthStyle = workbook.createCellStyle();
-        yearMonthStyle.setDataFormat(dataFormat.getFormat("yy/m"));
+        yearMonthStyle.setDataFormat(ValueType.YEAR_MONTH.getFormat(workbook));
         styles.put(ValueType.YEAR_MONTH, yearMonthStyle);
 
         CellStyle dateStyle = workbook.createCellStyle();
-        dateStyle.setDataFormat((short)0xe);
+        dateStyle.setDataFormat(ValueType.DATE.getFormat(workbook));
         styles.put(ValueType.DATE, dateStyle);
 
         CellStyle dateTimeStyle = workbook.createCellStyle();
-        dateTimeStyle.setDataFormat((short)0x16);
+        dateTimeStyle.setDataFormat(ValueType.DATE_TIME.getFormat(workbook));
         styles.put(ValueType.DATE_TIME, dateTimeStyle);
 
         CellStyle timeStyle = workbook.createCellStyle();
-        timeStyle.setDataFormat((short)0x14);
+        timeStyle.setDataFormat(ValueType.TIME.getFormat(workbook));
         styles.put(ValueType.TIME, timeStyle);
 
         CellStyle decimalStyle = workbook.createCellStyle();
-        decimalStyle.setDataFormat((short)0x4);
+        decimalStyle.setDataFormat(ValueType.DECIMAL.getFormat(workbook));
         styles.put(ValueType.DECIMAL, decimalStyle);
 
         CellStyle integerStyle = workbook.createCellStyle();
-        integerStyle.setDataFormat((short)0x3);
+        integerStyle.setDataFormat(ValueType.INTEGER.getFormat(workbook));
         styles.put(ValueType.INTEGER, integerStyle);
     }
 
@@ -491,7 +504,7 @@ public class DataTableExcellaExporter extends DataTableExporter {
                     }
                     CellStyle style = styles.get(valueType);
                     int colIndex = Arrays.asList(columnDataParams).indexOf(columnTag);
-                    IntStream.rangeClosed(headerSize, nonNull(dataContainer.get(entry.getKey()), Collections.emptyList()).size())
+                    IntStream.rangeClosed(headerSize, nonNull(dataContainer.get(entry.getKey()), Collections.emptyList()).size() + headerSize)
                         .mapToObj(sheet::getRow)
                         .filter(Objects::nonNull)
                         .map(r -> r.getCell(colIndex))

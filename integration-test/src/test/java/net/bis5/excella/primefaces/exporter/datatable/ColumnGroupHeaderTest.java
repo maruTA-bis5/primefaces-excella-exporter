@@ -12,6 +12,7 @@ import java.util.function.Function;
 
 import org.apache.poi.EncryptedDocumentException;
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -29,6 +30,7 @@ import org.primefaces.showcase.view.data.datatable.BasicView;
 import org.primefaces.showcase.view.data.datatable.BasicView.DataTypeCheck;
 
 import net.bis5.excella.primefaces.exporter.TakeScreenShotAfterFailure;
+import net.bis5.excella.primefaces.exporter.DataTableExcellaExporter.ValueType;
 
 @ExtendWith(TakeScreenShotAfterFailure.class)
 class ColumnGroupHeaderTest extends AbstractPrimePageTest {
@@ -42,6 +44,14 @@ class ColumnGroupHeaderTest extends AbstractPrimePageTest {
             () -> assertEquals(expectedType, cell.getCellType(), "cell type"),
             () -> assertEquals(expectedValue, actualValueMapper.apply(cell), "cell value")
         );
+    }
+
+    private <T> void assertCellFormat(String description, Cell cell, ValueType cellValueType) {
+        Workbook workbook = cell.getRow().getSheet().getWorkbook();
+        short expectedDataFormat = cellValueType.getFormat(workbook);
+
+        CellStyle cellStyle = cell.getCellStyle();
+        assertEquals(expectedDataFormat, cellStyle.getDataFormat(), "CellStyle.dataFormat");
     }
 
     @Test
@@ -84,15 +94,15 @@ class ColumnGroupHeaderTest extends AbstractPrimePageTest {
             assertAll(
                 () -> assertAll("Grouped Header row", () -> {
                     Cell cell = groupedHeaderRow.getCell(0);
-                    assertEquals("rowspan", cell.getStringCellValue());
-                    cell = groupedHeaderRow.getCell(1);
                     assertEquals("colspan", cell.getStringCellValue());
-                    assertMergedRegion(sheet, 0, 0, 1, 0);
-                    assertMergedRegion(sheet, 0, 1, 0, 2);
+                    cell = groupedHeaderRow.getCell(2);
+                    assertEquals("rowspan", cell.getStringCellValue());
+                    assertMergedRegion(sheet, 0, 0, 0, 1);
+                    assertMergedRegion(sheet, 0, 2, 1, 2);
                 }),
                 () -> assertAll("Detail Header row", () -> {
                     for (int i = 0; i < detailHeaders.size(); i++) {
-                        Cell cell = detailHeaderRow.getCell(i + 1);
+                        Cell cell = detailHeaderRow.getCell(i);
                         assertEquals(CellType.STRING, cell.getCellType());
                         assertEquals(detailHeaders.get(i), cell.getStringCellValue());
                     }
@@ -100,7 +110,9 @@ class ColumnGroupHeaderTest extends AbstractPrimePageTest {
                 () -> assertAll("Data row",
                     () -> assertCell("String cell", dataRow.getCell(0), CellType.STRING, record.getStringProperty(), Cell::getStringCellValue),
                     () -> assertCell("YearMonth cell", dataRow.getCell(1), CellType.NUMERIC, record.getYearMonthProperty().atDay(1).atStartOfDay(), Cell::getLocalDateTimeCellValue),
-                    () -> assertCell("LocalDate cell", dataRow.getCell(2), CellType.NUMERIC, record.getLocalDateProperty().atStartOfDay(), Cell::getLocalDateTimeCellValue)
+                    () -> assertCellFormat("YearMonth cell data format", dataRow.getCell(1), ValueType.YEAR_MONTH),
+                    () -> assertCell("LocalDate cell", dataRow.getCell(2), CellType.NUMERIC, record.getLocalDateProperty().atStartOfDay(), Cell::getLocalDateTimeCellValue),
+                    () -> assertCellFormat("LocalDate cell data format", dataRow.getCell(2), ValueType.DATE)
                 )
             );
         }
