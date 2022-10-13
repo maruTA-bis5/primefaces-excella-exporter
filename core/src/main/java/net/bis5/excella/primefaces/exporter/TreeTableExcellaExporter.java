@@ -518,7 +518,47 @@ public class TreeTableExcellaExporter extends TreeTableExporter {
     }
 
     @Override
+    protected void exportRow(TreeTable table, Object document) {
+        // exportRow(TreeTable, Object) is called for selectionOnly mode.
+        Map<String, Object> requestMap = FacesContext.getCurrentInstance().getExternalContext().getRequestMap();
+        TreeNode<?> node = (TreeNode<?>) requestMap.get(table.getVar());
+        int level = 0;
+        while(true) {
+            if (node.getParent() == null) {
+                break;
+            }
+            node = node.getParent();
+            level++;
+        }
+
+        ReportSheet sheet = (ReportSheet) document;
+        @SuppressWarnings("unchecked")
+        Map<String, List<Object>> dataContainer = (Map<String, List<Object>>) sheet.getParam(null, DATA_CONTAINER_KEY);
+        dataContainer.computeIfAbsent(TREE_LEVEL_KEY, ignore -> new ArrayList<>()).add(level);
+
+        super.exportRow(table, document);
+    }
+
+    @Override
     protected void exportCells(TreeTable table, Object document) {
+        Map<String, Object> requestMap = FacesContext.getCurrentInstance().getExternalContext().getRequestMap();
+        // patch for PrimeFaces#9310
+        String var = table.getVar(); // NOSONAR
+        Object origVar = requestMap.get(var);
+        if (origVar instanceof TreeNode) {
+            requestMap.put(var, ((TreeNode<?>)origVar).getData());
+        }
+
+        String nodeVar = table.getNodeVar();
+        Object origNodeVar = null;
+        if (nodeVar != null) {
+            origNodeVar = requestMap.get(nodeVar);
+            if (origNodeVar == null && origVar instanceof TreeNode) {
+                // May be exporting selection only mode
+                requestMap.put(nodeVar, origVar);
+            }
+        }
+
         ReportSheet sheet = (ReportSheet) document;
 
         @SuppressWarnings("unchecked")
@@ -534,6 +574,12 @@ public class TreeTableExcellaExporter extends TreeTableExporter {
             addCellValue(FacesContext.getCurrentInstance(), dataContainer, colIndex++, column);
         }
 
+        if (nodeVar != null && origNodeVar == null) {
+            requestMap.remove(nodeVar);
+        }
+        if (var != null && origVar != null) {
+            requestMap.put(var, origVar);
+        }
     }
 
     protected void addCellValue(FacesContext context, Map<String, List<Object>> dataContainer, int colIndex,

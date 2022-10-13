@@ -36,8 +36,18 @@
               <h:outputLabel>ExCella Reports (Ajax)</h:outputLabel>
               <p:dataExporter type="xls" target="tbl" fileName="tt-cars-ajax-nodevar" exporter="#{excellaExporter.treeTableExporter}" />
           </p:commandLink>
+          <br />
+          <p:commandLink id="excellaExportNonAjaxSelectionOnly" ajax="false">
+              <h:outputLabel>ExCella Reports (non-Ajax SelectionOnly)</h:outputLabel>
+              <p:dataExporter type="xls" target="tbl" fileName="tt-cars-non-ajax-nodevar-selection" selectionOnly="true" exporter="#{excellaExporter.treeTableExporter}" />
+          </p:commandLink>
+          <br />
+          <p:commandLink id="excellaExportAjaxSelectionOnly" ajax="true">
+              <h:outputLabel>ExCella Reports (Ajax SelectionOnly)</h:outputLabel>
+              <p:dataExporter type="xls" target="tbl" fileName="tt-cars-ajax-nodevar-selection" selectionOnly="true" exporter="#{excellaExporter.treeTableExporter}" />
+          </p:commandLink>
 
-          <p:treeTable id="tbl" var="row" value="#{ttBasicView.root}" nodeVar="node">
+          <p:treeTable id="tbl" var="row" value="#{ttBasicView.root}" nodeVar="node" selection="${ttBasicView.selection}" selectionMode="checkbox">
               <p:column headerText="String">
                   <h:outputText value="#{row.stringProperty}" rendered="#{node.odd}" />
               </p:column>

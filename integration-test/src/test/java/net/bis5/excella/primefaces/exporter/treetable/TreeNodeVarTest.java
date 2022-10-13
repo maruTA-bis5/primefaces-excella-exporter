@@ -18,6 +18,7 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.primefaces.model.TreeNode;
 import org.primefaces.selenium.AbstractPrimePage;
@@ -67,6 +68,24 @@ class TreeNodeVarTest extends AbstractPrimePageTest {
     }
 
     @Test
+    void exportExcellaAjaxSelectionOnly(Page page) throws EncryptedDocumentException, IOException {
+        BasicView backingBean = new BasicView();
+        backingBean.initialize();
+        TreeNode<DataTypeCheck> parentNode = backingBean.getRoot().getChildren().get(0);
+        TreeNode<DataTypeCheck> childNode = parentNode.getChildren().get(0);
+        DataTypeCheck parentRecord = (DataTypeCheck) parentNode.getData();
+        DataTypeCheck childRecord = (DataTypeCheck) childNode.getData();
+
+        page.firstParentRow.click();
+
+        CommandLink link = page.commandLinkAjaxSelectionOnly;
+        link.click();
+        PrimeSelenium.wait(1000);
+
+        assertFileContent(parentRecord, childRecord, "tt-cars-ajax-nodevar-selection.xlsx");
+    }
+
+    @Test
     void exportExcellaNonAjax(Page page) throws EncryptedDocumentException, IOException {
         BasicView backingBean = new BasicView();
         backingBean.initialize();
@@ -82,6 +101,23 @@ class TreeNodeVarTest extends AbstractPrimePageTest {
         link.getRoot().click();
 
         assertFileContent(parentRecord1, childRecord1, parentRecord2, childRecord2, "tt-cars-non-ajax-nodevar.xlsx");
+    }
+
+    @Test
+    void exportExcellaNonAjaxSelectionOnly(Page page) throws EncryptedDocumentException, IOException {
+        BasicView backingBean = new BasicView();
+        backingBean.initialize();
+        TreeNode<DataTypeCheck> parentNode = backingBean.getRoot().getChildren().get(0);
+        TreeNode<DataTypeCheck> childNode = parentNode.getChildren().get(0);
+        DataTypeCheck parentRecord = (DataTypeCheck) parentNode.getData();
+        DataTypeCheck childRecord = (DataTypeCheck) childNode.getData();
+
+        page.firstParentRow.click();
+
+        CommandLink link = page.commandLinkNonAjaxSelectionOnly;
+        link.getRoot().click();
+
+        assertFileContent(parentRecord, childRecord, "tt-cars-non-ajax-nodevar-selection.xlsx");
     }
 
     private void assertFileContent(DataTypeCheck parentRecord1, DataTypeCheck childRecord1, DataTypeCheck parentRecord2, DataTypeCheck childRecord2, String fileName) throws EncryptedDocumentException, IOException {
@@ -134,13 +170,55 @@ class TreeNodeVarTest extends AbstractPrimePageTest {
         }
     }
 
+    private void assertFileContent(DataTypeCheck parentRecord, DataTypeCheck childRecord, String fileName) throws EncryptedDocumentException, IOException {
+        try (Workbook workbook = WorkbookFactory.create(new File(getBaseDir()+"/docker-compose/downloads/" + fileName), null, true)) {
+            Sheet sheet = workbook.getSheetAt(0);
+            List<String> headers = Arrays.asList("String", "YearMonth", "j.u.Date (date)", "j.u.Date (datetime)");
+
+            Row headerRow = sheet.getRow(0);
+            Row parentNodeRow1 = sheet.getRow(1);
+            Row childNodeRow2 = sheet.getRow(2);
+            assertAll(
+                () -> assertAll("Header row", () -> {
+                    for (int i = 0; i < headers.size(); i++) {
+                        Cell cell = headerRow.getCell(i);
+                        assertEquals(CellType.STRING, cell.getCellType());
+                        assertEquals(headers.get(i), cell.getStringCellValue());
+                    }
+                }),
+                () -> assertAll("Parent node row 1 (odd)",
+                    () -> assertEquals(0, parentNodeRow1.getCell(0).getCellStyle().getIndention(), "indention"),
+                    () -> assertCell("String cell", parentNodeRow1.getCell(0), CellType.STRING, parentRecord.getStringProperty(), Cell::getStringCellValue),
+                    () -> assertBlankCell("YearMonth cell", parentNodeRow1.getCell(1)),
+                    () -> assertCell("Date cell", parentNodeRow1.getCell(2), CellType.NUMERIC, parentRecord.getDateProperty(), Cell::getDateCellValue),
+                    () -> assertBlankCell("Date time cell", parentNodeRow1.getCell(3))
+                ),
+                () -> assertAll("Child node row 2 (even)",
+                    () -> assertEquals(1, childNodeRow2.getCell(0).getCellStyle().getIndention(), "indention"),
+                    () -> assertBlankCell("String cell", childNodeRow2.getCell(0)),
+                    () -> assertCell("YearMonth cell", childNodeRow2.getCell(1), CellType.NUMERIC, childRecord.getYearMonthProperty().atDay(1).atStartOfDay(), Cell::getLocalDateTimeCellValue),
+                    () -> assertBlankCell("Date cell", childNodeRow2.getCell(2)),
+                    () -> assertCell("Date time cell", childNodeRow2.getCell(3), CellType.NUMERIC, childRecord.getDateTimeProperty(), Cell::getDateCellValue)
+                )
+            );
+        }
+    }
     public static class Page extends AbstractPrimePage {
+
+        @FindBy(id = "form:tbl_node_0")
+        WebElement firstParentRow;
 
         @FindBy(id = "form:excellaExportNonAjax")
         CommandLink commandLinkNonAjax;
 
         @FindBy(id = "form:excellaExportAjax")
         CommandLink commandLinkAjax;
+
+        @FindBy(id = "form:excellaExportNonAjaxSelectionOnly")
+        CommandLink commandLinkNonAjaxSelectionOnly;
+
+        @FindBy(id = "form:excellaExportAjaxSelectionOnly")
+        CommandLink commandLinkAjaxSelectionOnly;
 
         @Override
         public String getLocation() {

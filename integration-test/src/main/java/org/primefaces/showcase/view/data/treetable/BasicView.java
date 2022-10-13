@@ -23,6 +23,7 @@ import java.time.YearMonth;
 import java.time.ZoneId;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 
 import javax.annotation.PostConstruct;
 import javax.faces.view.ViewScoped;
@@ -34,6 +35,16 @@ import org.primefaces.model.TreeNode;
 @Named("ttBasicView")
 @ViewScoped
 public class BasicView implements Serializable {
+
+    private List<TreeNode<DataTypeCheck>> selection;
+
+    public List<TreeNode<DataTypeCheck>> getSelection() {
+        return selection;
+    }
+
+    public void setSelection(List<TreeNode<DataTypeCheck>> selection) {
+        this.selection = selection;
+    }
 
     public TreeNode<DataTypeCheck> getRoot() {
         return root;
