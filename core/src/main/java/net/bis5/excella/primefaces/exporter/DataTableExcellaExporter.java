@@ -27,8 +27,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -44,8 +44,6 @@ import javax.faces.convert.Converter;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
-import org.apache.poi.ss.usermodel.DataFormat;
-import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellRangeAddress;
@@ -85,6 +83,8 @@ public class DataTableExcellaExporter extends DataTableExporter {
 
     private static final String DATA_CONTAINER_KEY = "DATA_CONTAINER_KEY";
 
+    private static final String COLUMN_GROUP_MERGED_AREAS_KEY = "HEADER_MERGED_AREAS_KEY";
+
     private static final String DEFAULT_DATA_COLUMNS_TAG = "dataColumns";
 
     private static final String DEFAULT_HEADERS_TAG = "headers";
@@ -92,9 +92,6 @@ public class DataTableExcellaExporter extends DataTableExporter {
     private static final String DEFAULT_FOOTERS_TAG = "footers";
 
     private static final URL DEFAULT_TEMPLATE_URL = DataTableExcellaExporter.class.getResource("/DefaultTemplate.xlsx");
-
-    private static final String MERGE_TO_LEFT_MARKER = DataTableExcellaExporter.class.getCanonicalName()+".MergeToLeft";
-    private static final String MERGE_TO_UP_MARKER = DataTableExcellaExporter.class.getCanonicalName()+".MergeToUp";
 
     private ReportBook reportBook;
 
@@ -198,36 +195,49 @@ public class DataTableExcellaExporter extends DataTableExporter {
     }
 
     public enum ValueType {
-        YEAR_MONTH, DATE, DATE_TIME, TIME, DECIMAL, INTEGER
+        YEAR_MONTH(w -> w.createDataFormat().getFormat("yy/m")),
+        DATE(w -> 0xe),
+        DATE_TIME(w -> 0x16),
+        TIME(w -> 0x14),
+        DECIMAL(w -> 0x4),
+        INTEGER(w -> 0x3);
+
+        private final Function<Workbook, Short> dataFormat;
+
+        ValueType(Function<Workbook, Short> dataFormat) {
+            this.dataFormat = dataFormat;
+        }
+
+        public short getFormat(Workbook workbook) {
+            return dataFormat.apply(workbook);
+        }
     }
 
     private Map<ValueType, CellStyle> styles = new EnumMap<>(ValueType.class);
 
     private void initStyles(Workbook workbook) {
-        DataFormat dataFormat = workbook.createDataFormat();
-
         CellStyle yearMonthStyle = workbook.createCellStyle();
-        yearMonthStyle.setDataFormat(dataFormat.getFormat("yy/m"));
+        yearMonthStyle.setDataFormat(ValueType.YEAR_MONTH.getFormat(workbook));
         styles.put(ValueType.YEAR_MONTH, yearMonthStyle);
 
         CellStyle dateStyle = workbook.createCellStyle();
-        dateStyle.setDataFormat((short)0xe);
+        dateStyle.setDataFormat(ValueType.DATE.getFormat(workbook));
         styles.put(ValueType.DATE, dateStyle);
 
         CellStyle dateTimeStyle = workbook.createCellStyle();
-        dateTimeStyle.setDataFormat((short)0x16);
+        dateTimeStyle.setDataFormat(ValueType.DATE_TIME.getFormat(workbook));
         styles.put(ValueType.DATE_TIME, dateTimeStyle);
 
         CellStyle timeStyle = workbook.createCellStyle();
-        timeStyle.setDataFormat((short)0x14);
+        timeStyle.setDataFormat(ValueType.TIME.getFormat(workbook));
         styles.put(ValueType.TIME, timeStyle);
 
         CellStyle decimalStyle = workbook.createCellStyle();
-        decimalStyle.setDataFormat((short)0x4);
+        decimalStyle.setDataFormat(ValueType.DECIMAL.getFormat(workbook));
         styles.put(ValueType.DECIMAL, decimalStyle);
 
         CellStyle integerStyle = workbook.createCellStyle();
-        integerStyle.setDataFormat((short)0x3);
+        integerStyle.setDataFormat(ValueType.INTEGER.getFormat(workbook));
         styles.put(ValueType.INTEGER, integerStyle);
     }
 
@@ -464,6 +474,10 @@ public class DataTableExcellaExporter extends DataTableExporter {
         reportSheet.addParam(ColRepeatParamParser.DEFAULT_TAG, headersTagName, columnHeader.toArray());
         reportSheet.addParam(ColRepeatParamParser.DEFAULT_TAG, footersTagName, columnFooter.toArray());
 
+        @SuppressWarnings("unchecked")
+        Set<CellRangeAddress> columnGroupMergedAreas = nonNull((Set<CellRangeAddress>) reportSheet.getParam(null, COLUMN_GROUP_MERGED_AREAS_KEY), new HashSet<>());
+        reportSheet.removeParam(null, COLUMN_GROUP_MERGED_AREAS_KEY);
+
         reportBook.addReportSheet(reportSheet);
 
         listeners.add(new ReportProcessAdaptor() {
@@ -491,7 +505,7 @@ public class DataTableExcellaExporter extends DataTableExporter {
                     }
                     CellStyle style = styles.get(valueType);
                     int colIndex = Arrays.asList(columnDataParams).indexOf(columnTag);
-                    IntStream.rangeClosed(headerSize, nonNull(dataContainer.get(entry.getKey()), Collections.emptyList()).size())
+                    IntStream.rangeClosed(headerSize, nonNull(dataContainer.get(entry.getKey()), Collections.emptyList()).size() + headerSize)
                         .mapToObj(sheet::getRow)
                         .filter(Objects::nonNull)
                         .map(r -> r.getCell(colIndex))
@@ -515,38 +529,7 @@ public class DataTableExcellaExporter extends DataTableExporter {
             }
 
             private void mergeCells(Sheet sheet) {
-                for (Row row : sheet) {
-                    for (Cell cell : row) {
-                        try {
-                            String value = cell.getStringCellValue();
-                            if (MERGE_TO_LEFT_MARKER.equals(value)) {
-                                cell.setCellValue((String)null);
-                                List<CellRangeAddress> mergedRegions = sheet.getMergedRegions();
-                                Optional<CellRangeAddress> leftCellMergedRegion = findMergedRegion(sheet, cell.getRowIndex(), cell.getColumnIndex() - 1);
-                                leftCellMergedRegion.ifPresent(r -> sheet.removeMergedRegion(mergedRegions.indexOf(r)));
-                                CellRangeAddress newMergedRegion = leftCellMergedRegion.map(r -> new CellRangeAddress(r.getFirstRow(), r.getLastRow(), r.getFirstColumn(), r.getLastColumn() + 1))
-                                    .orElseGet(() -> new CellRangeAddress(cell.getRowIndex(), cell.getRowIndex(), cell.getColumnIndex() - 1, cell.getColumnIndex()));
-                                sheet.addMergedRegion(newMergedRegion);
-                            } else if (MERGE_TO_UP_MARKER.equals(value)) {
-                                cell.setCellValue((String)null);
-                                List<CellRangeAddress> mergedRegions = sheet.getMergedRegions();
-                                Optional<CellRangeAddress> leftCellMergedRegion = findMergedRegion(sheet, cell.getRowIndex() - 1, cell.getColumnIndex());
-                                leftCellMergedRegion.ifPresent(r -> sheet.removeMergedRegion(mergedRegions.indexOf(r)));
-                                CellRangeAddress newMergedRegion = leftCellMergedRegion.map(r -> new CellRangeAddress(r.getFirstRow(), r.getLastRow() + 1, r.getFirstColumn(), r.getLastColumn()))
-                                    .orElseGet(() -> new CellRangeAddress(cell.getRowIndex() - 1, cell.getRowIndex(), cell.getColumnIndex(), cell.getColumnIndex()));
-                                sheet.addMergedRegion(newMergedRegion);
-                            }
-                        } catch (RuntimeException ignore) {
-                            // noop
-                        }
-                    }
-                }
-            }
-
-            private Optional<CellRangeAddress> findMergedRegion(Sheet sheet, int rowIndex, int colIndex) {
-                return sheet.getMergedRegions().stream()
-                    .filter(r -> r.isInRange(rowIndex, colIndex))
-                    .findAny();
+                columnGroupMergedAreas.forEach(sheet::addMergedRegion);
             }
         });
     }
@@ -592,34 +575,42 @@ public class DataTableExcellaExporter extends DataTableExporter {
         List<String> facetColumns = new ArrayList<>();
         context.getAttributes().put(Constants.HELPER_RENDERER, "columnGroup");
 
+        @SuppressWarnings("unchecked")
+        Set<CellRangeAddress> mergedAreas = nonNull((Set<CellRangeAddress>) reportSheet.getParam(null, COLUMN_GROUP_MERGED_AREAS_KEY), new HashSet<>());
+        reportSheet.addParam(null, COLUMN_GROUP_MERGED_AREAS_KEY, mergedAreas);
+
+        int rowIndex = -1;
+        int colIndex = -1;
         for (UIComponent child : columnGroup.getChildren()) {
             if (!child.isRendered()) {
                 continue;
             }
+            rowIndex++;
             if (child instanceof org.primefaces.component.row.Row) {
                 if (columnGroup.getChildren().size() > 1) {
                     return exportColumnGroupMultiRow(context, columnGroup, columnType, reportSheet);
                 }
+                int colIndexForSingleRow = -1;
                 for (UIComponent rowChild : child.getChildren()) {
                     UIColumn column = (UIColumn) rowChild;
                     if (!isExportable(context, column)) {
                         continue;
                     }
+                    colIndexForSingleRow++;
                     facetColumns.add(getFacetColumnText(context, column, columnType));
                     if (column.getColspan() > 1) {
-                        IntStream.rangeClosed(2, column.getColspan())
-                            .forEach(x -> facetColumns.add(MERGE_TO_LEFT_MARKER));
+                        mergedAreas.add(new CellRangeAddress(rowIndex, rowIndex, colIndexForSingleRow, colIndexForSingleRow + column.getColspan() - 1));
                     }
                 }
             } else if (child instanceof UIColumn) {
                 UIColumn column = (UIColumn)child;
-		if (!isExportable(context, column)) {
+                if (!isExportable(context, column)) {
                     continue;
                 }
+                colIndex++;
                 facetColumns.add(getFacetColumnText(context, column, columnType));
                 if (column.getColspan() > 1) {
-                    IntStream.rangeClosed(2, column.getColspan())
-                        .forEach(x -> facetColumns.add(MERGE_TO_LEFT_MARKER));
+                    mergedAreas.add(new CellRangeAddress(rowIndex, rowIndex, colIndex, colIndex + column.getColspan() - 1));
                 }
             } else {
                 // ignore
@@ -669,37 +660,6 @@ public class DataTableExcellaExporter extends DataTableExporter {
         return facetColumns;
     }
 
-    private static class RowMergedArea {
-        private final int rowStart;
-        private final int colIndex;
-        private final int rowEnd;
-        private RowMergedArea(int rowStart, int colIndex, int rowspan) {
-            this.rowStart= rowStart;
-            this.colIndex = colIndex;
-            this.rowEnd = rowStart + rowspan - 1;
-        }
-        public boolean isInRowspanRange(int rowIndex, int colIndex) {
-            return colIndex == this.colIndex && this.rowStart <= rowIndex && rowIndex <= this.rowEnd;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (!(obj instanceof RowMergedArea)) {
-                return false;
-            }
-            if (this == obj) {
-                return true;
-            }
-            RowMergedArea other = (RowMergedArea)obj;
-            return this.rowStart == other.rowStart && this.colIndex == other.colIndex;
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(rowStart, colIndex);
-        }
-    }
-
     private List<String> exportColumnGroupMultiRow(FacesContext context, ColumnGroup columnGroup, ColumnType columnType,
             ReportSheet reportSheet) {
 
@@ -710,30 +670,18 @@ public class DataTableExcellaExporter extends DataTableExporter {
             ReportSheet reportSheet, int beginColIndex) {
 
         Map</*colindex*/Integer, List<String>> headerContents = new HashMap<>();
-        Set<RowMergedArea> rowMergedAreas = new HashSet<>();
         int rowIndex = 0;
+        Set<CellRangeAddress> mergedAreas = new HashSet<>();
+        reportSheet.addParam(null, COLUMN_GROUP_MERGED_AREAS_KEY, mergedAreas);
+
         for (UIComponent child : columnGroup.getChildren()) {
             if (!child.isRendered() || !(child instanceof org.primefaces.component.row.Row)) {
                 continue;
             }
             org.primefaces.component.row.Row row = (org.primefaces.component.row.Row)child;
             int colIndex = beginColIndex;
+            boolean foundExportableColumn = false;
             for (UIComponent rowChild : row.getChildren()) {
-                while (true) {
-                    boolean whileBreak = true;
-                    for (RowMergedArea mergedArea : rowMergedAreas) {
-                        if (mergedArea.isInRowspanRange(rowIndex, colIndex)) {
-                            List<String> columnContents = headerContents.computeIfAbsent(colIndex, c -> new ArrayList<>());
-                            columnContents.add(MERGE_TO_UP_MARKER);
-                            colIndex++;
-                            whileBreak = false;
-                            break;
-                        }
-                    }
-                    if (whileBreak) {
-                        break;
-                    }
-                }
                 if (!rowChild.isRendered() || !(rowChild instanceof UIColumn)) {
                     continue;
                 }
@@ -741,21 +689,25 @@ public class DataTableExcellaExporter extends DataTableExporter {
                 if (!isExportable(context, column)) {
                     continue;
                 }
+                foundExportableColumn = true;
                 List<String> columnContents = headerContents.computeIfAbsent(colIndex, c -> new ArrayList<>());
                 columnContents.add(getFacetColumnText(context, column, columnType));
                 if (column.getRowspan() > 1) {
-                    RowMergedArea mergedArea = new RowMergedArea(rowIndex, colIndex, column.getRowspan());
-                    rowMergedAreas.add(mergedArea);
+                    mergedAreas.add(new CellRangeAddress(rowIndex, rowIndex + column.getRowspan() - 1, colIndex, colIndex));
                 }
                 if (column.getColspan() > 1) {
+                    mergedAreas.add(new CellRangeAddress(rowIndex, rowIndex, colIndex, colIndex + column.getColspan() -1));
+
                     IntStream.range(colIndex + 1, colIndex + column.getColspan())
                         .mapToObj(i -> headerContents.computeIfAbsent(i, c -> new ArrayList<>()))
-                        .forEach(c -> c.add(MERGE_TO_LEFT_MARKER));
+                        .forEach(c -> c.add(null));
                     colIndex += column.getColspan() - 1;
                 }
                 colIndex++;
             }
-            rowIndex++;
+            if (foundExportableColumn) {
+                rowIndex++;
+            }
         }
         String tagPrefix = columnType == ColumnType.HEADER ? "header" : "footer";
         headerContents.entrySet().forEach(e -> reportSheet.addParam(RowRepeatParamParser.DEFAULT_TAG, tagPrefix + e.getKey(), e.getValue().toArray()));
