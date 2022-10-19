@@ -10,15 +10,21 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        java-version:
+          - 11
+          - 17
 
     steps:
     - uses: actions/checkout@v2
       with:
         fetch-depth: 0
-    - name: Set up JDK 11
+    - name: Set up JDK
       uses: actions/setup-java@v2
       with:
-        java-version: '11'
+        java-version: ${{ matrix.java-version }}
         distribution: 'temurin'
         cache: 'maven'
     - name: Cache SonarCloud packages
@@ -36,7 +42,7 @@ jobs:
     - name: Build with Maven
       run: mvn -B verify --file pom.xml
     - name: SonarCloud Scan
-      if: github.repository == 'maruTA-bis5/primefaces-excella-exporter'
+      if: github.repository == 'maruTA-bis5/primefaces-excella-exporter' && matrix.java-version == 11
       run: mvn -B clean verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=maruTA-bis5_primefaces-excella-exporter -Dsonar.organization=maruta-bis5-github -Dsonar.host.url=https://sonarcloud.io -Dsonar.login=${{secrets.SONAR_TOKEN}}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
