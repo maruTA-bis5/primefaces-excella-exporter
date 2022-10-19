@@ -31,7 +31,6 @@ public class PrimeSeleniumWildflyChromeAdapter implements WebDriverAdapter, Depl
         LoggingPreferences logPrefs = new LoggingPreferences();
         logPrefs.enable(LogType.BROWSER, Level.ALL);
         options.setCapability("goog::loggingPrefs", logPrefs);
-        options.setExperimentalOption("w3c", false);
 
         try {
             return new RemoteWebDriver(new URL("http://localhost:4444/wd/hub"), options);

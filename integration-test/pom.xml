@@ -3,7 +3,7 @@
   <parent>
     <groupId>net.bis5.excella</groupId>
     <artifactId>primefaces-excella-exporter-parent</artifactId>
-    <version>2.0.2-SNAPSHOT</version>
+    <version>3.0.0-SNAPSHOT</version>
   </parent>
   <artifactId>primefaces-excella-exporter-test</artifactId>
 
@@ -12,7 +12,7 @@
   <packaging>war</packaging>
 
   <properties>
-    <primefaces-selenium.version>11.0.0</primefaces-selenium.version>
+    <primefaces-selenium.version>${primefaces.version}</primefaces-selenium.version>
     <wildfly-jar-maven-plugin.version>5.0.1.Final</wildfly-jar-maven-plugin.version>
     <maven-failsafe-plugin.version>3.0.0-M5</maven-failsafe-plugin.version>
     <wildfly.version>24.0.1.Final</wildfly.version>
@@ -182,6 +182,11 @@
             </configuration>
           </execution>
         </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-war-plugin</artifactId>
+        <version>3.3.2</version>
       </plugin>
     </plugins>
   </build>
