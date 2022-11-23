@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://java.sun.com/jsf/html"
+      xmlns:f="http://java.sun.com/jsf/core"
+      xmlns:ui="http://java.sun.com/jsf/facelets"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:sc="http://primefaces.org/ui/showcase"
+      lang="en">
+
+    <h:head>
+        <f:facet name="first">
+            <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+            <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
+            <meta name="apple-mobile-web-app-capable" content="yes"/>
+        </f:facet>
+        <title>PrimeFaces Showcase</title>
+
+        <!-- For Community Themes except 'Luna' and 'Nova' theme -->
+        <h:outputStylesheet name="primeicons/primeicons.css" library="primefaces"/>
+
+        <h:outputScript name="jquery/jquery.js" library="primefaces"/>
+        <h:outputScript name="jquery/jquery-plugins.js" library="primefaces"/>
+        <h:outputScript name="script/nanoscroller.js" library="showcase"/>
+        <h:outputScript name="script/layout.js" library="showcase"/>
+    </h:head>
+
+    <h:body>
+      <h:form id="form">
+          <p:commandLink id="excellaExportNonAjax" ajax="false">
+              <h:outputLabel>ExCella Reports (non-Ajax)</h:outputLabel>
+              <p:dataExporter type="xls" target="tbl" fileName="complex-non-ajax" exporter="#{excellaExporter.dataTableExporter}" />
+          </p:commandLink>
+          <br />
+          <p:commandLink id="excellaExportAjax" ajax="true">
+              <h:outputLabel>ExCella Reports (Ajax)</h:outputLabel>
+              <p:dataExporter type="xls" target="tbl" fileName="complex-ajax" exporter="#{excellaExporter.dataTableExporter}" />
+          </p:commandLink>
+
+          <p:dataTable id="tbl" var="row" value="#{dtBasicView.dataTypes}">
+            <p:columnGroup type="header">
+              <p:row>
+                <p:column rowspan="3"
+                          headerText="rowspan" />
+                <p:column headerText="headerText A-1" />
+                <p:column headerText="headerText A-2" />
+                <p:column rowspan="3"
+                          headerText="rowspan2" />
+              </p:row>
+              <p:row>
+                <p:column headerText="headerText B-1" />
+                <p:column headerText="headerText B-2" />
+              </p:row>
+              <p:row>
+                <p:column headerText="headerText C-1" />
+                <p:column headerText="headerText C-2" />
+              </p:row>
+            </p:columnGroup>
+              <p:column>
+                  <h:outputText value="#{row.stringProperty}" />
+              </p:column>
+              <p:column>
+                  <h:outputText value="#{row.yearMonthProperty}" />
+              </p:column>
+              <p:column>
+                  <h:outputText value="#{row.localDateProperty}" />
+              </p:column>
+              <p:column>
+                  <h:outputText value="#{row.stringProperty}" />
+              </p:column>
+          </p:dataTable>
+      </h:form>
+    </h:body>
+
+</html>
+
