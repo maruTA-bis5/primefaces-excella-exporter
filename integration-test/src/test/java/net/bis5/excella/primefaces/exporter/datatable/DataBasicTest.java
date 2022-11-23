@@ -68,7 +68,7 @@ public class DataBasicTest extends AbstractPrimePageTest {
     private void assertFileContent(DataTypeCheck record, String outputFileName) throws EncryptedDocumentException, IOException {
         try (Workbook workbook = WorkbookFactory.create(new File(getBaseDir()+"/docker-compose/downloads/" + outputFileName), null, true)) {
             Sheet sheet = workbook.getSheetAt(0);
-            List<String> headers = Arrays.asList("String", "YearMonth", "j.u.Date (date)", "j.u.Date (datetime)", "LocalDate", "LocalDateTime", "Integer (int)", "Integer (BigDecimal scale=2)", "Decimal (double)", "Decimal (BigDecimal)", "Link (value specified)", "Link (value not specified)");
+            List<String> headers = Arrays.asList("String", "YearMonth", "j.u.Date (date)", "j.u.Date (datetime)", "LocalDate", "LocalDateTime", "Integer (int)", "Integer (BigDecimal scale=2)", "Decimal (double)", "Decimal (BigDecimal)", "Link (value specified)", "Link (value not specified)", "header line break");
 
             Row headerRow = sheet.getRow(0);
             Row dataRow = sheet.getRow(1);
@@ -92,7 +92,8 @@ public class DataBasicTest extends AbstractPrimePageTest {
                     () -> assertCell("decimal cell", dataRow.getCell(8), CellType.NUMERIC, record.getDoubleProperty(), Cell::getNumericCellValue),
                     () -> assertCell("BigDecimal as decimal cell", dataRow.getCell(9), CellType.NUMERIC, record.getBigDecimalDecimalProperty().doubleValue(), Cell::getNumericCellValue),
                     () -> assertCell("Link value specified", dataRow.getCell(10), CellType.STRING, "Link", Cell::getStringCellValue),
-                    () -> assertCell("Link value not specified", dataRow.getCell(11), CellType.NUMERIC, record.getBigDecimalDecimalProperty().doubleValue(), Cell::getNumericCellValue)
+                    () -> assertCell("Link value not specified", dataRow.getCell(11), CellType.NUMERIC, record.getBigDecimalDecimalProperty().doubleValue(), Cell::getNumericCellValue),
+                    () -> assertCell("remove br tag", dataRow.getCell(12), CellType.STRING, "value row line break", Cell::getStringCellValue)
                 )
             );
         }
