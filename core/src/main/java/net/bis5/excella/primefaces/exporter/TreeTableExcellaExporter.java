@@ -606,6 +606,15 @@ public class TreeTableExcellaExporter extends TreeTableExporter {
         values.add(exportValue);
     }
 
+    /**
+     * Remove invisible tags from UIInsutructions' evaluated value
+     * @param value evaluated value
+     * @return tag removed value
+     */
+    protected String removeTags(String value) {
+        return value.replaceAll("<[bB][rR] ?/>", "");
+    }
+
     @Override
     public String exportValue(FacesContext context, UIComponent component) {
         String value = super.exportValue(context, component);
@@ -613,7 +622,7 @@ public class TreeTableExcellaExporter extends TreeTableExporter {
             // evaluate el expr
             ValueExpression ve = context.getApplication().getExpressionFactory().createValueExpression(context.getELContext(), value, Object.class);
             Object objValue = ve.getValue(context.getELContext());
-            return objValue != null ? String.valueOf(ve.getValue(context.getELContext())) : null;
+            return objValue != null ? removeTags(String.valueOf(objValue)) : null;
         }
         return value;
     }
