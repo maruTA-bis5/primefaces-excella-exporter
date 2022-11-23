@@ -700,8 +700,8 @@ public class DataTableExcellaExporter extends DataTableExporter {
                 }
                 foundExportableColumn = true;
                 while (true) {
-                    var currRowIndex = rowIndex;
-                    var currColIndex = colIndex;
+                    int currRowIndex = rowIndex;
+                    int currColIndex = colIndex;
                     boolean overlapped = mergedAreas.stream()
                         .anyMatch(a -> a.isInRange(currRowIndex, currColIndex));
                     if (!overlapped) { break; }
