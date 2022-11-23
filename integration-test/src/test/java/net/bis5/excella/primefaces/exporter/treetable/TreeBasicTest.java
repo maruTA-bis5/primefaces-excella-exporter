@@ -83,7 +83,7 @@ class TreeBasicTest extends AbstractPrimePageTest {
     private void assertFileContent(DataTypeCheck parentRecord1, DataTypeCheck childRecord1, DataTypeCheck parentRecord2, DataTypeCheck childRecord2, String fileName) throws EncryptedDocumentException, IOException {
         try (Workbook workbook = WorkbookFactory.create(new File(getBaseDir()+"/docker-compose/downloads/" + fileName), null, true)) {
             Sheet sheet = workbook.getSheetAt(0);
-            List<String> headers = Arrays.asList("String", "YearMonth", "j.u.Date (date)", "j.u.Date (datetime)", "LocalDate", "LocalDateTime", "Integer (int)", "Integer (BigDecimal scale=2)", "Decimal (double)", "Decimal (BigDecimal)", "Link (value specified)", "Link (value not specified)");
+            List<String> headers = Arrays.asList("String", "YearMonth", "j.u.Date (date)", "j.u.Date (datetime)", "LocalDate", "LocalDateTime", "Integer (int)", "Integer (BigDecimal scale=2)", "Decimal (double)", "Decimal (BigDecimal)", "Link (value specified)", "Link (value not specified)", "header line break");
 
             Row headerRow = sheet.getRow(0);
             Row parentNodeRow1 = sheet.getRow(1);
@@ -111,7 +111,8 @@ class TreeBasicTest extends AbstractPrimePageTest {
                     () -> assertCell("decimal cell", parentNodeRow1.getCell(8), CellType.NUMERIC, parentRecord1.getDoubleProperty(), Cell::getNumericCellValue),
                     () -> assertCell("BigDecimal as decimal cell", parentNodeRow1.getCell(9), CellType.NUMERIC, parentRecord1.getBigDecimalDecimalProperty().doubleValue(), Cell::getNumericCellValue),
                     () -> assertCell("Link value specified", parentNodeRow1.getCell(10), CellType.STRING, "Link", Cell::getStringCellValue),
-                    () -> assertCell("Link value not specified", parentNodeRow1.getCell(11), CellType.NUMERIC, parentRecord1.getBigDecimalDecimalProperty().doubleValue(), Cell::getNumericCellValue)
+                    () -> assertCell("Link value not specified", parentNodeRow1.getCell(11), CellType.NUMERIC, parentRecord1.getBigDecimalDecimalProperty().doubleValue(), Cell::getNumericCellValue),
+                    () -> assertCell("remove br tag", parentNodeRow1.getCell(12), CellType.STRING, "value row line break", Cell::getStringCellValue)
                 ),
                 () -> assertAll("Child node row 2",
                     () -> assertEquals(1, childNodeRow2.getCell(0).getCellStyle().getIndention(), "indention"),
@@ -126,7 +127,8 @@ class TreeBasicTest extends AbstractPrimePageTest {
                     () -> assertCell("decimal cell", childNodeRow2.getCell(8), CellType.NUMERIC, childRecord1.getDoubleProperty(), Cell::getNumericCellValue),
                     () -> assertCell("BigDecimal as decimal cell", childNodeRow2.getCell(9), CellType.NUMERIC, childRecord1.getBigDecimalDecimalProperty().doubleValue(), Cell::getNumericCellValue),
                     () -> assertCell("Link value specified", childNodeRow2.getCell(10), CellType.STRING, "Link", Cell::getStringCellValue),
-                    () -> assertCell("Link value not specified", childNodeRow2.getCell(11), CellType.NUMERIC, childRecord1.getBigDecimalDecimalProperty().doubleValue(), Cell::getNumericCellValue)
+                    () -> assertCell("Link value not specified", childNodeRow2.getCell(11), CellType.NUMERIC, childRecord1.getBigDecimalDecimalProperty().doubleValue(), Cell::getNumericCellValue),
+                    () -> assertCell("remove br tag", childNodeRow2.getCell(12), CellType.STRING, "value row line break", Cell::getStringCellValue)
                 ),
                 () -> assertAll("Parent node row 3",
                     () -> assertEquals(0, parentNodeRow3.getCell(0).getCellStyle().getIndention(), "indention"),
@@ -141,7 +143,8 @@ class TreeBasicTest extends AbstractPrimePageTest {
                     () -> assertCell("decimal cell", parentNodeRow3.getCell(8), CellType.NUMERIC, parentRecord2.getDoubleProperty(), Cell::getNumericCellValue),
                     () -> assertCell("BigDecimal as decimal cell", parentNodeRow3.getCell(9), CellType.NUMERIC, parentRecord2.getBigDecimalDecimalProperty().doubleValue(), Cell::getNumericCellValue),
                     () -> assertCell("Link value specified", parentNodeRow3.getCell(10), CellType.STRING, "Link", Cell::getStringCellValue),
-                    () -> assertCell("Link value not specified", parentNodeRow3.getCell(11), CellType.NUMERIC, parentRecord2.getBigDecimalDecimalProperty().doubleValue(), Cell::getNumericCellValue)
+                    () -> assertCell("Link value not specified", parentNodeRow3.getCell(11), CellType.NUMERIC, parentRecord2.getBigDecimalDecimalProperty().doubleValue(), Cell::getNumericCellValue),
+                    () -> assertCell("remove br tag", parentNodeRow3.getCell(12), CellType.STRING, "value row line break", Cell::getStringCellValue)
                 ),
                 () -> assertAll("Child node row 4",
                     () -> assertEquals(1, childNodeRow4.getCell(0).getCellStyle().getIndention(), "indention"),
@@ -156,7 +159,8 @@ class TreeBasicTest extends AbstractPrimePageTest {
                     () -> assertCell("decimal cell", childNodeRow4.getCell(8), CellType.NUMERIC, childRecord2.getDoubleProperty(), Cell::getNumericCellValue),
                     () -> assertCell("BigDecimal as decimal cell", childNodeRow4.getCell(9), CellType.NUMERIC, childRecord2.getBigDecimalDecimalProperty().doubleValue(), Cell::getNumericCellValue),
                     () -> assertCell("Link value specified", childNodeRow4.getCell(10), CellType.STRING, "Link", Cell::getStringCellValue),
-                    () -> assertCell("Link value not specified", childNodeRow4.getCell(11), CellType.NUMERIC, childRecord2.getBigDecimalDecimalProperty().doubleValue(), Cell::getNumericCellValue)
+                    () -> assertCell("Link value not specified", childNodeRow4.getCell(11), CellType.NUMERIC, childRecord2.getBigDecimalDecimalProperty().doubleValue(), Cell::getNumericCellValue),
+                    () -> assertCell("remove br tag", childNodeRow4.getCell(12), CellType.STRING, "value row line break", Cell::getStringCellValue)
                 )
             );
         }
