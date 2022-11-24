@@ -699,10 +699,21 @@ public class DataTableExcellaExporter extends DataTableExporter {
                     continue;
                 }
                 foundExportableColumn = true;
+                while (true) {
+                    int currRowIndex = rowIndex;
+                    int currColIndex = colIndex;
+                    boolean overlapped = mergedAreas.stream()
+                        .anyMatch(a -> a.isInRange(currRowIndex, currColIndex));
+                    if (!overlapped) { break; }
+                    colIndex++;
+                }
                 List<String> columnContents = headerContents.computeIfAbsent(colIndex, c -> new ArrayList<>());
                 columnContents.add(getFacetColumnText(context, column, columnType));
                 if (column.getRowspan() > 1) {
                     mergedAreas.add(new CellRangeAddress(rowIndex, rowIndex + column.getRowspan() - 1, colIndex, colIndex));
+
+                    IntStream.range(rowIndex + 1, rowIndex + column.getRowspan())
+                        .forEach(i -> columnContents.add(null));
                 }
                 if (column.getColspan() > 1) {
                     mergedAreas.add(new CellRangeAddress(rowIndex, rowIndex, colIndex, colIndex + column.getColspan() -1));
