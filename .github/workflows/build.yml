@@ -10,12 +10,16 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
+    name: JDK ${{ matrix.java-version }} - ${{ matrix.faces-impl }}
     strategy:
       fail-fast: false
       matrix:
         java-version:
           - 11
           - 17
+        faces-impl:
+          - myfaces
+          - mojarra
 
     steps:
     - uses: actions/checkout@v2
@@ -40,9 +44,9 @@ jobs:
       run: HOST_IP=$(ip a | grep docker0 | grep inet | awk '{print $2;}' | sed 's/\/.*$//') docker-compose up -d
       working-directory: ./integration-test
     - name: Build with Maven
-      run: mvn -B verify --file pom.xml
+      run: mvn -B verify --file pom.xml -P${{ matrix.faces-impl }}
     - name: SonarCloud Scan
-      if: github.repository == 'maruTA-bis5/primefaces-excella-exporter' && matrix.java-version == 11
+      if: github.repository == 'maruTA-bis5/primefaces-excella-exporter' && matrix.java-version == 11 && matrix.faces-impl == 'mojarra'
       run: mvn -B clean verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=maruTA-bis5_primefaces-excella-exporter -Dsonar.organization=maruta-bis5-github -Dsonar.host.url=https://sonarcloud.io -Dsonar.login=${{secrets.SONAR_TOKEN}}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
