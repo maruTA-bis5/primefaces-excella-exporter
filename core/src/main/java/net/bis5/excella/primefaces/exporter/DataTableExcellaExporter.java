@@ -32,6 +32,7 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.StreamSupport;
 
 import javax.el.ValueExpression;
 import javax.faces.component.UIComponent;
@@ -44,8 +45,11 @@ import javax.faces.convert.Converter;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.util.CellAddress;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.ss.util.CellUtil;
 import org.bbreak.excella.core.SheetData;
@@ -468,15 +472,23 @@ public class DataTableExcellaExporter extends DataTableExporter {
         return obj != null ? obj : defaultValue;
     }
 
+    private String dataTag() {
+        return dataColumnsTag != null ? dataColumnsTag : DEFAULT_DATA_COLUMNS_TAG;
+    }
+
     private void setExportParameters(ReportSheet reportSheet, List<String> columnHeader, List<String> columnFooter, Map<String, List<Object>> dataContainer) {
         Object[] columnDataParams = dataContainer.keySet().stream().map(k -> "$R[]{" + k + "}").toArray();
-        reportSheet.addParam(ColRepeatParamParser.DEFAULT_TAG, dataColumnsTag != null ? dataColumnsTag : DEFAULT_DATA_COLUMNS_TAG, columnDataParams);
+        reportSheet.addParam(ColRepeatParamParser.DEFAULT_TAG, dataTag(), columnDataParams);
 
         Map<String, ValueType> valueTypes = detectValueTypes(dataContainer);
         dataContainer.entrySet()
             .stream()
             .map(this::normalizeValues)
             .forEach(e -> reportSheet.addParam(RowRepeatParamParser.DEFAULT_TAG, e.getKey(), e.getValue().toArray()));
+        int repeatRows = dataContainer.values().stream()
+            .mapToInt(List::size)
+            .max()
+            .orElse(1);
 
         String headersTagName = headersTag != null ? headersTag : DEFAULT_HEADERS_TAG;
         String footersTagName = footersTag != null ? footersTag : DEFAULT_FOOTERS_TAG;
@@ -484,16 +496,65 @@ public class DataTableExcellaExporter extends DataTableExporter {
         reportSheet.addParam(ColRepeatParamParser.DEFAULT_TAG, footersTagName, columnFooter.toArray());
 
         @SuppressWarnings("unchecked")
-        Set<CellRangeAddress> columnGroupMergedAreas = nonNull((Set<CellRangeAddress>) reportSheet.getParam(null, COLUMN_GROUP_MERGED_AREAS_KEY), new HashSet<>());
-        reportSheet.removeParam(null, COLUMN_GROUP_MERGED_AREAS_KEY);
+        Set<CellRangeAddress> headerMergedAreas = nonNull((Set<CellRangeAddress>) reportSheet.getParam(null, COLUMN_GROUP_MERGED_AREAS_KEY + "header"), new HashSet<>());
+        @SuppressWarnings("unchecked")
+        Set<CellRangeAddress> footerMergedAreas = nonNull((Set<CellRangeAddress>) reportSheet.getParam(null, COLUMN_GROUP_MERGED_AREAS_KEY + "footer"), new HashSet<>());
+        reportSheet.removeParam(null, COLUMN_GROUP_MERGED_AREAS_KEY + "header");
+        reportSheet.removeParam(null, COLUMN_GROUP_MERGED_AREAS_KEY + "footer");
 
         reportBook.addReportSheet(reportSheet);
 
         listeners.add(new ReportProcessAdaptor() {
 
+            private CellAddress headerPosition;
+
+            private CellAddress dataPosition;
+
+            private CellAddress footerPosition;
+
             @Override
             public void preBookParse(Workbook workbook, ReportBook reportBook) {
                 initStyles(workbook);
+            }
+
+            private void setHeaderPosition(CellAddress address) {
+                headerPosition = address;
+            }
+
+            private int headerRowOffset(int row) {
+                return headerPosition != null ? row + headerPosition.getRow() : row;
+            }
+
+            private void setDataPosition(CellAddress address) {
+                dataPosition = address;
+            }
+
+            private int dataColOffset(int col) {
+                return dataPosition != null ? col + dataPosition.getColumn()  : col;
+            }
+
+            private void setFooterPosition(CellAddress address) {
+                footerPosition = address;
+            }
+
+            @Override
+            public void preParse(Sheet sheet, SheetParser sheetParser) {
+                String headerTag = ColRepeatParamParser.DEFAULT_TAG + "{" + headersTagName + "}";
+                String footerTag = ColRepeatParamParser.DEFAULT_TAG + "{" + footersTagName + "}";
+                String dataTag = ColRepeatParamParser.DEFAULT_TAG + "{" + dataTag() + "}";
+                StreamSupport.stream(sheet.spliterator(), false)
+                    .map(Row::spliterator)
+                    .flatMap(s -> StreamSupport.stream(s, false))
+                    .filter(c -> c.getCellType() == CellType.STRING)
+                    .forEach(c -> {
+                        if (headerTag.equals(c.getStringCellValue())) {
+                            setHeaderPosition(c.getAddress());
+                        } else if (footerTag.equals(c.getStringCellValue())) {
+                            setFooterPosition(c.getAddress());
+                        } else if (dataTag.equals(c.getStringCellValue())) {
+                            setDataPosition(c.getAddress());
+                        }
+                    });
             }
 
             @Override
@@ -514,10 +575,10 @@ public class DataTableExcellaExporter extends DataTableExporter {
                     }
                     CellStyle style = styles.get(valueType);
                     int colIndex = Arrays.asList(columnDataParams).indexOf(columnTag);
-                    IntStream.rangeClosed(headerSize, nonNull(dataContainer.get(entry.getKey()), Collections.emptyList()).size() + headerSize)
+                    IntStream.range(headerRowOffset(headerSize), headerRowOffset(repeatRows + headerSize))
                         .mapToObj(sheet::getRow)
                         .filter(Objects::nonNull)
-                        .map(r -> r.getCell(colIndex))
+                        .map(r -> r.getCell(dataColOffset(colIndex)))
                         .filter(Objects::nonNull)
                         .forEach(c -> setCellStyle(c, style));
                 }
@@ -538,7 +599,23 @@ public class DataTableExcellaExporter extends DataTableExporter {
             }
 
             private void mergeCells(Sheet sheet) {
-                columnGroupMergedAreas.forEach(sheet::addMergedRegion);
+                headerMergedAreas.forEach(a -> mergeCell(sheet, headerPosition, 0, a));
+                footerMergedAreas.forEach(a -> mergeCell(sheet, footerPosition, repeatRows, a));
+            }
+
+            private void mergeCell(Sheet sheet, CellAddress beginPosition, int rowOffset, CellRangeAddress area) {
+                if ((beginPosition == null || beginPosition.equals(CellAddress.A1)) && rowOffset == 0) {
+                    sheet.addMergedRegion(area);
+                    return;
+                }
+                int colOffset = 0;
+                if (beginPosition != null) {
+                    rowOffset = rowOffset + beginPosition.getRow();
+                    colOffset = beginPosition.getColumn();
+                }
+
+                var rangeToMerge = new CellRangeAddress(rowOffset + area.getFirstRow(), rowOffset + area.getLastRow(), colOffset + area.getFirstColumn(), colOffset + area.getLastColumn());
+                sheet.addMergedRegion(rangeToMerge);
             }
         });
     }
@@ -585,8 +662,8 @@ public class DataTableExcellaExporter extends DataTableExporter {
         context.getAttributes().put(Constants.HELPER_RENDERER, "columnGroup");
 
         @SuppressWarnings("unchecked")
-        Set<CellRangeAddress> mergedAreas = nonNull((Set<CellRangeAddress>) reportSheet.getParam(null, COLUMN_GROUP_MERGED_AREAS_KEY), new HashSet<>());
-        reportSheet.addParam(null, COLUMN_GROUP_MERGED_AREAS_KEY, mergedAreas);
+        Set<CellRangeAddress> mergedAreas = nonNull((Set<CellRangeAddress>) reportSheet.getParam(null, COLUMN_GROUP_MERGED_AREAS_KEY + columnType), new HashSet<>());
+        reportSheet.addParam(null, COLUMN_GROUP_MERGED_AREAS_KEY + columnType, mergedAreas);
 
         int rowIndex = -1;
         int colIndex = -1;
@@ -681,7 +758,7 @@ public class DataTableExcellaExporter extends DataTableExporter {
         Map</*colindex*/Integer, List<String>> headerContents = new HashMap<>();
         int rowIndex = 0;
         Set<CellRangeAddress> mergedAreas = new HashSet<>();
-        reportSheet.addParam(null, COLUMN_GROUP_MERGED_AREAS_KEY, mergedAreas);
+        reportSheet.addParam(null, COLUMN_GROUP_MERGED_AREAS_KEY + columnType, mergedAreas);
 
         for (UIComponent child : columnGroup.getChildren()) {
             if (!child.isRendered() || !(child instanceof org.primefaces.component.row.Row)) {

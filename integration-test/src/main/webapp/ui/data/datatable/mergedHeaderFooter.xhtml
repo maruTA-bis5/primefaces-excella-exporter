@@ -29,15 +29,15 @@
       <h:form id="form">
           <p:commandLink id="excellaExportNonAjax" ajax="false">
               <h:outputLabel>ExCella Reports (non-Ajax)</h:outputLabel>
-              <p:dataExporter type="xls" target="tbl" fileName="group-non-ajax" exporter="#{excellaExporter.dataTableExporter}" />
+              <p:dataExporter type="xls" target="tbl" fileName="merged-hf-non-ajax" exporter="#{dtMergedHfView.dataTableExporter}" />
           </p:commandLink>
           <br />
           <p:commandLink id="excellaExportAjax" ajax="true">
               <h:outputLabel>ExCella Reports (Ajax)</h:outputLabel>
-              <p:dataExporter type="xls" target="tbl" fileName="group-ajax" exporter="#{excellaExporter.dataTableExporter}" />
+              <p:dataExporter type="xls" target="tbl" fileName="merged-hf-ajax" exporter="#{dtMergedHfView.dataTableExporter}" />
           </p:commandLink>
 
-          <p:dataTable id="tbl" var="row" value="#{dtBasicView.dataTypes}">
+          <p:dataTable id="tbl" var="row" value="#{dtMergedHfView.dataTypes}">
             <p:columnGroup type="header">
               <p:row>
                 <p:column width="50" exportable="false" />
@@ -64,8 +64,22 @@
               <p:column>
                   <h:outputText value="#{row.localDateProperty}" />
               </p:column>
+              <p:columnGroup type="footer">
+                <p:row>
+                  <p:column colspan="2" footerText="Foot left" />
+                  <p:column>
+                    <f:facet name="footer">
+                      <h:outputText value="Foot right" />
+                    </f:facet>
+                  </p:column>
+                </p:row>
+                <p:row>
+                  <p:column colspan="3" footerText="EOS" />
+                </p:row>
+              </p:columnGroup>
           </p:dataTable>
       </h:form>
     </h:body>
 
 </html>
+
