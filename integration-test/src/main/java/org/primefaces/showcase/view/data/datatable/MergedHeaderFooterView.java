@@ -29,7 +29,7 @@ import net.bis5.excella.primefaces.exporter.DataTableExcellaExporter;
 public class MergedHeaderFooterView extends BasicView {
 
     public Exporter<DataTable> getDataTableExporter() {
-        var exporter = new DataTableExcellaExporter();
+        DataTableExcellaExporter exporter = new DataTableExcellaExporter();
 
         exporter.setTemplateUrl(MergedHeaderFooterView.class.getResource("/PositionChangedTemplate.xlsx"));
 

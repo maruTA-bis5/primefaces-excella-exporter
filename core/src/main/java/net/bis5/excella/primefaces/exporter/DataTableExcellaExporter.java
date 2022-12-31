@@ -614,7 +614,7 @@ public class DataTableExcellaExporter extends DataTableExporter {
                     colOffset = beginPosition.getColumn();
                 }
 
-                var rangeToMerge = new CellRangeAddress(rowOffset + area.getFirstRow(), rowOffset + area.getLastRow(), colOffset + area.getFirstColumn(), colOffset + area.getLastColumn());
+                CellRangeAddress rangeToMerge = new CellRangeAddress(rowOffset + area.getFirstRow(), rowOffset + area.getLastRow(), colOffset + area.getFirstColumn(), colOffset + area.getLastColumn());
                 sheet.addMergedRegion(rangeToMerge);
             }
         });
