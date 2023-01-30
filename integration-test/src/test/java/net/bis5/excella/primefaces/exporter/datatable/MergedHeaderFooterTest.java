@@ -19,6 +19,7 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.apache.poi.ss.util.CellRangeAddress;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.openqa.selenium.support.FindBy;
@@ -98,12 +99,14 @@ class MergedHeaderFooterTest extends AbstractPrimePageTest {
             Row eosRow = sheet.getRow(ROW_OFFSET + 4);
             assertAll(
                 () -> assertAll("Grouped Header row", () -> {
-                    Cell cell = groupedHeaderRow.getCell(COL_OFFSET + 0);
-                    assertEquals("colspan", cell.getStringCellValue());
-                    cell = groupedHeaderRow.getCell(COL_OFFSET + 2);
-                    assertEquals("rowspan", cell.getStringCellValue());
-                    assertMergedRegion(sheet, ROW_OFFSET + 0, COL_OFFSET + 0, ROW_OFFSET + 0, COL_OFFSET + 1);
-                    assertMergedRegion(sheet, ROW_OFFSET + 0, COL_OFFSET + 2, ROW_OFFSET + 1, COL_OFFSET + 2);
+                    Cell firstCell = groupedHeaderRow.getCell(COL_OFFSET + 0);
+                    Cell secondCell = groupedHeaderRow.getCell(COL_OFFSET + 2);
+                    assertAll(
+                        () -> assertEquals("colspan", firstCell.getStringCellValue()),
+                        () -> assertEquals("rowspan", secondCell.getStringCellValue()),
+                        () -> assertMergedRegion(sheet, ROW_OFFSET + 0, COL_OFFSET + 0, ROW_OFFSET + 0, COL_OFFSET + 1),
+                        () -> assertMergedRegion(sheet, ROW_OFFSET + 0, COL_OFFSET + 2, ROW_OFFSET + 1, COL_OFFSET + 2)
+                    );
                 }),
                 () -> assertAll("Detail Header row", () -> {
                     for (int i = 0; i < detailHeaders.size(); i++) {
@@ -132,6 +135,63 @@ class MergedHeaderFooterTest extends AbstractPrimePageTest {
         }
     }
 
+    @Test
+    @Disabled("#56")
+    void exportExcellaAjaxSingleRow(Page page) throws EncryptedDocumentException, IOException {
+        var backingBean = new MergedHeaderFooterView();
+        DataTypeCheck record = backingBean.getDataTypes().get(0);
+
+        CommandLink link = page.commandLinkAjaxSingleRow;
+        link.click();
+        PrimeSelenium.wait(1000);
+
+        assertFileContentSingleRow(record, "merged-hf-ajax-sr.xlsx");
+    }
+
+    @Test
+    @Disabled("#56")
+    void exportExcellaNonAjaxSingleRow(Page page) throws EncryptedDocumentException, IOException {
+        var backingBean = new MergedHeaderFooterView();
+        DataTypeCheck record = backingBean.getDataTypes().get(0);
+
+        CommandLink link = page.commandLinkNonAjaxSingleRow;
+        link.getRoot().click();
+
+        assertFileContentSingleRow(record, "merged-hf-non-ajax-sr.xlsx");
+    }
+
+    private void assertFileContentSingleRow(DataTypeCheck record, String outputFileName) throws EncryptedDocumentException, IOException {
+        try (Workbook workbook = WorkbookFactory.create(new File(getBaseDir()+"/docker-compose/downloads/" + outputFileName), null, true)) {
+            Sheet sheet = workbook.getSheetAt(0);
+
+            Row groupedHeaderRow = sheet.getRow(ROW_OFFSET + 0);
+            Row dataRow = sheet.getRow(ROW_OFFSET + 1);
+            Row groupedFooterRow = sheet.getRow(ROW_OFFSET + 2);
+            assertAll(
+                () -> assertAll("Grouped Header row", () -> {
+                    Cell firstCell = groupedHeaderRow.getCell(COL_OFFSET + 0);
+                    Cell secondCell = groupedHeaderRow.getCell(COL_OFFSET + 2);
+                    assertAll(
+                        () -> assertEquals("colspan", firstCell.getStringCellValue()),
+                        () -> assertEquals("col", secondCell.getStringCellValue()),
+                        () -> assertMergedRegion(sheet, ROW_OFFSET + 0, COL_OFFSET + 0, ROW_OFFSET + 0, COL_OFFSET + 1)
+                    );
+                }),
+                () -> assertAll("Data row",
+                    () -> assertCell("String cell", dataRow.getCell(COL_OFFSET + 0), CellType.STRING, record.getStringProperty(), Cell::getStringCellValue),
+                    () -> assertCell("YearMonth cell", dataRow.getCell(COL_OFFSET + 1), CellType.NUMERIC, record.getYearMonthProperty().atDay(1).atStartOfDay(), Cell::getLocalDateTimeCellValue),
+                    () -> assertCellFormat("YearMonth cell data format", dataRow.getCell(COL_OFFSET + 1), ValueType.YEAR_MONTH),
+                    () -> assertCell("LocalDate cell", dataRow.getCell(COL_OFFSET + 2), CellType.NUMERIC, record.getLocalDateProperty().atStartOfDay(), Cell::getLocalDateTimeCellValue),
+                    () -> assertCellFormat("LocalDate cell data format", dataRow.getCell(COL_OFFSET + 2), ValueType.DATE)
+                ),
+                () -> assertAll("Grouped Footer row",
+                    () -> assertMergedRegion(sheet, ROW_OFFSET + 2, COL_OFFSET + 0, ROW_OFFSET + 2, COL_OFFSET + 2),
+                    () -> assertEquals("colspan3", groupedFooterRow.getCell(COL_OFFSET + 0).getStringCellValue())
+                )
+            );
+        }
+    }
+
     public static class Page extends AbstractPrimePage {
 
         @FindBy(id = "form:excellaExportNonAjax")
@@ -139,6 +199,12 @@ class MergedHeaderFooterTest extends AbstractPrimePageTest {
 
         @FindBy(id = "form:excellaExportAjax")
         CommandLink commandLinkAjax;
+
+        @FindBy(id = "form:excellaExportNonAjaxSingleRow")
+        CommandLink commandLinkNonAjaxSingleRow;
+
+        @FindBy(id = "form:excellaExportAjaxSingleRow")
+        CommandLink commandLinkAjaxSingleRow;
 
         @Override
         public String getLocation() {
