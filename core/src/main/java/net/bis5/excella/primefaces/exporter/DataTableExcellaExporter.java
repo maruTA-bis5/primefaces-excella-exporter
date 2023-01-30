@@ -504,6 +504,8 @@ public class DataTableExcellaExporter extends DataTableExporter {
 
             private CellAddress footerPosition;
 
+            private int headerSize;
+
             @Override
             public void preBookParse(Workbook workbook, ReportBook reportBook) {
                 initStyles(workbook);
@@ -555,7 +557,6 @@ public class DataTableExcellaExporter extends DataTableExporter {
                     return;
                 }
                 Object[] headers = (Object[]) reportSheet.getParam(RowRepeatParamParser.DEFAULT_TAG, "header0");
-                int headerSize = 1;
                 if (headers != null) {
                     headerSize = headers.length;
                 }
@@ -592,20 +593,22 @@ public class DataTableExcellaExporter extends DataTableExporter {
 
             private void mergeCells(Sheet sheet) {
                 headerMergedAreas.forEach(a -> mergeCell(sheet, headerPosition, 0, a));
-                footerMergedAreas.forEach(a -> mergeCell(sheet, footerPosition, repeatRows, a));
+                int footerOffset = repeatRows;
+                footerMergedAreas.forEach(a -> mergeCell(sheet, footerPosition, footerOffset, a));
             }
 
             private void mergeCell(Sheet sheet, CellAddress beginPosition, int rowOffset, CellRangeAddress area) {
-                if ((beginPosition == null || beginPosition.equals(CellAddress.A1)) && rowOffset == 0) {
+                if (beginPosition == null) {
+                    return;
+                }
+                if (beginPosition.equals(CellAddress.A1) && rowOffset <= 0) {
                     sheet.addMergedRegion(area);
                     return;
                 }
-                int colOffset = 0;
-                if (beginPosition != null) {
-                    rowOffset = rowOffset + beginPosition.getRow();
-                    colOffset = beginPosition.getColumn();
-                }
+                rowOffset = rowOffset + beginPosition.getRow();
+                int colOffset = beginPosition.getColumn();
 
+                // TODO #56 footerの開始行計算がおかしそう
                 var rangeToMerge = new CellRangeAddress(rowOffset + area.getFirstRow(), rowOffset + area.getLastRow(), colOffset + area.getFirstColumn(), colOffset + area.getLastColumn());
                 sheet.addMergedRegion(rangeToMerge);
             }
@@ -657,45 +660,50 @@ public class DataTableExcellaExporter extends DataTableExporter {
         Set<CellRangeAddress> mergedAreas = nonNull((Set<CellRangeAddress>) reportSheet.getParam(null, COLUMN_GROUP_MERGED_AREAS_KEY + columnType), new HashSet<>());
         reportSheet.addParam(null, COLUMN_GROUP_MERGED_AREAS_KEY + columnType, mergedAreas);
 
-        int rowIndex = -1;
-        int colIndex = -1;
         for (UIComponent child : columnGroup.getChildren()) {
             if (!child.isRendered()) {
                 continue;
             }
-            rowIndex++;
             if (child instanceof org.primefaces.component.row.Row) {
                 if (columnGroup.getChildren().size() > 1) {
                     return exportColumnGroupMultiRow(context, columnGroup, columnType, reportSheet);
-                }
-                int colIndexForSingleRow = -1;
-                for (UIComponent rowChild : child.getChildren()) {
-                    UIColumn column = (UIColumn) rowChild;
-                    if (!isExportable(context, column)) {
-                        continue;
-                    }
-                    colIndexForSingleRow++;
-                    facetColumns.add(getFacetColumnText(context, column, columnType));
-                    if (column.getColspan() > 1) {
-                        mergedAreas.add(new CellRangeAddress(rowIndex, rowIndex, colIndexForSingleRow, colIndexForSingleRow + column.getColspan() - 1));
-                    }
+                } else {
+                    return exportFacetColumns(context, child.getChildren(), columnType, reportSheet);
                 }
             } else if (child instanceof UIColumn) {
-                UIColumn column = (UIColumn)child;
-                if (!isExportable(context, column)) {
-                    continue;
-                }
-                colIndex++;
-                facetColumns.add(getFacetColumnText(context, column, columnType));
-                if (column.getColspan() > 1) {
-                    mergedAreas.add(new CellRangeAddress(rowIndex, rowIndex, colIndex, colIndex + column.getColspan() - 1));
-                }
+                return exportFacetColumns(context, columnGroup.getChildren(), columnType, reportSheet);
             } else {
                 // ignore
             }
         }
 
         context.getAttributes().remove(Constants.HELPER_RENDERER);
+        return facetColumns;
+    }
+
+    private List<String> exportFacetColumns(FacesContext context, List<UIComponent> columns, ColumnType columnType, ReportSheet reportSheet) {
+        @SuppressWarnings("unchecked")
+        Set<CellRangeAddress> mergedAreas = nonNull((Set<CellRangeAddress>) reportSheet.getParam(null, COLUMN_GROUP_MERGED_AREAS_KEY + columnType), new HashSet<>());
+        reportSheet.addParam(null, COLUMN_GROUP_MERGED_AREAS_KEY + columnType, mergedAreas);
+
+        List<String> facetColumns = new ArrayList<>();
+
+        int colIndex = -1;
+        for (UIComponent child : columns) {
+            UIColumn column = (UIColumn)child;
+            if (!isExportable(context, column)) {
+                continue;
+            }
+            colIndex++;
+            facetColumns.add(getFacetColumnText(context, column, columnType));
+            if (column.getColspan() > 1) {
+                int colsToMerge = column.getColspan() - 1;
+                mergedAreas.add(new CellRangeAddress(0, 0, colIndex, colIndex + colsToMerge));
+                colIndex += colsToMerge;
+                IntStream.range(0, colsToMerge).forEach(i -> facetColumns.add(null));
+            }
+        }
+
         return facetColumns;
     }
 
