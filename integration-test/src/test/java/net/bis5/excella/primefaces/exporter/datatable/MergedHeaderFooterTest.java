@@ -138,7 +138,7 @@ class MergedHeaderFooterTest extends AbstractPrimePageTest {
     @Test
     @Disabled("#56")
     void exportExcellaAjaxSingleRow(Page page) throws EncryptedDocumentException, IOException {
-        var backingBean = new MergedHeaderFooterView();
+        MergedHeaderFooterView backingBean = new MergedHeaderFooterView();
         DataTypeCheck record = backingBean.getDataTypes().get(0);
 
         CommandLink link = page.commandLinkAjaxSingleRow;
@@ -151,7 +151,7 @@ class MergedHeaderFooterTest extends AbstractPrimePageTest {
     @Test
     @Disabled("#56")
     void exportExcellaNonAjaxSingleRow(Page page) throws EncryptedDocumentException, IOException {
-        var backingBean = new MergedHeaderFooterView();
+        MergedHeaderFooterView backingBean = new MergedHeaderFooterView();
         DataTypeCheck record = backingBean.getDataTypes().get(0);
 
         CommandLink link = page.commandLinkNonAjaxSingleRow;
