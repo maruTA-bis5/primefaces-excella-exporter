@@ -78,6 +78,40 @@
                 </p:row>
               </p:columnGroup>
           </p:dataTable>
+
+          <p:commandLink id="excellaExportNonAjaxSingleRow" ajax="false">
+              <h:outputLabel>ExCella Reports (non-Ajax) - Single Row</h:outputLabel>
+              <p:dataExporter type="xls" target="tbl-sr" fileName="merged-hf-non-ajax-sr" exporter="#{dtMergedHfView.dataTableExporter}" />
+          </p:commandLink>
+          <br />
+          <p:commandLink id="excellaExportAjaxSingleRow" ajax="true">
+              <h:outputLabel>ExCella Reports (Ajax) - Single Row</h:outputLabel>
+              <p:dataExporter type="xls" target="tbl-sr" fileName="merged-hf-ajax-sr" exporter="#{dtMergedHfView.dataTableExporter}" />
+          </p:commandLink>
+
+          <p:dataTable id="tbl-sr" var="row" value="#{dtMergedHfView.dataTypes}">
+            <p:columnGroup type="header">
+              <p:row>
+                <p:column colspan="2"
+                          headerText="colspan" />
+                <p:column headerText="col" />
+              </p:row>
+            </p:columnGroup>
+            <p:column>
+                <h:outputText value="#{row.stringProperty}" />
+            </p:column>
+            <p:column>
+                <h:outputText value="#{row.yearMonthProperty}" />
+            </p:column>
+            <p:column>
+                <h:outputText value="#{row.localDateProperty}" />
+            </p:column>
+            <p:columnGroup type="footer">
+              <p:row>
+                <p:column colspan="3" footerText="colspan3" />
+              </p:row>
+            </p:columnGroup>
+          </p:dataTable>
       </h:form>
     </h:body>
 
