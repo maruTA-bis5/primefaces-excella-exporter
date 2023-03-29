@@ -1,17 +1,17 @@
 package net.bis5.excella.primefaces.exporter.datatable;
 
+import static net.bis5.excella.primefaces.exporter.Assertions.assertCell;
+import static net.bis5.excella.primefaces.exporter.Assertions.assertHeaderCell;
 import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
 
 import org.apache.poi.EncryptedDocumentException;
 import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -20,6 +20,7 @@ import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.function.Executable;
 import org.openqa.selenium.support.FindBy;
 import org.primefaces.selenium.AbstractPrimePage;
 import org.primefaces.selenium.AbstractPrimePageTest;
@@ -28,29 +29,14 @@ import org.primefaces.selenium.component.CommandLink;
 import org.primefaces.showcase.view.data.datatable.BasicView;
 import org.primefaces.showcase.view.data.datatable.BasicView.DataTypeCheck;
 
-import net.bis5.excella.primefaces.exporter.DataTableExcellaExporter.ValueType;
 import net.bis5.excella.primefaces.exporter.TakeScreenShotAfterFailure;
+import net.bis5.excella.primefaces.exporter.ValueType;
 
 @ExtendWith(TakeScreenShotAfterFailure.class)
 class ComplexRowspanTest extends AbstractPrimePageTest {
 
     private String getBaseDir() {
         return System.getProperty("basedir");
-    }
-
-    private <T> void assertCell(String description, Cell cell, CellType expectedType, T expectedValue, Function<Cell, T> actualValueMapper) {
-        assertAll(description,
-            () -> assertEquals(expectedType, cell.getCellType(), "cell type"),
-            () -> assertEquals(expectedValue, actualValueMapper.apply(cell), "cell value")
-        );
-    }
-
-    private <T> void assertCellFormat(String description, Cell cell, ValueType cellValueType) {
-        Workbook workbook = cell.getRow().getSheet().getWorkbook();
-        short expectedDataFormat = cellValueType.getFormat(workbook);
-
-        CellStyle cellStyle = cell.getCellStyle();
-        assertEquals(expectedDataFormat, cellStyle.getDataFormat(), "CellStyle.dataFormat");
     }
 
     @Test
@@ -94,46 +80,53 @@ class ComplexRowspanTest extends AbstractPrimePageTest {
             Row headerRowC = sheet.getRow(2);
             Row dataRow = sheet.getRow(3);
             assertAll(
-                () -> assertAll("headerRowA", () -> {
-                    assertMergedRegion(sheet, 0, 0, 2, 0);
-                    assertMergedRegion(sheet, 0, 3, 2, 3);
+                () -> {
+                    List<Executable> assertions = new ArrayList<>();
+                    assertions.add(() -> assertMergedRegion(sheet, 0, 0, 2, 0));
+                    assertions.add(() -> assertMergedRegion(sheet, 0, 3, 2, 3));
                     for (int i = 0; i < headerRowAText.size(); i++) {
                         Cell cell = headerRowA.getCell(i);
-                        assertEquals(CellType.STRING, cell.getCellType());
-                        assertEquals(headerRowAText.get(i), cell.getStringCellValue());
+                        String expectedHeaderValue = headerRowAText.get(i);
+                        var index = i;
+                        assertions.add(() -> assertHeaderCell(index, cell, expectedHeaderValue));
                     }
-                }),
-                () -> assertAll("headerRowB", () -> {
+                    assertAll("headerRowA", assertions.toArray(Executable[]::new));
+                },
+                () -> {
+                    List<Executable> assertions = new ArrayList<>();
                     for (int i = 0; i < headerRowBText.size(); i++) {
                         Cell cell = headerRowB.getCell(i);
-                        if (headerRowBText.get(i).isEmpty()) {
-                            assertTrue(cell == null || cell.getCellType() == CellType.BLANK,
-                                () -> "merged area cell type must be blank. observed: " + cell.getCellType() + ", value: " + cell.getStringCellValue());
+                        String expectedHeaderValue = headerRowBText.get(i);
+                        if (expectedHeaderValue.isEmpty()) {
+                            assertions.add(() -> assertTrue(cell == null || cell.getCellType() == CellType.BLANK,
+                                () -> "merged area cell type must be blank. observed: " + cell.getCellType() + ", value: " + cell.getStringCellValue()));
                             continue;
                         }
-                        assertEquals(CellType.STRING, cell.getCellType());
-                        assertEquals(headerRowBText.get(i), cell.getStringCellValue());
+                        var index = i;
+                        assertions.add(() -> assertHeaderCell(index, cell, expectedHeaderValue));
                     }
-                }),
-                () -> assertAll("headerRowC", () -> {
+                    assertAll("headerRowB", assertions.toArray(Executable[]::new));
+                },
+                () -> {
+                    List<Executable> assertions = new ArrayList<>();
                     for (int i = 0; i < headerRowCText.size(); i++) {
                         Cell cell = headerRowC.getCell(i);
-                        if (headerRowBText.get(i).isEmpty()) {
-                            assertTrue(cell == null || cell.getCellType() == CellType.BLANK,
-                                () -> "merged area cell type must be blank. observed: " + cell.getCellType() + ", value: " + cell.getStringCellValue());
+                        String expectedHeaderValue = headerRowCText.get(i);
+                        if (expectedHeaderValue.isEmpty()) {
+                            assertions.add(() -> assertTrue(cell == null || cell.getCellType() == CellType.BLANK,
+                                () -> "merged area cell type must be blank. observed: " + cell.getCellType() + ", value: " + cell.getStringCellValue()));
                             continue;
                         }
-                        assertEquals(CellType.STRING, cell.getCellType());
-                        assertEquals(headerRowCText.get(i), cell.getStringCellValue());
+                        var index = i;
+                        assertions.add(() -> assertHeaderCell(index, cell, expectedHeaderValue));
                     }
-                }),
+                    assertAll("headerRowC", assertions.toArray(Executable[]::new));
+                },
                 () -> assertAll("Data row",
-                    () -> assertCell("String cell", dataRow.getCell(0), CellType.STRING, record.getStringProperty(), Cell::getStringCellValue),
-                    () -> assertCell("YearMonth cell", dataRow.getCell(1), CellType.NUMERIC, record.getYearMonthProperty().atDay(1).atStartOfDay(), Cell::getLocalDateTimeCellValue),
-                    () -> assertCellFormat("YearMonth cell data format", dataRow.getCell(1), ValueType.YEAR_MONTH),
-                    () -> assertCell("LocalDate cell", dataRow.getCell(2), CellType.NUMERIC, record.getLocalDateProperty().atStartOfDay(), Cell::getLocalDateTimeCellValue),
-                    () -> assertCellFormat("LocalDate cell data format", dataRow.getCell(2), ValueType.DATE),
-                    () -> assertCell("String cell 2", dataRow.getCell(3), CellType.STRING, record.getStringProperty(), Cell::getStringCellValue)
+                    () -> assertCell("String cell", dataRow.getCell(0), CellType.STRING, ValueType.STRING, record.getStringProperty(), Cell::getStringCellValue),
+                    () -> assertCell("YearMonth cell", dataRow.getCell(1), CellType.NUMERIC, ValueType.YEAR_MONTH, record.getYearMonthProperty().atDay(1).atStartOfDay(), Cell::getLocalDateTimeCellValue),
+                    () -> assertCell("LocalDate cell", dataRow.getCell(2), CellType.NUMERIC, ValueType.DATE, record.getLocalDateProperty().atStartOfDay(), Cell::getLocalDateTimeCellValue),
+                    () -> assertCell("String cell 2", dataRow.getCell(3), CellType.STRING, ValueType.STRING, record.getStringProperty(), Cell::getStringCellValue)
                 )
             );
         }

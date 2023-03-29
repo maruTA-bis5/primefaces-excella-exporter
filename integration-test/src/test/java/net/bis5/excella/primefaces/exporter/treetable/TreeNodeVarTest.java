@@ -1,13 +1,16 @@
 package net.bis5.excella.primefaces.exporter.treetable;
 
+import static net.bis5.excella.primefaces.exporter.Assertions.assertBlankCell;
+import static net.bis5.excella.primefaces.exporter.Assertions.assertCell;
+import static net.bis5.excella.primefaces.exporter.Assertions.assertHeaderCell;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Function;
 
 import org.apache.poi.EncryptedDocumentException;
 import org.apache.poi.ss.usermodel.Cell;
@@ -18,6 +21,7 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.function.Executable;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.primefaces.model.TreeNode;
@@ -29,23 +33,13 @@ import org.primefaces.showcase.view.data.treetable.BasicView;
 import org.primefaces.showcase.view.data.treetable.BasicView.DataTypeCheck;
 
 import net.bis5.excella.primefaces.exporter.TakeScreenShotAfterFailure;
+import net.bis5.excella.primefaces.exporter.ValueType;
 
 @ExtendWith(TakeScreenShotAfterFailure.class)
 class TreeNodeVarTest extends AbstractPrimePageTest {
 
     private String getBaseDir() {
         return System.getProperty("basedir");
-    }
-
-    private <T> void assertCell(String description, Cell cell, CellType expectedType, T expectedValue, Function<Cell, T> actualValueMapper) {
-        assertAll(description,
-            () -> assertEquals(expectedType, cell.getCellType(), "cell type"),
-            () -> assertEquals(expectedValue, actualValueMapper.apply(cell), "cell value")
-        );
-    }
-
-    private void assertBlankCell(String description, Cell cell) {
-        assertEquals(CellType.BLANK, cell.getCellType(), "wrong cell type");
     }
 
     @Test
@@ -131,40 +125,41 @@ class TreeNodeVarTest extends AbstractPrimePageTest {
             Row parentNodeRow3 = sheet.getRow(3);
             Row childNodeRow4 = sheet.getRow(4);
             assertAll(
-                () -> assertAll("Header row", () -> {
+                () -> {
+                    List<Executable> assertions = new ArrayList<>();
                     for (int i = 0; i < headers.size(); i++) {
                         Cell cell = headerRow.getCell(i);
-                        assertEquals(CellType.STRING, cell.getCellType());
-                        assertEquals(headers.get(i), cell.getStringCellValue());
+                        String expectedHeaderValue = headers.get(i);
+                        var index = i;
+                        assertions.add(() -> assertHeaderCell(index, cell, expectedHeaderValue));
                     }
-                }),
+                    assertAll("Header row", assertions.toArray(Executable[]::new));
+                },
                 () -> assertAll("Parent node row 1 (odd)",
                     () -> assertEquals(0, parentNodeRow1.getCell(0).getCellStyle().getIndention(), "indention"),
-                    () -> assertCell("String cell", parentNodeRow1.getCell(0), CellType.STRING, parentRecord1.getStringProperty(), Cell::getStringCellValue),
-                    () -> assertBlankCell("YearMonth cell", parentNodeRow1.getCell(1)),
-                    () -> assertCell("Date cell", parentNodeRow1.getCell(2), CellType.NUMERIC, parentRecord1.getDateProperty(), Cell::getDateCellValue),
-                    () -> assertBlankCell("Date time cell", parentNodeRow1.getCell(3))
+                    () -> assertCell("String cell", parentNodeRow1.getCell(0), CellType.STRING, ValueType.STRING, parentRecord1.getStringProperty(), Cell::getStringCellValue),
+                    () -> assertCell("Date cell", parentNodeRow1.getCell(2), CellType.NUMERIC, ValueType.DATE, parentRecord1.getDateProperty(), Cell::getDateCellValue)
                 ),
                 () -> assertAll("Child node row 2 (even)",
                     () -> assertEquals(1, childNodeRow2.getCell(0).getCellStyle().getIndention(), "indention"),
                     () -> assertBlankCell("String cell", childNodeRow2.getCell(0)),
-                    () -> assertCell("YearMonth cell", childNodeRow2.getCell(1), CellType.NUMERIC, childRecord1.getYearMonthProperty().atDay(1).atStartOfDay(), Cell::getLocalDateTimeCellValue),
+                    () -> assertCell("YearMonth cell", childNodeRow2.getCell(1), CellType.NUMERIC, ValueType.YEAR_MONTH, childRecord1.getYearMonthProperty().atDay(1).atStartOfDay(), Cell::getLocalDateTimeCellValue),
                     () -> assertBlankCell("Date cell", childNodeRow2.getCell(2)),
-                    () -> assertCell("Date time cell", childNodeRow2.getCell(3), CellType.NUMERIC, childRecord1.getDateTimeProperty(), Cell::getDateCellValue)
+                    () -> assertCell("Date time cell", childNodeRow2.getCell(3), CellType.NUMERIC, ValueType.DATE_TIME, childRecord1.getDateTimeProperty(), Cell::getDateCellValue)
                 ),
                 () -> assertAll("Parent node row 3 (odd)",
                     () -> assertEquals(0, parentNodeRow3.getCell(0).getCellStyle().getIndention(), "indention"),
-                    () -> assertCell("String cell", parentNodeRow3.getCell(0), CellType.STRING, parentRecord2.getStringProperty(), Cell::getStringCellValue),
+                    () -> assertCell("String cell", parentNodeRow3.getCell(0), CellType.STRING, ValueType.STRING, parentRecord2.getStringProperty(), Cell::getStringCellValue),
                     () -> assertBlankCell("YearMonth cell", parentNodeRow3.getCell(1)),
-                    () -> assertCell("Date cell", parentNodeRow3.getCell(2), CellType.NUMERIC, parentRecord2.getDateProperty(), Cell::getDateCellValue),
+                    () -> assertCell("Date cell", parentNodeRow3.getCell(2), CellType.NUMERIC, ValueType.DATE, parentRecord2.getDateProperty(), Cell::getDateCellValue),
                     () -> assertBlankCell("Date time cell", parentNodeRow3.getCell(3))
                 ),
                 () -> assertAll("Child node row 4 (even)",
                     () -> assertEquals(1, childNodeRow4.getCell(0).getCellStyle().getIndention(), "indention"),
                     () -> assertBlankCell("String cell", childNodeRow4.getCell(0)),
-                    () -> assertCell("YearMonth cell", childNodeRow4.getCell(1), CellType.NUMERIC, childRecord2.getYearMonthProperty().atDay(1).atStartOfDay(), Cell::getLocalDateTimeCellValue),
+                    () -> assertCell("YearMonth cell", childNodeRow4.getCell(1), CellType.NUMERIC, ValueType.YEAR_MONTH, childRecord2.getYearMonthProperty().atDay(1).atStartOfDay(), Cell::getLocalDateTimeCellValue),
                     () -> assertBlankCell("Date cell", childNodeRow4.getCell(2)),
-                    () -> assertCell("Date time cell", childNodeRow4.getCell(3), CellType.NUMERIC, childRecord2.getDateTimeProperty(), Cell::getDateCellValue)
+                    () -> assertCell("Date time cell", childNodeRow4.getCell(3), CellType.NUMERIC, ValueType.DATE_TIME, childRecord2.getDateTimeProperty(), Cell::getDateCellValue)
                 )
             );
         }
@@ -179,26 +174,29 @@ class TreeNodeVarTest extends AbstractPrimePageTest {
             Row parentNodeRow1 = sheet.getRow(1);
             Row childNodeRow2 = sheet.getRow(2);
             assertAll(
-                () -> assertAll("Header row", () -> {
+                () -> {
+                    List<Executable> assertions = new ArrayList<>();
                     for (int i = 0; i < headers.size(); i++) {
                         Cell cell = headerRow.getCell(i);
-                        assertEquals(CellType.STRING, cell.getCellType());
-                        assertEquals(headers.get(i), cell.getStringCellValue());
+                        String expectedHeaderValue = headers.get(i);
+                        var index = i;
+                        assertions.add(() -> assertHeaderCell(index, cell, expectedHeaderValue));
                     }
-                }),
+                    assertAll("Header row", assertions.toArray(Executable[]::new));
+                },
                 () -> assertAll("Parent node row 1 (odd)",
                     () -> assertEquals(0, parentNodeRow1.getCell(0).getCellStyle().getIndention(), "indention"),
-                    () -> assertCell("String cell", parentNodeRow1.getCell(0), CellType.STRING, parentRecord.getStringProperty(), Cell::getStringCellValue),
+                    () -> assertCell("String cell", parentNodeRow1.getCell(0), CellType.STRING, ValueType.STRING, parentRecord.getStringProperty(), Cell::getStringCellValue),
                     () -> assertBlankCell("YearMonth cell", parentNodeRow1.getCell(1)),
-                    () -> assertCell("Date cell", parentNodeRow1.getCell(2), CellType.NUMERIC, parentRecord.getDateProperty(), Cell::getDateCellValue),
+                    () -> assertCell("Date cell", parentNodeRow1.getCell(2), CellType.NUMERIC, ValueType.DATE, parentRecord.getDateProperty(), Cell::getDateCellValue),
                     () -> assertBlankCell("Date time cell", parentNodeRow1.getCell(3))
                 ),
                 () -> assertAll("Child node row 2 (even)",
                     () -> assertEquals(1, childNodeRow2.getCell(0).getCellStyle().getIndention(), "indention"),
                     () -> assertBlankCell("String cell", childNodeRow2.getCell(0)),
-                    () -> assertCell("YearMonth cell", childNodeRow2.getCell(1), CellType.NUMERIC, childRecord.getYearMonthProperty().atDay(1).atStartOfDay(), Cell::getLocalDateTimeCellValue),
+                    () -> assertCell("YearMonth cell", childNodeRow2.getCell(1), CellType.NUMERIC, ValueType.YEAR_MONTH, childRecord.getYearMonthProperty().atDay(1).atStartOfDay(), Cell::getLocalDateTimeCellValue),
                     () -> assertBlankCell("Date cell", childNodeRow2.getCell(2)),
-                    () -> assertCell("Date time cell", childNodeRow2.getCell(3), CellType.NUMERIC, childRecord.getDateTimeProperty(), Cell::getDateCellValue)
+                    () -> assertCell("Date time cell", childNodeRow2.getCell(3), CellType.NUMERIC, ValueType.DATE_TIME, childRecord.getDateTimeProperty(), Cell::getDateCellValue)
                 )
             );
         }

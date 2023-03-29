@@ -1,59 +1,44 @@
 package net.bis5.excella.primefaces.exporter.datatable;
 
+import static net.bis5.excella.primefaces.exporter.Assertions.assertCell;
+import static net.bis5.excella.primefaces.exporter.Assertions.assertHeaderCell;
+import static net.bis5.excella.primefaces.exporter.Assertions.assertMergedRegion;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Function;
 
 import org.apache.poi.EncryptedDocumentException;
 import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
-import org.apache.poi.ss.util.CellRangeAddress;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.function.Executable;
 import org.openqa.selenium.support.FindBy;
 import org.primefaces.selenium.AbstractPrimePage;
 import org.primefaces.selenium.AbstractPrimePageTest;
 import org.primefaces.selenium.PrimeSelenium;
 import org.primefaces.selenium.component.CommandLink;
-import org.primefaces.showcase.view.data.datatable.MergedHeaderFooterView;
 import org.primefaces.showcase.view.data.datatable.BasicView.DataTypeCheck;
+import org.primefaces.showcase.view.data.datatable.MergedHeaderFooterView;
 
-import net.bis5.excella.primefaces.exporter.DataTableExcellaExporter.ValueType;
 import net.bis5.excella.primefaces.exporter.TakeScreenShotAfterFailure;
+import net.bis5.excella.primefaces.exporter.ValueType;
 
 @ExtendWith(TakeScreenShotAfterFailure.class)
 class MergedHeaderFooterTest extends AbstractPrimePageTest {
 
-
     private String getBaseDir() {
         return System.getProperty("basedir");
-    }
-
-    private <T> void assertCell(String description, Cell cell, CellType expectedType, T expectedValue, Function<Cell, T> actualValueMapper) {
-        assertAll(description,
-            () -> assertEquals(expectedType, cell.getCellType(), "cell type"),
-            () -> assertEquals(expectedValue, actualValueMapper.apply(cell), "cell value")
-        );
-    }
-
-    private <T> void assertCellFormat(String description, Cell cell, ValueType cellValueType) {
-        Workbook workbook = cell.getRow().getSheet().getWorkbook();
-        short expectedDataFormat = cellValueType.getFormat(workbook);
-
-        CellStyle cellStyle = cell.getCellStyle();
-        assertEquals(expectedDataFormat, cellStyle.getDataFormat(), description + " CellStyle.dataFormat");
     }
 
     @Test
@@ -79,12 +64,6 @@ class MergedHeaderFooterTest extends AbstractPrimePageTest {
         assertFileContent(record, "merged-hf-non-ajax.xlsx");
     }
 
-    private void assertMergedRegion(Sheet sheet, int fromRowIndex, int fromColIndex, int toRowIndex, int toColIndex) {
-        CellRangeAddress expectedRange = new CellRangeAddress(fromRowIndex, toRowIndex, fromColIndex, toColIndex);
-        List<CellRangeAddress> mergedRegions = sheet.getMergedRegions();
-        assertTrue(mergedRegions.contains(expectedRange), () -> "Cell range [" + expectedRange + "] is not merged. merged regions: " + mergedRegions);
-    }
-
     private static final int ROW_OFFSET = 2;
     private static final int COL_OFFSET = 1;
     private void assertFileContent(DataTypeCheck record, String outputFileName) throws EncryptedDocumentException, IOException {
@@ -102,25 +81,26 @@ class MergedHeaderFooterTest extends AbstractPrimePageTest {
                     Cell firstCell = groupedHeaderRow.getCell(COL_OFFSET + 0);
                     Cell secondCell = groupedHeaderRow.getCell(COL_OFFSET + 2);
                     assertAll(
-                        () -> assertEquals("colspan", firstCell.getStringCellValue()),
-                        () -> assertEquals("rowspan", secondCell.getStringCellValue()),
+                        () -> assertHeaderCell(COL_OFFSET + 0, firstCell, "colspan"),
+                        () -> assertHeaderCell(COL_OFFSET + 2, secondCell, "rowspan"),
                         () -> assertMergedRegion(sheet, ROW_OFFSET + 0, COL_OFFSET + 0, ROW_OFFSET + 0, COL_OFFSET + 1),
                         () -> assertMergedRegion(sheet, ROW_OFFSET + 0, COL_OFFSET + 2, ROW_OFFSET + 1, COL_OFFSET + 2)
                     );
                 }),
-                () -> assertAll("Detail Header row", () -> {
+                () -> {
+                    List<Executable> headerAssertions = new ArrayList<>();
                     for (int i = 0; i < detailHeaders.size(); i++) {
                         Cell cell = detailHeaderRow.getCell(COL_OFFSET + i);
-                        assertEquals(CellType.STRING, cell.getCellType());
-                        assertEquals(detailHeaders.get(i), cell.getStringCellValue());
+                        String expectedHeaderValue = detailHeaders.get(i);
+                        var index = i;
+                        headerAssertions.add(() -> assertHeaderCell(index, cell, expectedHeaderValue));
                     }
-                }),
+                    assertAll("Detail Header row", headerAssertions.toArray(Executable[]::new));
+                },
                 () -> assertAll("Data row",
-                    () -> assertCell("String cell", dataRow.getCell(COL_OFFSET + 0), CellType.STRING, record.getStringProperty(), Cell::getStringCellValue),
-                    () -> assertCell("YearMonth cell", dataRow.getCell(COL_OFFSET + 1), CellType.NUMERIC, record.getYearMonthProperty().atDay(1).atStartOfDay(), Cell::getLocalDateTimeCellValue),
-                    () -> assertCellFormat("YearMonth cell data format", dataRow.getCell(COL_OFFSET + 1), ValueType.YEAR_MONTH),
-                    () -> assertCell("LocalDate cell", dataRow.getCell(COL_OFFSET + 2), CellType.NUMERIC, record.getLocalDateProperty().atStartOfDay(), Cell::getLocalDateTimeCellValue),
-                    () -> assertCellFormat("LocalDate cell data format", dataRow.getCell(COL_OFFSET + 2), ValueType.DATE)
+                    () -> assertCell("String cell", dataRow.getCell(COL_OFFSET + 0), CellType.STRING, ValueType.STRING, record.getStringProperty(), Cell::getStringCellValue),
+                    () -> assertCell("YearMonth cell", dataRow.getCell(COL_OFFSET + 1), CellType.NUMERIC, ValueType.YEAR_MONTH, record.getYearMonthProperty().atDay(1).atStartOfDay(), Cell::getLocalDateTimeCellValue),
+                    () -> assertCell("LocalDate cell", dataRow.getCell(COL_OFFSET + 2), CellType.NUMERIC, ValueType.DATE, record.getLocalDateProperty().atStartOfDay(), Cell::getLocalDateTimeCellValue)
                 ),
                 () -> assertAll("Grouped Footer row",
                     () -> assertMergedRegion(sheet, ROW_OFFSET + 3, COL_OFFSET + 0, ROW_OFFSET + 3, COL_OFFSET + 1),
@@ -178,11 +158,9 @@ class MergedHeaderFooterTest extends AbstractPrimePageTest {
                     );
                 }),
                 () -> assertAll("Data row",
-                    () -> assertCell("String cell", dataRow.getCell(COL_OFFSET + 0), CellType.STRING, record.getStringProperty(), Cell::getStringCellValue),
-                    () -> assertCell("YearMonth cell", dataRow.getCell(COL_OFFSET + 1), CellType.NUMERIC, record.getYearMonthProperty().atDay(1).atStartOfDay(), Cell::getLocalDateTimeCellValue),
-                    () -> assertCellFormat("YearMonth cell data format", dataRow.getCell(COL_OFFSET + 1), ValueType.YEAR_MONTH),
-                    () -> assertCell("LocalDate cell", dataRow.getCell(COL_OFFSET + 2), CellType.NUMERIC, record.getLocalDateProperty().atStartOfDay(), Cell::getLocalDateTimeCellValue),
-                    () -> assertCellFormat("LocalDate cell data format", dataRow.getCell(COL_OFFSET + 2), ValueType.DATE)
+                    () -> assertCell("String cell", dataRow.getCell(COL_OFFSET + 0), CellType.STRING, ValueType.STRING, record.getStringProperty(), Cell::getStringCellValue),
+                    () -> assertCell("YearMonth cell", dataRow.getCell(COL_OFFSET + 1), CellType.NUMERIC, ValueType.YEAR_MONTH, record.getYearMonthProperty().atDay(1).atStartOfDay(), Cell::getLocalDateTimeCellValue),
+                    () -> assertCell("LocalDate cell", dataRow.getCell(COL_OFFSET + 2), CellType.NUMERIC, ValueType.DATE, record.getLocalDateProperty().atStartOfDay(), Cell::getLocalDateTimeCellValue)
                 ),
                 () -> assertAll("Grouped Footer row",
                     () -> assertMergedRegion(sheet, ROW_OFFSET + 2, COL_OFFSET + 0, ROW_OFFSET + 2, COL_OFFSET + 2),

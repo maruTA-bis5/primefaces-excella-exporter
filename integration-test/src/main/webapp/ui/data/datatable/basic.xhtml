@@ -38,42 +38,42 @@
           </p:commandLink>
 
           <p:dataTable id="tbl2" var="row" value="#{dtBasicView.dataTypes}">
-              <p:column headerText="String">
+              <p:column headerText="String" footerText="String">
                   <h:outputText value="#{row.stringProperty}" />
               </p:column>
-              <p:column headerText="YearMonth">
+              <p:column headerText="YearMonth" footerText="YearMonth">
                   <h:outputText value="#{row.yearMonthProperty}" />
               </p:column>
-              <p:column headerText="j.u.Date (date)">
+              <p:column headerText="j.u.Date (date)" footerText="j.u.Date (date)">
                   <h:outputText value="#{row.dateProperty}" />
               </p:column>
-              <p:column headerText="j.u.Date (datetime)">
+              <p:column headerText="j.u.Date (datetime)" footerText="j.u.Date (datetime)">
                   <h:outputText value="#{row.dateTimeProperty}" />
               </p:column>
-              <p:column headerText="LocalDate">
+              <p:column headerText="LocalDate" footerText="LocalDate">
                   <h:outputText value="#{row.localDateProperty}" />
               </p:column>
-              <p:column headerText="LocalDateTime">
+              <p:column headerText="LocalDateTime" footerText="LocalDateTime">
                   <h:outputText value="#{row.localDateTimeProperty}" />
               </p:column>
-              <p:column headerText="Integer (int)">
+              <p:column headerText="Integer (int)" footerText="Integer (int)">
                   <h:outputText value="#{row.intProperty}" />
               </p:column>
-              <p:column headerText="Integer (BigDecimal scale=2)">
+              <p:column headerText="Integer (BigDecimal scale=2)" footerText="Integer (BigDecimal scale=2)">
                   <h:outputText value="#{row.bigDecimalIntProperty}" />
               </p:column>
-              <p:column headerText="Decimal (double)">
+              <p:column headerText="Decimal (double)" footerText="Decimal (double)">
                   <h:outputText value="#{row.doubleProperty}" />
               </p:column>
-              <p:column headerText="Decimal (BigDecimal)">
+              <p:column headerText="Decimal (BigDecimal)" footerText="Decimal (BigDecimal)">
                   <h:outputText value="#{row.bigDecimalDecimalProperty}" />
               </p:column>
-              <p:column headerText="Link (value specified)">
+              <p:column headerText="Link (value specified)" footerText="Link (value specified)">
                   <p:link outcome="basic" value="Link">
                       <f:param name="param" value="value" />
                   </p:link>
               </p:column>
-              <p:column  headerText="Link (value not specified)">
+              <p:column  headerText="Link (value not specified)" footerText="Link (value not specified)">
                   <p:link outcome="basic.xhtml">
                       <h:outputText value="#{row.bigDecimalDecimalProperty}" />
                       <f:param name="param" value="value" />
@@ -84,6 +84,9 @@
                   header<br /> line<BR /> break
                 </f:facet>
                 value<br/> row<Br /> line<bR /> break
+                <f:facet name="footer">
+                  header<br /> line<BR /> break
+                </f:facet>
               </p:column>
           </p:dataTable>
       </h:form>
