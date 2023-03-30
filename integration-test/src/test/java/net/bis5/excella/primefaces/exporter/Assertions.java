@@ -20,10 +20,13 @@ public class Assertions {
 
     public static <T> void assertCell(String description, Cell cell, CellType expectedCellType, ValueType expectedValueType, T expectedValue, Function<Cell, T> actualValueMapper) {
         var workbook = cell.getRow().getSheet().getWorkbook();
+        String expectedDataFormat = workbook.createDataFormat().getFormat(expectedValueType.getFormat(workbook));
+        String actualDataFormat = cell.getCellStyle().getDataFormatString();
+
         assertAll(description,
             () -> assertEquals(expectedCellType, cell.getCellType(), "cell type is incorrect"),
             () -> assertEquals(expectedValue, actualValueMapper.apply(cell), "cell value is incorrect"),
-            () -> assertEquals(expectedValueType.getFormat(workbook), cell.getCellStyle().getDataFormat(), "data format is incorrect")
+            () -> assertEquals(expectedDataFormat, actualDataFormat, "data format is incorrect")
         );
     }
 

@@ -19,7 +19,6 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
-import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -30,6 +29,7 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.StreamSupport;
 
 import javax.el.ValueExpression;
 import javax.faces.component.UIComponent;
@@ -43,10 +43,11 @@ import org.apache.commons.math3.util.Pair;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
-import org.apache.poi.ss.usermodel.DataFormat;
+import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.util.CellAddress;
 import org.apache.poi.ss.util.CellUtil;
 import org.bbreak.excella.core.SheetData;
 import org.bbreak.excella.core.SheetParser;
@@ -266,6 +267,10 @@ public class TreeTableExcellaExporter extends TreeTableExporter {
         return rawValue;
     }
 
+    private String dataTag() {
+        return nonNull(dataColumnsTag, DEFAULT_DATA_COLUMNS_TAG);
+    }
+
     private void setExportParameters(ReportSheet reportSheet, List<String> columnHeader, List<String> columnFooter,
             Map<String, List<Object>> dataContainer) {
 
@@ -274,7 +279,12 @@ public class TreeTableExcellaExporter extends TreeTableExporter {
             .map(Integer.class::cast)
             .collect(Collectors.toList());
         Object[] columnDataParams = dataContainer.keySet().stream().map(k -> "$R[]{" + k + "}").toArray();
-        reportSheet.addParam(ColRepeatParamParser.DEFAULT_TAG, nonNull(dataColumnsTag, DEFAULT_DATA_COLUMNS_TAG), columnDataParams);
+        reportSheet.addParam(ColRepeatParamParser.DEFAULT_TAG, dataTag(), columnDataParams);
+
+        int repeatRows = dataContainer.values().stream()
+            .mapToInt(List::size)
+            .max()
+            .orElse(1);
 
         Map<String, ValueType> valueTypes = detectValueTypes(dataContainer);
         dataContainer.entrySet()
@@ -282,12 +292,43 @@ public class TreeTableExcellaExporter extends TreeTableExporter {
             .map(this::normalizeValues)
             .forEach(e -> reportSheet.addParam(RowRepeatParamParser.DEFAULT_TAG, e.getKey(), e.getValue().toArray()));
 
-        reportSheet.addParam(ColRepeatParamParser.DEFAULT_TAG, nonNull(headersTag, DEFAULT_HEADERS_TAG), columnHeader.toArray());
-        reportSheet.addParam(ColRepeatParamParser.DEFAULT_TAG, nonNull(footersTag, DEFAULT_FOOTERS_TAG), columnFooter.toArray());
+        int columnSize = columnHeader.size();
+
+        String headersTagName = nonNull(headersTag, DEFAULT_HEADERS_TAG);
+        String footersTagName = nonNull(footersTag, DEFAULT_FOOTERS_TAG);
+        reportSheet.addParam(ColRepeatParamParser.DEFAULT_TAG, headersTagName, columnHeader.toArray());
+        reportSheet.addParam(ColRepeatParamParser.DEFAULT_TAG, footersTagName, columnFooter.toArray());
         listeners.add(new ReportProcessAdaptor() {
+
+            private CellAddress dataPosition;
+
+            private int headerSize;
+
+            private void setDataPosition(CellAddress address) {
+                dataPosition = address;
+            }
+
+            private int dataRowOffset(int row) {
+                return Math.max(headerSize - 1, 0) + (dataPosition != null ? row + dataPosition.getRow() : row);
+            }
+
             @Override
             public void preBookParse(Workbook workbook, ReportBook reportBook) {
-                initStyles(workbook);
+                styles = ValueType.initStyles(workbook);
+            }
+
+            @Override
+            public void preParse(Sheet sheet, SheetParser sheetParser) throws org.bbreak.excella.core.exception.ParseException {
+                String dataTag = ColRepeatParamParser.DEFAULT_TAG + "{" + dataTag() + "}";
+                StreamSupport.stream(sheet.spliterator(), false)
+                    .map(Row::spliterator)
+                    .flatMap(s -> StreamSupport.stream(s, false))
+                    .filter(c -> c.getCellType() == CellType.STRING)
+                    .forEach(c -> {
+                        if (dataTag.equals(c.getStringCellValue())) {
+                            setDataPosition(c.getAddress());
+                        }
+                    });
             }
 
             @Override
@@ -311,11 +352,14 @@ public class TreeTableExcellaExporter extends TreeTableExporter {
                 if (dataContainer.isEmpty()) {
                     return;
                 }
-                Object[] headers = (Object[]) reportSheet.getParam(RowRepeatParamParser.DEFAULT_TAG, "header0");
-                int headerSize = 1;
-                if (headers != null) {
-                    headerSize = headers.length;
-                }
+                IntStream.range(0, columnSize)
+                    .mapToObj(i -> "header" + i)
+                    .map(t -> reportSheet.getParam(RowRepeatParamParser.DEFAULT_TAG, t))
+                    .filter(Objects::nonNull)
+                    .map(Object[].class::cast)
+                    .mapToInt(a -> a.length)
+                    .max()
+                    .ifPresentOrElse(s -> headerSize = s, () -> headerSize = 1);
                 for (Entry<String, ValueType> entry : valueTypes.entrySet()) {
                     String columnTag = getColumnTag(entry.getKey());
                     ValueType valueType = entry.getValue();
@@ -324,7 +368,7 @@ public class TreeTableExcellaExporter extends TreeTableExporter {
                     }
                     CellStyle style = styles.get(valueType);
                     int colIndex = Arrays.asList(columnDataParams).indexOf(columnTag);
-                    IntStream.rangeClosed(headerSize, nonNull(dataContainer.get(entry.getKey()), Collections.emptyList()).size())
+                    IntStream.range(dataRowOffset(0), dataRowOffset(repeatRows))
                         .mapToObj(sheet::getRow)
                         .filter(Objects::nonNull)
                         .map(r -> r.getCell(colIndex))
@@ -346,39 +390,7 @@ public class TreeTableExcellaExporter extends TreeTableExporter {
         reportBook.addReportSheet(reportSheet);
     }
 
-    public enum ValueType {
-        YEAR_MONTH, DATE, DATE_TIME, TIME, DECIMAL, INTEGER
-    }
-
-    private Map<ValueType, CellStyle> styles = new EnumMap<>(ValueType.class);
-
-    private void initStyles(Workbook workbook) {
-        DataFormat dataFormat = workbook.createDataFormat();
-
-        CellStyle yearMonthStyle = workbook.createCellStyle();
-        yearMonthStyle.setDataFormat(dataFormat.getFormat("yyyy/m"));
-        styles.put(ValueType.YEAR_MONTH, yearMonthStyle);
-
-        CellStyle dateStyle = workbook.createCellStyle();
-        dateStyle.setDataFormat((short)0xe);
-        styles.put(ValueType.DATE, dateStyle);
-
-        CellStyle dateTimeStyle = workbook.createCellStyle();
-        dateTimeStyle.setDataFormat((short)0x16);
-        styles.put(ValueType.DATE_TIME, dateTimeStyle);
-
-        CellStyle timeStyle = workbook.createCellStyle();
-        timeStyle.setDataFormat((short)0x14);
-        styles.put(ValueType.TIME, timeStyle);
-
-        CellStyle decimalStyle = workbook.createCellStyle();
-        decimalStyle.setDataFormat((short)0x4);
-        styles.put(ValueType.DECIMAL, decimalStyle);
-
-        CellStyle integerStyle = workbook.createCellStyle();
-        integerStyle.setDataFormat((short)0x3);
-        styles.put(ValueType.INTEGER, integerStyle);
-    }
+    private Map<ValueType, CellStyle> styles;
 
     private final Pattern timePattern = Pattern.compile("^[0-9]+:[0-9][0-9]$");
 
