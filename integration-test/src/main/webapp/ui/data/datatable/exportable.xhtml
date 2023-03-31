@@ -50,6 +50,10 @@
                 visibleOnly="true" />
           </p:commandLink>
 
+          <br />
+          <p:commandButton value="toggle" type="button" />
+          <p:columnToggler trigger="@previous" datasource="tbl2" />
+
           <p:dataTable id="tbl2" var="row" value="#{dtBasicView.dataTypes}">
               <p:column headerText="String" footerText="String">
                   <h:outputText value="#{row.stringProperty}" />
