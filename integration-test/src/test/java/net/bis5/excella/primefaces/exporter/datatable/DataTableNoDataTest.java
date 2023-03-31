@@ -18,7 +18,7 @@ import org.primefaces.selenium.component.CommandLink;
 import net.bis5.excella.primefaces.exporter.TakeScreenShotAfterFailure;
 
 @ExtendWith(TakeScreenShotAfterFailure.class)
-public class DataTableNoDataTest extends AbstractPrimePageTest {
+class DataTableNoDataTest extends AbstractPrimePageTest {
 
     private String getBaseDir() {
         return System.getProperty("basedir");
