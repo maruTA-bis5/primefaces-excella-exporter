@@ -221,6 +221,8 @@ public class TreeTableExcellaExporter extends TreeTableExporter {
 
         if (config.isSelectionOnly()) {
             exportSelectionOnly(facesContext, table, reportSheet, config);
+        } else if (config.isPageOnly()) {
+            exportPageOnly(facesContext, table, reportSheet, config);
         } else {
             exportAll(facesContext, table, reportSheet, config);
         }
