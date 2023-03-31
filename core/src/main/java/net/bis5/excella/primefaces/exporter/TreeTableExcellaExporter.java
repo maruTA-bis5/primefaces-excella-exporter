@@ -51,6 +51,7 @@ import org.apache.poi.ss.util.CellAddress;
 import org.apache.poi.ss.util.CellUtil;
 import org.bbreak.excella.core.SheetData;
 import org.bbreak.excella.core.SheetParser;
+import org.bbreak.excella.core.util.StringUtil;
 import org.bbreak.excella.reports.exporter.ExcelExporter;
 import org.bbreak.excella.reports.listener.ReportProcessAdaptor;
 import org.bbreak.excella.reports.listener.ReportProcessListener;
@@ -219,9 +220,9 @@ public class TreeTableExcellaExporter extends TreeTableExporter {
         List<String> columnHeader = exportFacet(facesContext, table, TreeTableExporter.ColumnType.HEADER);
 
         if (config.isSelectionOnly()) {
-            exportSelectionOnly(facesContext, table, reportSheet);
+            exportSelectionOnly(facesContext, table, reportSheet, config);
         } else {
-            exportAll(facesContext, table, reportSheet);
+            exportAll(facesContext, table, reportSheet, config);
         }
 
         List<String> columnFooter = exportFacet(facesContext, table, TreeTableExporter.ColumnType.FOOTER);
@@ -229,6 +230,45 @@ public class TreeTableExcellaExporter extends TreeTableExporter {
         reportSheet.removeParam(null, DATA_CONTAINER_KEY);
 
         setExportParameters(reportSheet, columnHeader, columnFooter, dataContainer);
+    }
+
+    protected void exportSelectionOnly(FacesContext context, TreeTable table, Object document, ExportConfiguration config) {
+        if (config.getOptions() instanceof ExCellaExporterOptions) {
+            boolean throwExceptionWhenNoData = ((ExCellaExporterOptions)config.getOptions()).isThrowExceptionWhenNoData();
+            if (throwExceptionWhenNoData && StringUtil.isEmpty(table.getSelectedRowKeysAsString())) {
+                throw new EmptyDataException();
+            }
+        }
+
+        super.exportSelectionOnly(context, table, document);
+    }
+
+    protected void exportPageOnly(FacesContext context, TreeTable table, Object document, ExportConfiguration config) {
+        if (config.getOptions() instanceof ExCellaExporterOptions) {
+            boolean throwExceptionWhenNoData = ((ExCellaExporterOptions)config.getOptions()).isThrowExceptionWhenNoData();
+            int first = table.getFirst();
+            int rows = table.getRows();
+            int rowsToExport = first + rows;
+
+            if (throwExceptionWhenNoData && rowsToExport == 0) {
+                throw new EmptyDataException();
+            }
+        }
+
+        super.exportPageOnly(context, table, document);
+    }
+
+    protected void exportAll(FacesContext context, TreeTable table, Object document, ExportConfiguration config) {
+        if (config.getOptions() instanceof ExCellaExporterOptions) {
+            boolean throwExceptionWhenNoData = ((ExCellaExporterOptions)config.getOptions()).isThrowExceptionWhenNoData();
+            TreeNode<?> root = table.getValue();
+            int rowCount = getTreeRowCount(root) - 1;
+            if (throwExceptionWhenNoData && rowCount == 0) {
+                throw new EmptyDataException();
+            }
+        }
+
+        super.exportAll(context, table, document);
     }
 
     private Map<String, ValueType> detectValueTypes(Map<String, List<Object>> dataContainer) {

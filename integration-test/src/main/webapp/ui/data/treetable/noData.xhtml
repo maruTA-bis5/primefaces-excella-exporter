@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://java.sun.com/jsf/html"
+      xmlns:f="http://java.sun.com/jsf/core"
+      xmlns:ui="http://java.sun.com/jsf/facelets"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:sc="http://primefaces.org/ui/showcase"
+      lang="en">
+
+    <h:head>
+        <f:facet name="first">
+            <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+            <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
+            <meta name="apple-mobile-web-app-capable" content="yes"/>
+        </f:facet>
+        <title>PrimeFaces Showcase</title>
+
+        <!-- For Community Themes except 'Luna' and 'Nova' theme -->
+        <h:outputStylesheet name="primeicons/primeicons.css" library="primefaces"/>
+
+        <h:outputScript name="jquery/jquery.js" library="primefaces"/>
+        <h:outputScript name="jquery/jquery-plugins.js" library="primefaces"/>
+        <h:outputScript name="script/nanoscroller.js" library="showcase"/>
+        <h:outputScript name="script/layout.js" library="showcase"/>
+    </h:head>
+
+    <h:body>
+      <h:form id="form">
+          <p:commandLink id="excellaExportNonAjaxAll" ajax="false">
+              <h:outputLabel>ExCella Reports (non-Ajax) / All</h:outputLabel>
+              <p:dataExporter type="xls" target="tbl2" fileName="tree-no-data-non-ajax-all" exporter="#{excellaExporter.treeTableExporter}"
+                options="#{ttNoDataView.exceptionOptions}" />
+          </p:commandLink>
+          <br />
+          <p:commandLink id="excellaExportAjaxAll" ajax="true">
+              <h:outputLabel>ExCella Reports (Ajax) / All</h:outputLabel>
+              <p:dataExporter type="xls" target="tbl2" fileName="tree-no-data-ajax-all" exporter="#{excellaExporter.treeTableExporter}"
+                options="#{ttNoDataView.exceptionOptions}" />
+          </p:commandLink>
+          <br />
+          <p:commandLink id="excellaExportNonAjaxSelection" ajax="false">
+              <h:outputLabel>ExCella Reports (non-Ajax) / Selection Only</h:outputLabel>
+              <p:dataExporter type="xls" target="tbl2" fileName="tree-no-data-non-ajax-selection" exporter="#{excellaExporter.treeTableExporter}"
+                selectionOnly="true"
+                options="#{ttNoDataView.exceptionOptions}" />
+          </p:commandLink>
+          <br />
+          <p:commandLink id="excellaExportAjaxSelection" ajax="true">
+              <h:outputLabel>ExCella Reports (Ajax) / Selection Only</h:outputLabel>
+              <p:dataExporter type="xls" target="tbl2" fileName="tree-no-data-ajax-selection" exporter="#{excellaExporter.treeTableExporter}"
+                selectionOnly="true"
+                options="#{ttNoDataView.exceptionOptions}" />
+          </p:commandLink>
+          <br />
+          <p:commandLink id="excellaExportNonAjaxPage" ajax="false">
+              <h:outputLabel>ExCella Reports (non-Ajax) / Page Only</h:outputLabel>
+              <p:dataExporter type="xls" target="tbl2" fileName="tree-no-data-non-ajax-page" exporter="#{excellaExporter.treeTableExporter}"
+                pageOnly="true"
+                options="#{ttNoDataView.exceptionOptions}" />
+          </p:commandLink>
+          <br />
+          <p:commandLink id="excellaExportAjaxPage" ajax="true">
+              <h:outputLabel>ExCella Reports (Ajax) / Page Only</h:outputLabel>
+              <p:dataExporter type="xls" target="tbl2" fileName="tree-no-data-ajax-page" exporter="#{excellaExporter.treeTableExporter}"
+                pageOnly="true"
+                options="#{ttNoDataView.exceptionOptions}" />
+          </p:commandLink>
+
+          <p:commandLink id="excellaExportNonAjaxNoExceptionAll" ajax="false">
+              <h:outputLabel>ExCella Reports (non-AjaxNoException) / All</h:outputLabel>
+              <p:dataExporter type="xls" target="tbl2" fileName="tree-no-data-non-ajax-no-exception-all" exporter="#{excellaExporter.treeTableExporter}" />
+          </p:commandLink>
+          <br />
+          <p:commandLink id="excellaExportAjaxNoExceptionAll" ajax="true">
+              <h:outputLabel>ExCella Reports (AjaxNoException) / All</h:outputLabel>
+              <p:dataExporter type="xls" target="tbl2" fileName="tree-no-data-ajax-no-exception-all" exporter="#{excellaExporter.treeTableExporter}" />
+          </p:commandLink>
+          <br />
+          <p:commandLink id="excellaExportNonAjaxNoExceptionSelection" ajax="false">
+              <h:outputLabel>ExCella Reports (non-AjaxNoException) / Selection Only</h:outputLabel>
+              <p:dataExporter type="xls" target="tbl2" fileName="tree-no-data-non-ajax-no-exception-selection" exporter="#{excellaExporter.treeTableExporter}"
+                selectionOnly="true" />
+          </p:commandLink>
+          <br />
+          <p:commandLink id="excellaExportAjaxNoExceptionSelection" ajax="true">
+              <h:outputLabel>ExCella Reports (AjaxNoException) / Selection Only</h:outputLabel>
+              <p:dataExporter type="xls" target="tbl2" fileName="tree-no-data-ajax-no-exception-selection" exporter="#{excellaExporter.treeTableExporter}"
+                selectionOnly="true" />
+          </p:commandLink>
+          <br />
+          <p:commandLink id="excellaExportNonAjaxNoExceptionPage" ajax="false">
+              <h:outputLabel>ExCella Reports (non-AjaxNoException) / Page Only</h:outputLabel>
+              <p:dataExporter type="xls" target="tbl2" fileName="tree-no-data-non-ajax-no-exception-page" exporter="#{excellaExporter.treeTableExporter}"
+                pageOnly="true" />
+          </p:commandLink>
+          <br />
+          <p:commandLink id="excellaExportAjaxNoExceptionPage" ajax="true">
+              <h:outputLabel>ExCella Reports (AjaxNoException) / Page Only</h:outputLabel>
+              <p:dataExporter type="xls" target="tbl2" fileName="tree-no-data-ajax-no-exception-page" exporter="#{excellaExporter.treeTableExporter}"
+                pageOnly="true" />
+          </p:commandLink>
+
+          <p:treeTable id="tbl2" var="row" value="#{ttNoDataView.root}">
+              <p:column headerText="String" footerText="String">
+                  <h:outputText value="#{row.stringProperty}" />
+              </p:column>
+              <p:column headerText="YearMonth" footerText="YearMonth">
+                  <h:outputText value="#{row.yearMonthProperty}" />
+              </p:column>
+              <p:column headerText="j.u.Date (date)" footerText="j.u.Date (date)">
+                  <h:outputText value="#{row.dateProperty}" />
+              </p:column>
+              <p:column headerText="j.u.Date (datetime)" footerText="j.u.Date (datetime)">
+                  <h:outputText value="#{row.dateTimeProperty}" />
+              </p:column>
+              <p:column headerText="LocalDate" footerText="LocalDate">
+                  <h:outputText value="#{row.localDateProperty}" />
+              </p:column>
+              <p:column headerText="LocalDateTime" footerText="LocalDateTime">
+                  <h:outputText value="#{row.localDateTimeProperty}" />
+              </p:column>
+              <p:column headerText="Integer (int)" footerText="Integer (int)">
+                  <h:outputText value="#{row.intProperty}" />
+              </p:column>
+              <p:column headerText="Integer (BigDecimal scale=2)" footerText="Integer (BigDecimal scale=2)">
+                  <h:outputText value="#{row.bigDecimalIntProperty}" />
+              </p:column>
+              <p:column headerText="Decimal (double)" footerText="Decimal (double)">
+                  <h:outputText value="#{row.doubleProperty}" />
+              </p:column>
+              <p:column headerText="Decimal (BigDecimal)" footerText="Decimal (BigDecimal)">
+                  <h:outputText value="#{row.bigDecimalDecimalProperty}" />
+              </p:column>
+              <p:column headerText="Link (value specified)" footerText="Link (value specified)">
+                  <p:link outcome="basic" value="Link">
+                      <f:param name="param" value="value" />
+                  </p:link>
+              </p:column>
+              <p:column  headerText="Link (value not specified)" footerText="Link (value not specified)">
+                  <p:link outcome="basic.xhtml">
+                      <h:outputText value="#{row.bigDecimalDecimalProperty}" />
+                      <f:param name="param" value="value" />
+                  </p:link>
+              </p:column>
+              <p:column>
+                <f:facet name="header">
+                  header<br /> line<BR /> break
+                </f:facet>
+                value<br/> row<Br /> line<bR /> break
+                <f:facet name="footer">
+                  header<br /> line<BR /> break
+                </f:facet>
+              </p:column>
+          </p:treeTable>
+      </h:form>
+    </h:body>
+
+</html>

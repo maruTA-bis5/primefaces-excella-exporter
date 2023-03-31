@@ -357,11 +357,11 @@ public class DataTableExcellaExporter extends DataTableExporter {
         List<String> columnHeader = exportFacet(facesContext, table, DataTableExporter.ColumnType.HEADER, reportSheet);
 
         if (config.isPageOnly()) {
-            exportPageOnly(facesContext, table, reportSheet);
+            exportPageOnly(facesContext, table, reportSheet, config);
         } else if (config.isSelectionOnly()) {
-            exportSelectionOnly(facesContext, table, reportSheet);
+            exportSelectionOnly(facesContext, table, reportSheet, config);
         } else {
-            exportAll(facesContext, table, reportSheet);
+            exportAll(facesContext, table, reportSheet, config);
         }
 
         List<String> columnFooter = exportFacet(facesContext, table, DataTableExporter.ColumnType.FOOTER, reportSheet);
@@ -369,6 +369,38 @@ public class DataTableExcellaExporter extends DataTableExporter {
         reportSheet.removeParam(null, DATA_CONTAINER_KEY);
 
         setExportParameters(reportSheet, columnHeader, columnFooter, dataContainer);
+    }
+
+    protected void exportSelectionOnly(FacesContext facesContext, DataTable table, Object document, ExportConfiguration config) {
+        if (config.getOptions() instanceof ExCellaExporterOptions) {
+            boolean throwExceptionWhenNoData = ((ExCellaExporterOptions)config.getOptions()).isThrowExceptionWhenNoData();
+            if (throwExceptionWhenNoData && table.getSelectedRowKeys().isEmpty()) {
+                throw new EmptyDataException();
+            }
+        }
+        super.exportSelectionOnly(facesContext, table, document);
+    }
+
+    protected void exportPageOnly(FacesContext context, DataTable table, Object document, ExportConfiguration config) {
+        if (config.getOptions() instanceof ExCellaExporterOptions) {
+            boolean throwExceptionWhenNoData = ((ExCellaExporterOptions)config.getOptions()).isThrowExceptionWhenNoData();
+            if (throwExceptionWhenNoData && table.getRowsToRender() == 0) {
+                throw new EmptyDataException();
+            }
+        }
+
+        super.exportPageOnly(context, table, document);
+    }
+
+    protected void exportAll(FacesContext context, DataTable table, Object document, ExportConfiguration config) {
+        if (config.getOptions() instanceof ExCellaExporterOptions) {
+            boolean throwExceptionWhenNoData = ((ExCellaExporterOptions)config.getOptions()).isThrowExceptionWhenNoData();
+            if (throwExceptionWhenNoData && table.getRowCount() == 0) {
+                throw new EmptyDataException();
+            }
+        }
+
+        super.exportAll(context, table, document);
     }
 
     public Map<String, List<Object>> getDataContainer(ReportSheet reportSheet) {
