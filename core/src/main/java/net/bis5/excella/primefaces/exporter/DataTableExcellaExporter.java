@@ -555,8 +555,10 @@ public class DataTableExcellaExporter extends DataTableExporter {
             }
 
             private void mergeCells(Sheet sheet) {
-                headerMergedAreas.forEach(a -> mergeCell(sheet, headerPosition, 0, a));
-                int footerOffset = repeatRows;
+                int headerOffset = headerPosition == null ? 0 : headerPosition.getRow();
+                headerMergedAreas.forEach(a -> mergeCell(sheet, headerPosition, headerOffset, a));
+
+                int footerOffset = footerPosition == null ? 0 : dataRowOffset(repeatRows) + footerPosition.getRow() - dataPosition.getRow() - 1;
                 footerMergedAreas.forEach(a -> mergeCell(sheet, footerPosition, footerOffset, a));
             }
 
@@ -568,10 +570,8 @@ public class DataTableExcellaExporter extends DataTableExporter {
                     sheet.addMergedRegion(area);
                     return;
                 }
-                rowOffset = rowOffset + beginPosition.getRow();
                 int colOffset = beginPosition.getColumn();
 
-                // TODO #56 footerの開始行計算がおかしそう
                 var rangeToMerge = new CellRangeAddress(rowOffset + area.getFirstRow(), rowOffset + area.getLastRow(), colOffset + area.getFirstColumn(), colOffset + area.getLastColumn());
                 sheet.addMergedRegion(rangeToMerge);
             }

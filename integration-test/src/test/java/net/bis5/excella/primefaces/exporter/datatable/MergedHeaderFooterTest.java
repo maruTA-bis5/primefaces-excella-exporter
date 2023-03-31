@@ -19,7 +19,6 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.function.Executable;
@@ -116,7 +115,6 @@ class MergedHeaderFooterTest extends AbstractPrimePageTest {
     }
 
     @Test
-    @Disabled("#56")
     void exportExcellaAjaxSingleRow(Page page) throws EncryptedDocumentException, IOException {
         var backingBean = new MergedHeaderFooterView();
         DataTypeCheck record = backingBean.getDataTypes().get(0);
@@ -129,7 +127,6 @@ class MergedHeaderFooterTest extends AbstractPrimePageTest {
     }
 
     @Test
-    @Disabled("#56")
     void exportExcellaNonAjaxSingleRow(Page page) throws EncryptedDocumentException, IOException {
         var backingBean = new MergedHeaderFooterView();
         DataTypeCheck record = backingBean.getDataTypes().get(0);
