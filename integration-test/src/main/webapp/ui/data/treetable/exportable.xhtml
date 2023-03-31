@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://java.sun.com/jsf/html"
+      xmlns:f="http://java.sun.com/jsf/core"
+      xmlns:ui="http://java.sun.com/jsf/facelets"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:sc="http://primefaces.org/ui/showcase"
+      lang="en">
+
+    <h:head>
+        <f:facet name="first">
+            <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+            <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
+            <meta name="apple-mobile-web-app-capable" content="yes"/>
+        </f:facet>
+        <title>PrimeFaces Showcase</title>
+
+        <!-- For Community Themes except 'Luna' and 'Nova' theme -->
+        <h:outputStylesheet name="primeicons/primeicons.css" library="primefaces"/>
+
+        <h:outputScript name="jquery/jquery.js" library="primefaces"/>
+        <h:outputScript name="jquery/jquery-plugins.js" library="primefaces"/>
+        <h:outputScript name="script/nanoscroller.js" library="showcase"/>
+        <h:outputScript name="script/layout.js" library="showcase"/>
+    </h:head>
+
+    <h:body>
+      <h:form id="form">
+          <p:commandLink id="excellaExportNonAjax" ajax="false">
+              <h:outputLabel>ExCella Reports (non-Ajax)</h:outputLabel>
+              <p:dataExporter type="xls" target="tbl" fileName="exportable-tt-cars-non-ajax" exporter="#{excellaExporter.treeTableExporter}" />
+          </p:commandLink>
+          <br />
+          <p:commandLink id="excellaExportAjax" ajax="true">
+              <h:outputLabel>ExCella Reports (Ajax)</h:outputLabel>
+              <p:dataExporter type="xls" target="tbl" fileName="exportable-tt-cars-ajax" exporter="#{excellaExporter.treeTableExporter}" />
+          </p:commandLink>
+
+          <br />
+          <p:commandLink id="excellaExportNonAjaxVisibleOnly" ajax="false">
+              <h:outputLabel>ExCella Reports (non-Ajax) / Visible Only</h:outputLabel>
+              <p:dataExporter type="xls" target="tbl" fileName="exportable-tt-cars-non-ajax-visible" exporter="#{excellaExporter.treeTableExporter}"
+                visibleOnly="true" />
+          </p:commandLink>
+          <br />
+          <p:commandLink id="excellaExportAjaxVisibleOnly" ajax="true">
+              <h:outputLabel>ExCella Reports (Ajax) / Visible Only</h:outputLabel>
+              <p:dataExporter type="xls" target="tbl" fileName="exportable-tt-cars-ajax-visible" exporter="#{excellaExporter.treeTableExporter}"
+                visibleOnly="true" />
+          </p:commandLink>
+
+          <br />
+          <p:commandButton value="toggle" type="button" />
+          <p:columnToggler trigger="@previous" datasource="tbl" />
+
+          <p:treeTable id="tbl" var="row" value="#{ttExportableView.root}">
+              <p:column headerText="String" footerText="String">
+                  <h:outputText value="#{row.stringProperty}" />
+              </p:column>
+              <p:column headerText="YearMonth (not exportable)" footerText="YearMonth" exportable="false">
+                  <h:outputText value="#{row.yearMonthProperty}" />
+              </p:column>
+              <p:column headerText="not rendered" footerText="not rendered" rendered="false" />
+              <p:column headerText="invisible" footerText="invisible" visible="false" />
+              <p:column headerText="j.u.Date (date)" footerText="j.u.Date (date)">
+                  <h:outputText value="#{row.dateProperty}" />
+              </p:column>
+          </p:treeTable>
+      </h:form>
+    </h:body>
+
+</html>

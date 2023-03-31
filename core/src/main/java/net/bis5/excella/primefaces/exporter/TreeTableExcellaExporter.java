@@ -501,7 +501,7 @@ public class TreeTableExcellaExporter extends TreeTableExporter {
     protected List<String> exportFacet(FacesContext context, TreeTable table, ColumnType columnType) {
         List<String> facetColumns = new ArrayList<>();
 
-        for (UIColumn column : table.getColumns()) {
+        for (UIColumn column : getExportableColumns(table)) {
             if (column instanceof DynamicColumn) {
                 ((DynamicColumn)column).applyStatelessModel();
             }
@@ -519,8 +519,15 @@ public class TreeTableExcellaExporter extends TreeTableExporter {
         return facetColumns;
     }
 
+    /**
+     * Returns specified column is exportable.
+     * @param context current faces context
+     * @param column the column
+     * @return if column is exportable, returns {@code true}, otherwise {@code false}
+     */
     protected boolean isExportable(FacesContext context, UIColumn column) {
-        return column.isRendered() && column.isExportable();
+        boolean visibleOnly = getExportConfiguration().isVisibleOnly();
+        return column.isExportable() && column.isRendered() && (!visibleOnly || column.isVisible());
     }
 
     protected String getFacetColumnText(FacesContext context, UIColumn column, ColumnType columnType) {
@@ -618,7 +625,7 @@ public class TreeTableExcellaExporter extends TreeTableExporter {
         @SuppressWarnings("unchecked")
         Map<String, List<Object>> dataContainer = (Map<String, List<Object>>) sheet.getParam(null, DATA_CONTAINER_KEY);
         int colIndex = 0;
-        for (UIColumn column : table.getColumns()) {
+        for (UIColumn column : getExportableColumns(table)) {
             if (column instanceof DynamicColumn) {
                 ((DynamicColumn)column).applyStatelessModel();
             }
