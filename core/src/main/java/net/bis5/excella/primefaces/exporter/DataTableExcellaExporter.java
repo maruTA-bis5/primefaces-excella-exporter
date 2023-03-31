@@ -150,7 +150,7 @@ public class DataTableExcellaExporter extends DataTableExporter {
         ReportSheet sheet = (ReportSheet) document;
         Map<String, List<Object>> dataContainer = getDataContainer(sheet);
         int colIndex = 0;
-        for (UIColumn column : table.getColumns()) {
+        for (UIColumn column : getExportableColumns(table)) {
             if (column instanceof DynamicColumn) {
                 ((DynamicColumn) column).applyStatelessModel();
             }
@@ -625,7 +625,7 @@ public class DataTableExcellaExporter extends DataTableExporter {
             }
         }
 
-        for (UIColumn column : table.getColumns()) {
+        for (UIColumn column : getExportableColumns(table)) {
             if (column instanceof DynamicColumn) {
                 ((DynamicColumn)column).applyStatelessModel();
             }
@@ -643,8 +643,15 @@ public class DataTableExcellaExporter extends DataTableExporter {
         return facetColumns;
     }
 
+    /**
+     * Returns specified column is exportable.
+     * @param context current faces context
+     * @param column the column
+     * @return if column is exportable, returns {@code true}, otherwise {@code false}
+     */
     protected boolean isExportable(FacesContext context, UIColumn column) {
-        return column.isRendered() && column.isExportable();
+        boolean visibleOnly = getExportConfiguration().isVisibleOnly();
+        return column.isExportable() && column.isRendered() && (!visibleOnly || column.isVisible());
     }
 
     private List<String> exportColumnGroup(FacesContext context, ColumnGroup columnGroup, ColumnType columnType, ReportSheet reportSheet) {
