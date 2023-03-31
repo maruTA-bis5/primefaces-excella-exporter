@@ -22,11 +22,17 @@ public class PrimeSeleniumWildflyChromeAdapter implements WebDriverAdapter, Depl
     public WebDriver createWebDriver() {
         ChromeOptions options = new ChromeOptions();
         options.setPageLoadStrategy(PageLoadStrategy.NORMAL);
-        options.setHeadless(Boolean.valueOf(System.getProperty("webdriver.headless")));
+
+        boolean headless = Boolean.valueOf(System.getProperty("webdriver.headless"));
+        if (headless) {
+            // https://www.selenium.dev/blog/2023/headless-is-going-away/
+            options.addArguments("--headless=new");
+        }
+
         options.addArguments("--disable-dev-shm-usage");
         options.addArguments("--no-sandbox");
         options.addArguments("--remote-debugging-port=9222");
-        Map<String, Object> prefs = Collections.singletonMap("download.default_directory", "/tmp/downloads");
+        Map<String, Object> prefs = Collections.singletonMap("download.default_directory", "/home/seluser/Downloads");
         options.setExperimentalOption("prefs", prefs);
         LoggingPreferences logPrefs = new LoggingPreferences();
         logPrefs.enable(LogType.BROWSER, Level.ALL);

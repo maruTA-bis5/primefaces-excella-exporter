@@ -5,6 +5,6 @@ services:
     ports:
       - "4444:4444"
     volumes:
-      - "./docker-compose/downloads:/tmp/downloads"
+      - "./docker-compose/downloads:/home/seluser/Downloads"
     extra_hosts:
       - "docker-host:$HOST_IP"

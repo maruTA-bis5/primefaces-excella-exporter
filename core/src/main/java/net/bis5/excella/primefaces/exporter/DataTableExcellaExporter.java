@@ -19,7 +19,6 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
-import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -28,7 +27,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -207,52 +205,8 @@ public class DataTableExcellaExporter extends DataTableExporter {
         return value;
     }
 
-    public enum ValueType {
-        YEAR_MONTH(w -> w.createDataFormat().getFormat("yy/m")),
-        DATE(w -> 0xe),
-        DATE_TIME(w -> 0x16),
-        TIME(w -> 0x14),
-        DECIMAL(w -> 0x4),
-        INTEGER(w -> 0x3);
+    private Map<ValueType, CellStyle> styles;
 
-        private final Function<Workbook, Short> dataFormat;
-
-        ValueType(Function<Workbook, Short> dataFormat) {
-            this.dataFormat = dataFormat;
-        }
-
-        public short getFormat(Workbook workbook) {
-            return dataFormat.apply(workbook);
-        }
-    }
-
-    private Map<ValueType, CellStyle> styles = new EnumMap<>(ValueType.class);
-
-    private void initStyles(Workbook workbook) {
-        CellStyle yearMonthStyle = workbook.createCellStyle();
-        yearMonthStyle.setDataFormat(ValueType.YEAR_MONTH.getFormat(workbook));
-        styles.put(ValueType.YEAR_MONTH, yearMonthStyle);
-
-        CellStyle dateStyle = workbook.createCellStyle();
-        dateStyle.setDataFormat(ValueType.DATE.getFormat(workbook));
-        styles.put(ValueType.DATE, dateStyle);
-
-        CellStyle dateTimeStyle = workbook.createCellStyle();
-        dateTimeStyle.setDataFormat(ValueType.DATE_TIME.getFormat(workbook));
-        styles.put(ValueType.DATE_TIME, dateTimeStyle);
-
-        CellStyle timeStyle = workbook.createCellStyle();
-        timeStyle.setDataFormat(ValueType.TIME.getFormat(workbook));
-        styles.put(ValueType.TIME, timeStyle);
-
-        CellStyle decimalStyle = workbook.createCellStyle();
-        decimalStyle.setDataFormat(ValueType.DECIMAL.getFormat(workbook));
-        styles.put(ValueType.DECIMAL, decimalStyle);
-
-        CellStyle integerStyle = workbook.createCellStyle();
-        integerStyle.setDataFormat(ValueType.INTEGER.getFormat(workbook));
-        styles.put(ValueType.INTEGER, integerStyle);
-    }
 
     private final Pattern timePattern = Pattern.compile("^[0-9]+:[0-9][0-9]$");
 
@@ -300,6 +254,9 @@ public class DataTableExcellaExporter extends DataTableExporter {
             } else {
                 return ValueType.DECIMAL;
             }
+        }
+        if (value instanceof String) {
+            return ValueType.STRING;
         }
         return null;
     }
@@ -487,6 +444,8 @@ public class DataTableExcellaExporter extends DataTableExporter {
         reportSheet.addParam(ColRepeatParamParser.DEFAULT_TAG, headersTagName, columnHeader.toArray());
         reportSheet.addParam(ColRepeatParamParser.DEFAULT_TAG, footersTagName, columnFooter.toArray());
 
+        final int columnSize = columnHeader.size();
+
         @SuppressWarnings("unchecked")
         Set<CellRangeAddress> headerMergedAreas = nonNull((Set<CellRangeAddress>) reportSheet.getParam(null, COLUMN_GROUP_MERGED_AREAS_KEY + "header"), new HashSet<>());
         @SuppressWarnings("unchecked")
@@ -508,19 +467,19 @@ public class DataTableExcellaExporter extends DataTableExporter {
 
             @Override
             public void preBookParse(Workbook workbook, ReportBook reportBook) {
-                initStyles(workbook);
+                styles = ValueType.initStyles(workbook);
             }
 
             private void setHeaderPosition(CellAddress address) {
                 headerPosition = address;
             }
 
-            private int headerRowOffset(int row) {
-                return headerPosition != null ? row + headerPosition.getRow() : row;
-            }
-
             private void setDataPosition(CellAddress address) {
                 dataPosition = address;
+            }
+
+            private int dataRowOffset(int row) {
+                return Math.max(headerSize - 1, 0) + (dataPosition != null ? row + dataPosition.getRow() : row);
             }
 
             private int dataColOffset(int col) {
@@ -556,10 +515,14 @@ public class DataTableExcellaExporter extends DataTableExporter {
                 if (dataContainer.isEmpty() || !sheetData.getSheetName().equals(reportSheet.getSheetName())) {
                     return;
                 }
-                Object[] headers = (Object[]) reportSheet.getParam(RowRepeatParamParser.DEFAULT_TAG, "header0");
-                if (headers != null) {
-                    headerSize = headers.length;
-                }
+                IntStream.range(0, columnSize)
+                    .mapToObj(i -> "header" + i)
+                    .map(t -> reportSheet.getParam(RowRepeatParamParser.DEFAULT_TAG, t))
+                    .filter(Objects::nonNull)
+                    .map(Object[].class::cast)
+                    .mapToInt(a -> a.length)
+                    .max()
+                    .ifPresentOrElse(s -> headerSize = s, () -> headerSize = 1);
                 for (Entry<String, ValueType> entry : valueTypes.entrySet()) {
                     String columnTag = getColumnTag(entry.getKey());
                     ValueType valueType = entry.getValue();
@@ -568,7 +531,7 @@ public class DataTableExcellaExporter extends DataTableExporter {
                     }
                     CellStyle style = styles.get(valueType);
                     int colIndex = Arrays.asList(columnDataParams).indexOf(columnTag);
-                    IntStream.range(headerRowOffset(headerSize), headerRowOffset(repeatRows + headerSize))
+                    IntStream.range(dataRowOffset(0), dataRowOffset(repeatRows))
                         .mapToObj(sheet::getRow)
                         .filter(Objects::nonNull)
                         .map(r -> r.getCell(dataColOffset(colIndex)))
