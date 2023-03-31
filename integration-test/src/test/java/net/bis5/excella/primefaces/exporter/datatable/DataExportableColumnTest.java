@@ -33,7 +33,7 @@ import net.bis5.excella.primefaces.exporter.TakeScreenShotAfterFailure;
 import net.bis5.excella.primefaces.exporter.ValueType;
 
 @ExtendWith(TakeScreenShotAfterFailure.class)
-public class DataExportableColumnTest extends AbstractPrimePageTest {
+class DataExportableColumnTest extends AbstractPrimePageTest {
 
     private String getBaseDir() {
         return System.getProperty("basedir");
