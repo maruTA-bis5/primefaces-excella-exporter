@@ -70,6 +70,11 @@
       <name>bBreak Systems Excella</name>
       <url>https://excella-core.github.io/maven2/</url>
     </repository>
+    <repository>
+      <id>jitpack</id>
+      <name>jitpack</name>
+      <url>https://jitpack.io/</url>
+    </repository>
   </repositories>
 
   <dependencyManagement>
@@ -80,7 +85,7 @@
         <version>${excella-reports.version}</version>
       </dependency>
       <dependency>
-        <groupId>org.primefaces</groupId>
+        <groupId>com.github.primefaces.primefaces</groupId>
         <artifactId>primefaces</artifactId>
         <version>${primefaces.version}</version>
         <scope>provided</scope>
