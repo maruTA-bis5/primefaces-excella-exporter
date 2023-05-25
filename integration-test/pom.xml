@@ -32,7 +32,7 @@
       <scope>compile</scope>
     </dependency>
     <dependency>
-      <groupId>com.github.primefaces.primefaces</groupId>
+      <groupId>org.primefaces</groupId>
       <artifactId>primefaces</artifactId>
       <scope>compile</scope>
     </dependency>
@@ -49,13 +49,13 @@
       <artifactId>junit-jupiter-engine</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.github.primefaces.primefaces</groupId>
+      <groupId>org.primefaces</groupId>
       <artifactId>primefaces-selenium-core</artifactId>
       <version>${primefaces-selenium.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>com.github.primefaces.primefaces</groupId>
+      <groupId>org.primefaces</groupId>
       <artifactId>primefaces-selenium-components</artifactId>
       <version>${primefaces-selenium.version}</version>
       <scope>test</scope>
