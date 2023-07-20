@@ -57,6 +57,7 @@ This library provides the implementation of PrimeFaces' Exporter using [ExCella 
 |1.x|8.x|
 |2.x|11.x|
 |3.x|12.x|
+|4.x|13.x|
 
 ## Development
 - build
