@@ -15,10 +15,10 @@ import net.bis5.excella.primefaces.exporter.TreeTableExcellaExporter;
 public class ExcellaExporter {
 
     public Exporter<DataTable> getDataTableExporter() {
-        return new DataTableExcellaExporter();
+        return DataTableExcellaExporter.builder().build();
     }
 
     public Exporter<TreeTable> getTreeTableExporter() {
-        return new TreeTableExcellaExporter();
+        return TreeTableExcellaExporter.builder().build();
     }
 }
