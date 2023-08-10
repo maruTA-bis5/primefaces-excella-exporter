@@ -29,7 +29,7 @@ This library provides the implementation of PrimeFaces' Exporter using [ExCella 
       <repository>
         <id>excella.bbreak.org</id>
         <name>bBreak Systems Excella</name>
-        <url>https://excella-core.github.io/maven2/</url>    
+        <url>https://excella-core.github.io/maven2/</url>
       </repository>
     </repositories>
     ````
@@ -38,7 +38,7 @@ This library provides the implementation of PrimeFaces' Exporter using [ExCella 
     @Model
     public class Exporters {
         public Exporter<DataTable> getDataTableExporter() {
-            return new DataTableExcellaExporter();
+            return DataTableExcellaExporter.builder().build();
         }
     }
     ```
