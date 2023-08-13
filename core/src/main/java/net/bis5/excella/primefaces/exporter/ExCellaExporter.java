@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,6 +27,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import javax.el.ValueExpression;
 import javax.faces.component.UIComponent;
@@ -37,6 +39,7 @@ import javax.faces.convert.Converter;
 
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.util.CellRangeAddress;
 import org.bbreak.excella.reports.exporter.ExcelExporter;
 import org.bbreak.excella.reports.listener.ReportProcessAdaptor;
 import org.bbreak.excella.reports.listener.ReportProcessListener;
@@ -44,18 +47,23 @@ import org.bbreak.excella.reports.model.ConvertConfiguration;
 import org.bbreak.excella.reports.model.ReportBook;
 import org.bbreak.excella.reports.model.ReportSheet;
 import org.bbreak.excella.reports.processor.ReportProcessor;
+import org.bbreak.excella.reports.tag.RowRepeatParamParser;
 import org.primefaces.PrimeFaces;
 import org.primefaces.component.api.UIColumn;
 import org.primefaces.component.celleditor.CellEditor;
+import org.primefaces.component.columngroup.ColumnGroup;
 import org.primefaces.component.export.ExportConfiguration;
 import org.primefaces.component.link.Link;
 import org.primefaces.util.ComponentUtils;
+import org.primefaces.util.Constants;
 
 import net.bis5.excella.primefaces.exporter.component.ExportableComponent;
 import net.bis5.excella.primefaces.exporter.convert.ExporterConverter;
 
 // internal
 interface ExCellaExporter<T> {
+
+    String COLUMN_GROUP_MERGED_AREAS_KEY = "HEADER_MERGED_AREAS_KEY";
 
     URL DEFAULT_TEMPLATE_URL = ExCellaExporter.class.getResource("/DefaultTemplate.xlsx");
     String DEFAULT_TEMPLATE_SHEET_NAME = "DATA";
@@ -492,6 +500,133 @@ interface ExCellaExporter<T> {
             throw new IllegalStateException(e);
         }
         return url.substring(url.lastIndexOf("."), url.length());
+    }
+
+    default List<String> exportColumnGroup(FacesContext context, ColumnGroup columnGroup, ExCellaExporter.ColumnType columnType, ReportSheet reportSheet) {
+        List<String> facetColumns = new ArrayList<>();
+        context.getAttributes().put(Constants.HELPER_RENDERER, "columnGroup");
+
+        @SuppressWarnings("unchecked")
+        Set<CellRangeAddress> mergedAreas = nonNull((Set<CellRangeAddress>) reportSheet.getParam(null, COLUMN_GROUP_MERGED_AREAS_KEY + columnType), new HashSet<>());
+        reportSheet.addParam(null, COLUMN_GROUP_MERGED_AREAS_KEY + columnType, mergedAreas);
+
+        for (UIComponent child : columnGroup.getChildren()) {
+            if (!child.isRendered()) {
+                continue;
+            }
+            if (child instanceof org.primefaces.component.row.Row) {
+                if (columnGroup.getChildren().size() > 1) {
+                    return exportColumnGroupMultiRow(context, columnGroup, columnType, reportSheet);
+                } else {
+                    return exportFacetColumns(context, child.getChildren(), columnType, reportSheet);
+                }
+            } else if (child instanceof UIColumn) {
+                return exportFacetColumns(context, columnGroup.getChildren(), columnType, reportSheet);
+            } else {
+                // ignore
+            }
+        }
+
+        context.getAttributes().remove(Constants.HELPER_RENDERER);
+        return facetColumns;
+    }
+
+    default List<String> exportColumnGroupMultiRow(FacesContext context, ColumnGroup columnGroup, ExCellaExporter.ColumnType columnType,
+            ReportSheet reportSheet) {
+
+        return exportColumnGroupMultiRow(context, columnGroup, columnType, reportSheet, 0);
+    }
+
+    default List<String> exportColumnGroupMultiRow(FacesContext context, ColumnGroup columnGroup, ExCellaExporter.ColumnType columnType,
+            ReportSheet reportSheet, int beginColIndex) {
+
+        Map</*colindex*/Integer, List<String>> headerContents = new HashMap<>();
+        int rowIndex = 0;
+        Set<CellRangeAddress> mergedAreas = new HashSet<>();
+        reportSheet.addParam(null, COLUMN_GROUP_MERGED_AREAS_KEY + columnType, mergedAreas);
+
+        for (UIComponent child : columnGroup.getChildren()) {
+            if (!child.isRendered() || !(child instanceof org.primefaces.component.row.Row)) {
+                continue;
+            }
+            org.primefaces.component.row.Row row = (org.primefaces.component.row.Row)child;
+            int colIndex = beginColIndex;
+            boolean foundExportableColumn = false;
+            for (UIComponent rowChild : row.getChildren()) {
+                if (!rowChild.isRendered() || !(rowChild instanceof UIColumn)) {
+                    continue;
+                }
+                UIColumn column = (UIColumn)rowChild;
+                if (!isExportable(context, column)) {
+                    continue;
+                }
+                foundExportableColumn = true;
+                while (true) {
+                    var currRowIndex = rowIndex;
+                    var currColIndex = colIndex;
+                    boolean overlapped = mergedAreas.stream()
+                        .anyMatch(a -> a.isInRange(currRowIndex, currColIndex));
+                    if (!overlapped) { break; }
+                    colIndex++;
+                }
+                List<String> columnContents = headerContents.computeIfAbsent(colIndex, c -> new ArrayList<>());
+                columnContents.add(getFacetColumnText(context, column, columnType));
+                if (column.getRowspan() > 1) {
+                    mergedAreas.add(new CellRangeAddress(rowIndex, rowIndex + column.getRowspan() - 1, colIndex, colIndex));
+
+                    IntStream.range(rowIndex + 1, rowIndex + column.getRowspan())
+                        .forEach(i -> columnContents.add(null));
+                }
+                if (column.getColspan() > 1) {
+                    mergedAreas.add(new CellRangeAddress(rowIndex, rowIndex, colIndex, colIndex + column.getColspan() -1));
+
+                    IntStream.range(colIndex + 1, colIndex + column.getColspan())
+                        .mapToObj(i -> headerContents.computeIfAbsent(i, c -> new ArrayList<>()))
+                        .forEach(c -> c.add(null));
+                    colIndex += column.getColspan() - 1;
+                }
+                colIndex++;
+            }
+            if (foundExportableColumn) {
+                rowIndex++;
+            }
+        }
+        String tagPrefix = columnType == ExCellaExporter.ColumnType.HEADER ? "header" : "footer";
+        headerContents.entrySet().forEach(e -> reportSheet.addParam(RowRepeatParamParser.DEFAULT_TAG, tagPrefix + e.getKey(), e.getValue().toArray()));
+
+        return headerContents.keySet().stream()
+            .map(i -> "$R[]{" + tagPrefix + i + "}")
+            .collect(Collectors.toList());
+    }
+
+    private List<String> exportFacetColumns(FacesContext context, List<UIComponent> columns, ExCellaExporter.ColumnType columnType, ReportSheet reportSheet) {
+        @SuppressWarnings("unchecked")
+        Set<CellRangeAddress> mergedAreas = nonNull((Set<CellRangeAddress>) reportSheet.getParam(null, COLUMN_GROUP_MERGED_AREAS_KEY + columnType), new HashSet<>());
+        reportSheet.addParam(null, COLUMN_GROUP_MERGED_AREAS_KEY + columnType, mergedAreas);
+
+        List<String> facetColumns = new ArrayList<>();
+
+        int colIndex = -1;
+        for (UIComponent child : columns) {
+            UIColumn column = (UIColumn)child;
+            if (!isExportable(context, column)) {
+                continue;
+            }
+            colIndex++;
+            facetColumns.add(getFacetColumnText(context, column, columnType));
+            if (column.getColspan() > 1) {
+                int colsToMerge = column.getColspan() - 1;
+                mergedAreas.add(new CellRangeAddress(0, 0, colIndex, colIndex + colsToMerge));
+                colIndex += colsToMerge;
+                IntStream.range(0, colsToMerge).forEach(i -> facetColumns.add(null));
+            }
+        }
+
+        return facetColumns;
+    }
+
+    default <T> T nonNull(T obj, T defaultValue) {
+        return obj != null ? obj : defaultValue;
     }
 
 }

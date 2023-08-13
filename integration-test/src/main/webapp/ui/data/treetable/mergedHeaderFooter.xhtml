@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://java.sun.com/jsf/html"
+      xmlns:f="http://java.sun.com/jsf/core"
+      xmlns:ui="http://java.sun.com/jsf/facelets"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:sc="http://primefaces.org/ui/showcase"
+      lang="en">
+
+    <h:head>
+        <f:facet name="first">
+            <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+            <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
+            <meta name="apple-mobile-web-app-capable" content="yes"/>
+        </f:facet>
+        <title>PrimeFaces Showcase</title>
+
+        <!-- For Community Themes except 'Luna' and 'Nova' theme -->
+        <h:outputStylesheet name="primeicons/primeicons.css" library="primefaces"/>
+
+        <h:outputScript name="jquery/jquery.js" library="primefaces"/>
+        <h:outputScript name="jquery/jquery-plugins.js" library="primefaces"/>
+        <h:outputScript name="script/nanoscroller.js" library="showcase"/>
+        <h:outputScript name="script/layout.js" library="showcase"/>
+    </h:head>
+
+    <h:body>
+      <h:form id="form">
+          <p:commandLink id="excellaExportNonAjax" ajax="false">
+              <h:outputLabel>ExCella Reports (non-Ajax)</h:outputLabel>
+              <p:dataExporter type="xls" target="tbl" fileName="tt-merged-hf-non-ajax" exporter="#{ttMergedHfView.treeTableExporter}" />
+          </p:commandLink>
+          <br />
+          <p:commandLink id="excellaExportAjax" ajax="true">
+              <h:outputLabel>ExCella Reports (Ajax)</h:outputLabel>
+              <p:dataExporter type="xls" target="tbl" fileName="tt-merged-hf-ajax" exporter="#{ttMergedHfView.treeTableExporter}" />
+          </p:commandLink>
+
+          <p:treeTable id="tbl" var="row" value="#{ttMergedHfView.root}">
+            <p:columnGroup type="header">
+              <p:row>
+                <p:column width="50" exportable="false" />
+                <p:column width="100" exportable="false" />
+                <p:column width="150" exportable="false" />
+              </p:row>
+              <p:row>
+                <p:column colspan="2"
+                          headerText="colspan" />
+                <p:column rowspan="2"
+                          headerText="rowspan" />
+              </p:row>
+              <p:row>
+                <p:column headerText="headerText B-1" />
+                <p:column headerText="headerText B-2" />
+              </p:row>
+            </p:columnGroup>
+              <p:column>
+                  <h:outputText value="#{row.stringProperty}" />
+              </p:column>
+              <p:column>
+                  <h:outputText value="#{row.yearMonthProperty}" />
+              </p:column>
+              <p:column>
+                  <h:outputText value="#{row.localDateProperty}" />
+              </p:column>
+              <p:columnGroup type="footer">
+                <p:row>
+                  <p:column colspan="2" footerText="Foot left" />
+                  <p:column>
+                    <f:facet name="footer">
+                      <h:outputText value="Foot right" />
+                    </f:facet>
+                  </p:column>
+                </p:row>
+                <p:row>
+                  <p:column colspan="3" footerText="EOS" />
+                </p:row>
+              </p:columnGroup>
+          </p:treeTable>
+
+          <p:commandLink id="excellaExportNonAjaxSingleRow" ajax="false">
+              <h:outputLabel>ExCella Reports (non-Ajax) - Single Row</h:outputLabel>
+              <p:dataExporter type="xls" target="tbl-sr" fileName="tt-merged-hf-non-ajax-sr" exporter="#{ttMergedHfView.treeTableExporter}" />
+          </p:commandLink>
+          <br />
+          <p:commandLink id="excellaExportAjaxSingleRow" ajax="true">
+              <h:outputLabel>ExCella Reports (Ajax) - Single Row</h:outputLabel>
+              <p:dataExporter type="xls" target="tbl-sr" fileName="tt-merged-hf-ajax-sr" exporter="#{ttMergedHfView.treeTableExporter}" />
+          </p:commandLink>
+
+          <p:treeTable id="tbl-sr" var="row" value="#{ttMergedHfView.root}">
+            <p:columnGroup type="header">
+              <p:row>
+                <p:column colspan="2"
+                          headerText="colspan" />
+                <p:column headerText="col" />
+              </p:row>
+            </p:columnGroup>
+            <p:column>
+                <h:outputText value="#{row.stringProperty}" />
+            </p:column>
+            <p:column>
+                <h:outputText value="#{row.yearMonthProperty}" />
+            </p:column>
+            <p:column>
+                <h:outputText value="#{row.localDateProperty}" />
+            </p:column>
+            <p:columnGroup type="footer">
+              <p:row>
+                <p:column colspan="3" footerText="colspan3" />
+              </p:row>
+            </p:columnGroup>
+          </p:treeTable>
+      </h:form>
+    </h:body>
+
+</html>
+
