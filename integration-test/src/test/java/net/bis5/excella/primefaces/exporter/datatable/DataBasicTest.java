@@ -64,7 +64,23 @@ public class DataBasicTest extends AbstractPrimePageTest {
     private void assertFileContent(DataTypeCheck record, String outputFileName) throws EncryptedDocumentException, IOException {
         try (Workbook workbook = WorkbookFactory.create(new File(getBaseDir()+"/docker-compose/downloads/" + outputFileName), null, true)) {
             Sheet sheet = workbook.getSheetAt(0);
-            List<String> headers = Arrays.asList("String", "YearMonth", "j.u.Date (date)", "j.u.Date (datetime)", "LocalDate", "LocalDateTime", "Integer (int)", "Integer (BigDecimal scale=2)", "Decimal (double)", "Decimal (BigDecimal)", "Link (value specified)", "Link (value not specified)", "header line break");
+            List<String> headers = Arrays.asList(
+                "String",
+                "YearMonth",
+                "j.u.Date (date)",
+                "j.u.Date (datetime)",
+                "LocalDate",
+                "LocalDateTime",
+                "Integer (int)",
+                "Integer (BigDecimal scale=2)",
+                "Decimal (double)",
+                "Decimal (BigDecimal)",
+                "Link (value specified)",
+                "Link (value not specified)",
+                "header line break",
+                "exportable component",
+                "exportable component(value null)"
+            );
 
             Row headerRow = sheet.getRow(0);
             Row dataRow = sheet.getRow(1);
@@ -94,7 +110,9 @@ public class DataBasicTest extends AbstractPrimePageTest {
                     () -> assertCell("BigDecimal as decimal cell", dataRow.getCell(9), CellType.NUMERIC, ValueType.DECIMAL, record.getBigDecimalDecimalProperty().doubleValue(), Cell::getNumericCellValue),
                     () -> assertCell("Link value specified", dataRow.getCell(10), CellType.STRING, ValueType.STRING, "Link", Cell::getStringCellValue),
                     () -> assertCell("Link value not specified", dataRow.getCell(11), CellType.NUMERIC, ValueType.DECIMAL, record.getBigDecimalDecimalProperty().doubleValue(), Cell::getNumericCellValue),
-                    () -> assertCell("remove br tag", dataRow.getCell(12), CellType.STRING, ValueType.STRING, "value row line break", Cell::getStringCellValue)
+                    () -> assertCell("remove br tag", dataRow.getCell(12), CellType.STRING, ValueType.STRING, "value row line break", Cell::getStringCellValue),
+                    () -> assertCell("exportable value holder", dataRow.getCell(13), CellType.STRING, ValueType.STRING, "Export text1", Cell::getStringCellValue),
+                    () -> assertCell("exportable value holder(value null)", dataRow.getCell(14), CellType.STRING, ValueType.STRING, "Export text2", Cell::getStringCellValue)
                 ),
                 () -> {
                     List<Executable> assertions = new ArrayList<>();

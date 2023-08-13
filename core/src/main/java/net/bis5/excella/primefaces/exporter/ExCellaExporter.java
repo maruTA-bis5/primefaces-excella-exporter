@@ -51,6 +51,7 @@ import org.primefaces.component.export.ExportConfiguration;
 import org.primefaces.component.link.Link;
 import org.primefaces.util.ComponentUtils;
 
+import net.bis5.excella.primefaces.exporter.component.ExportableComponent;
 import net.bis5.excella.primefaces.exporter.convert.ExporterConverter;
 
 // internal
@@ -416,9 +417,13 @@ interface ExCellaExporter<T> {
     @SuppressWarnings("unchecked")
     private Object getComponentValue(FacesContext context, ValueHolder valueHolder) {
         Object value = valueHolder.getValue();
+        if (valueHolder instanceof ExportableComponent) {
+            value = ((ExportableComponent)valueHolder).getExportValue();
+        }
         if (value == null) {
             return null;
         }
+
         UIComponent component = (UIComponent)valueHolder;
         Converter<Object> converter = valueHolder.getConverter();
         if (converter == null) {
