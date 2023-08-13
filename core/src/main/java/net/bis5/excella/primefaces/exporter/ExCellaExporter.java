@@ -2,7 +2,6 @@ package net.bis5.excella.primefaces.exporter;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.math.BigDecimal;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -25,7 +24,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -249,77 +247,6 @@ interface ExCellaExporter<T> {
     List<String> exportFacet(FacesContext context, T table, ColumnType columnType, ReportSheet reportSheet);
 
     void setExportParameters(ReportSheet reportSheet, List<String> columnHeader, List<String> columnFooter, Map<String, List<Object>> dataContainer);
-
-    default Map<String, ValueType> detectValueTypes(Map<String, List<Object>> dataContainer) {
-        Map<String, ValueType> valueTypes = new HashMap<>();
-        for(Entry<String, List<Object>> entry : dataContainer.entrySet()) {
-            String key = entry.getKey();
-            List<Object> values = entry.getValue();
-            ValueType type = detectValueType(values);
-            valueTypes.put(key, type);
-        }
-        return valueTypes;
-    }
-
-    Pattern timePattern = Pattern.compile("^[0-9]+:[0-9][0-9]$");
-
-    private ValueType detectValueType(List<Object> values) {
-        Set<ValueType> types = values.stream()
-            .map(this::detectValueType)
-            .filter(Objects::nonNull)
-            .collect(Collectors.toSet());
-
-        if (types.isEmpty()) {
-            return null;
-        }
-        if (types.contains(ValueType.INTEGER) && types.contains(ValueType.DECIMAL)) {
-            return ValueType.DECIMAL;
-        }
-        if (types.contains(ValueType.DATE) && types.contains(ValueType.DATE_TIME)) {
-            return ValueType.DATE_TIME;
-        }
-        return types.iterator().next();
-    }
-
-    private ValueType detectValueType(Object value) {
-        if (value instanceof LocalDateTime || (value instanceof Date && hasTime((Date)value)) || (value instanceof Calendar && hasTime((Calendar)value))) {
-            return ValueType.DATE_TIME;
-        }
-        if (value instanceof LocalDate || value instanceof Date || value instanceof Calendar) {
-            return ValueType.DATE;
-        }
-        if (value instanceof LocalTime || (value instanceof String && timePattern.matcher((String)value).matches())) {
-            return ValueType.TIME;
-        }
-        if (value instanceof YearMonth) {
-            return ValueType.YEAR_MONTH;
-        }
-        if (value instanceof Number) {
-            if (value instanceof Long || value instanceof Integer) {
-                return ValueType.INTEGER;
-            } else if (value instanceof BigDecimal) {
-                BigDecimal bigDecimal = (BigDecimal)value;
-                if (bigDecimal.compareTo(BigDecimal.valueOf(bigDecimal.longValue())) == 0) {
-                    return ValueType.INTEGER;
-                } else {
-                    return ValueType.DECIMAL;
-                }
-            } else {
-                return ValueType.DECIMAL;
-            }
-        }
-        return null;
-    }
-
-    private boolean hasTime(Date date) {
-        Calendar cal = Calendar.getInstance();
-        cal.setTime(date);
-        return hasTime(cal);
-    }
-
-    private boolean hasTime(Calendar cal) {
-        return cal.get(Calendar.HOUR_OF_DAY) != 0 && cal.get(Calendar.MINUTE) != 0 && cal.get(Calendar.SECOND) != 0;
-    }
 
     String exportValue(FacesContext context, UIComponent component);
 
