@@ -625,7 +625,7 @@ interface ExCellaExporter<T> {
         return facetColumns;
     }
 
-    default <T> T nonNull(T obj, T defaultValue) {
+    default <V> V nonNull(V obj, V defaultValue) {
         return obj != null ? obj : defaultValue;
     }
 
