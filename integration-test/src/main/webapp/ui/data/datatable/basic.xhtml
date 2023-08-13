@@ -5,6 +5,7 @@
       xmlns:ui="http://java.sun.com/jsf/facelets"
       xmlns:p="http://primefaces.org/ui"
       xmlns:sc="http://primefaces.org/ui/showcase"
+      xmlns:comp="primefaces-excella-exporter"
       lang="en">
 
     <h:head>
@@ -87,6 +88,12 @@
                 <f:facet name="footer">
                   header<br /> line<BR /> break
                 </f:facet>
+              </p:column>
+              <p:column headerText="exportable component" footerText="exportable component">
+                <comp:exportableValueHolder exportValue="Export text1" value="Rendered text" />
+              </p:column>
+              <p:column headerText="exportable component(value null)" footerText="exportable component(value null)">
+                <comp:exportableValueHolder exportValue="Export text2" />
               </p:column>
           </p:dataTable>
       </h:form>
