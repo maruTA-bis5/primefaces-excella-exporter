@@ -5,34 +5,15 @@ import java.io.OutputStream;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.StreamSupport;
 
 import javax.faces.component.UIComponent;
 import javax.faces.context.FacesContext;
 
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.CellStyle;
-import org.apache.poi.ss.usermodel.CellType;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.ss.util.CellAddress;
-import org.apache.poi.ss.util.CellRangeAddress;
-import org.apache.poi.ss.util.CellUtil;
-import org.bbreak.excella.core.SheetData;
-import org.bbreak.excella.core.SheetParser;
-import org.bbreak.excella.reports.listener.ReportProcessAdaptor;
 import org.bbreak.excella.reports.listener.ReportProcessListener;
 import org.bbreak.excella.reports.model.ReportBook;
 import org.bbreak.excella.reports.model.ReportSheet;
@@ -45,14 +26,11 @@ import org.primefaces.component.datatable.DataTable;
 import org.primefaces.component.datatable.export.DataTableExporter;
 import org.primefaces.component.export.ExportConfiguration;
 import org.primefaces.component.export.Exporter;
-import org.primefaces.util.Constants;
 
 /**
  * ExCella Reportsを用いてDataTableのデータを出力する{@link Exporter}実装
  */
 public class DataTableExcellaExporter extends DataTableExporter implements ExCellaExporter<DataTable> {
-
-    private static final String COLUMN_GROUP_MERGED_AREAS_KEY = "HEADER_MERGED_AREAS_KEY";
 
     private static final String DEFAULT_DATA_COLUMNS_TAG = "dataColumns";
 
@@ -247,8 +225,6 @@ public class DataTableExcellaExporter extends DataTableExporter implements ExCel
         return value;
     }
 
-    private Map<ValueType, CellStyle> styles;
-
     public void setDataColumnsTag(String dataColumnsTag) {
         this.dataColumnsTag = dataColumnsTag;
     }
@@ -307,10 +283,6 @@ public class DataTableExcellaExporter extends DataTableExporter implements ExCel
         return dataContainer;
     }
 
-    private <T> T nonNull(T obj, T defaultValue) {
-        return obj != null ? obj : defaultValue;
-    }
-
     private String dataTag() {
         return dataColumnsTag != null ? dataColumnsTag : DEFAULT_DATA_COLUMNS_TAG;
     }
@@ -320,15 +292,10 @@ public class DataTableExcellaExporter extends DataTableExporter implements ExCel
         Object[] columnDataParams = dataContainer.keySet().stream().map(k -> "$R[]{" + k + "}").toArray();
         reportSheet.addParam(ColRepeatParamParser.DEFAULT_TAG, dataTag(), columnDataParams);
 
-        Map<String, ValueType> valueTypes = detectValueTypes(dataContainer);
         dataContainer.entrySet()
             .stream()
             .map(this::normalizeValues)
             .forEach(e -> reportSheet.addParam(RowRepeatParamParser.DEFAULT_TAG, e.getKey(), e.getValue().toArray()));
-        int repeatRows = dataContainer.values().stream()
-            .mapToInt(List::size)
-            .max()
-            .orElse(1);
 
         String headersTagName = headersTag != null ? headersTag : DEFAULT_HEADERS_TAG;
         String footersTagName = footersTag != null ? footersTag : DEFAULT_FOOTERS_TAG;
@@ -337,136 +304,10 @@ public class DataTableExcellaExporter extends DataTableExporter implements ExCel
 
         final int columnSize = columnHeader.size();
 
-        @SuppressWarnings("unchecked")
-        Set<CellRangeAddress> headerMergedAreas = nonNull((Set<CellRangeAddress>) reportSheet.getParam(null, COLUMN_GROUP_MERGED_AREAS_KEY + "header"), new HashSet<>());
-        @SuppressWarnings("unchecked")
-        Set<CellRangeAddress> footerMergedAreas = nonNull((Set<CellRangeAddress>) reportSheet.getParam(null, COLUMN_GROUP_MERGED_AREAS_KEY + "footer"), new HashSet<>());
-        reportSheet.removeParam(null, COLUMN_GROUP_MERGED_AREAS_KEY + "header");
-        reportSheet.removeParam(null, COLUMN_GROUP_MERGED_AREAS_KEY + "footer");
-
         reportBook.addReportSheet(reportSheet);
 
-        listeners.add(new ReportProcessAdaptor() {
+        listeners.add(new StyleUpdateListener(reportSheet, dataContainer, dataTag(), headersTagName, footersTagName, columnSize, columnDataParams));
 
-            private CellAddress headerPosition;
-
-            private CellAddress dataPosition;
-
-            private CellAddress footerPosition;
-
-            private int headerSize;
-
-            @Override
-            public void preBookParse(Workbook workbook, ReportBook reportBook) {
-                styles = ValueType.initStyles(workbook);
-            }
-
-            private void setHeaderPosition(CellAddress address) {
-                headerPosition = address;
-            }
-
-            private void setDataPosition(CellAddress address) {
-                dataPosition = address;
-            }
-
-            private int dataRowOffset(int row) {
-                return Math.max(headerSize - 1, 0) + (dataPosition != null ? row + dataPosition.getRow() : row);
-            }
-
-            private int dataColOffset(int col) {
-                return dataPosition != null ? col + dataPosition.getColumn()  : col;
-            }
-
-            private void setFooterPosition(CellAddress address) {
-                footerPosition = address;
-            }
-
-            @Override
-            public void preParse(Sheet sheet, SheetParser sheetParser) {
-                String headerTag = ColRepeatParamParser.DEFAULT_TAG + "{" + headersTagName + "}";
-                String footerTag = ColRepeatParamParser.DEFAULT_TAG + "{" + footersTagName + "}";
-                String dataTag = ColRepeatParamParser.DEFAULT_TAG + "{" + dataTag() + "}";
-                StreamSupport.stream(sheet.spliterator(), false)
-                    .map(Row::spliterator)
-                    .flatMap(s -> StreamSupport.stream(s, false))
-                    .filter(c -> c.getCellType() == CellType.STRING)
-                    .forEach(c -> {
-                        if (headerTag.equals(c.getStringCellValue())) {
-                            setHeaderPosition(c.getAddress());
-                        } else if (footerTag.equals(c.getStringCellValue())) {
-                            setFooterPosition(c.getAddress());
-                        } else if (dataTag.equals(c.getStringCellValue())) {
-                            setDataPosition(c.getAddress());
-                        }
-                    });
-            }
-
-            @Override
-            public void postParse(Sheet sheet, SheetParser sheetParser, SheetData sheetData) {
-                if (dataContainer.isEmpty() || !sheetData.getSheetName().equals(reportSheet.getSheetName())) {
-                    return;
-                }
-                IntStream.range(0, columnSize)
-                    .mapToObj(i -> "header" + i)
-                    .map(t -> reportSheet.getParam(RowRepeatParamParser.DEFAULT_TAG, t))
-                    .filter(Objects::nonNull)
-                    .map(Object[].class::cast)
-                    .mapToInt(a -> a.length)
-                    .max()
-                    .ifPresentOrElse(s -> headerSize = s, () -> headerSize = 1);
-                for (Entry<String, ValueType> entry : valueTypes.entrySet()) {
-                    String columnTag = getColumnTag(entry.getKey());
-                    ValueType valueType = entry.getValue();
-                    if (valueType == null) {
-                        continue;
-                    }
-                    CellStyle style = styles.get(valueType);
-                    int colIndex = Arrays.asList(columnDataParams).indexOf(columnTag);
-                    IntStream.range(dataRowOffset(0), dataRowOffset(repeatRows))
-                        .mapToObj(sheet::getRow)
-                        .filter(Objects::nonNull)
-                        .map(r -> r.getCell(dataColOffset(colIndex)))
-                        .filter(Objects::nonNull)
-                        .forEach(c -> setCellStyle(c, style));
-                }
-            }
-
-            private void setCellStyle(Cell cell, CellStyle style) {
-                CellUtil.setCellStyleProperty(cell, CellUtil.DATA_FORMAT, style.getDataFormat());
-            }
-            private String getColumnTag(String key) {
-                return "$R[]{" + key + "}";
-            }
-
-            @Override
-            public void postBookParse(Workbook workbook, ReportBook reportBook) {
-                IntStream.range(0, workbook.getNumberOfSheets())
-                    .mapToObj(workbook::getSheetAt)
-                    .forEach(this::mergeCells);
-            }
-
-            private void mergeCells(Sheet sheet) {
-                int headerOffset = headerPosition == null ? 0 : headerPosition.getRow();
-                headerMergedAreas.forEach(a -> mergeCell(sheet, headerPosition, headerOffset, a));
-
-                int footerOffset = footerPosition == null ? 0 : dataRowOffset(repeatRows) + footerPosition.getRow() - dataPosition.getRow() - 1;
-                footerMergedAreas.forEach(a -> mergeCell(sheet, footerPosition, footerOffset, a));
-            }
-
-            private void mergeCell(Sheet sheet, CellAddress beginPosition, int rowOffset, CellRangeAddress area) {
-                if (beginPosition == null) {
-                    return;
-                }
-                if (beginPosition.equals(CellAddress.A1) && rowOffset <= 0) {
-                    sheet.addMergedRegion(area);
-                    return;
-                }
-                int colOffset = beginPosition.getColumn();
-
-                var rangeToMerge = new CellRangeAddress(rowOffset + area.getFirstRow(), rowOffset + area.getLastRow(), colOffset + area.getFirstColumn(), colOffset + area.getLastColumn());
-                sheet.addMergedRegion(rangeToMerge);
-            }
-        });
     }
 
     @Override
@@ -503,60 +344,6 @@ public class DataTableExcellaExporter extends DataTableExporter implements ExCel
         return facetColumns;
     }
 
-    private List<String> exportColumnGroup(FacesContext context, ColumnGroup columnGroup, ExCellaExporter.ColumnType columnType, ReportSheet reportSheet) {
-        List<String> facetColumns = new ArrayList<>();
-        context.getAttributes().put(Constants.HELPER_RENDERER, "columnGroup");
-
-        @SuppressWarnings("unchecked")
-        Set<CellRangeAddress> mergedAreas = nonNull((Set<CellRangeAddress>) reportSheet.getParam(null, COLUMN_GROUP_MERGED_AREAS_KEY + columnType), new HashSet<>());
-        reportSheet.addParam(null, COLUMN_GROUP_MERGED_AREAS_KEY + columnType, mergedAreas);
-
-        for (UIComponent child : columnGroup.getChildren()) {
-            if (!child.isRendered()) {
-                continue;
-            }
-            if (child instanceof org.primefaces.component.row.Row) {
-                if (columnGroup.getChildren().size() > 1) {
-                    return exportColumnGroupMultiRow(context, columnGroup, columnType, reportSheet);
-                } else {
-                    return exportFacetColumns(context, child.getChildren(), columnType, reportSheet);
-                }
-            } else if (child instanceof UIColumn) {
-                return exportFacetColumns(context, columnGroup.getChildren(), columnType, reportSheet);
-            } else {
-                // ignore
-            }
-        }
-
-        context.getAttributes().remove(Constants.HELPER_RENDERER);
-        return facetColumns;
-    }
-
-    private List<String> exportFacetColumns(FacesContext context, List<UIComponent> columns, ExCellaExporter.ColumnType columnType, ReportSheet reportSheet) {
-        @SuppressWarnings("unchecked")
-        Set<CellRangeAddress> mergedAreas = nonNull((Set<CellRangeAddress>) reportSheet.getParam(null, COLUMN_GROUP_MERGED_AREAS_KEY + columnType), new HashSet<>());
-        reportSheet.addParam(null, COLUMN_GROUP_MERGED_AREAS_KEY + columnType, mergedAreas);
-
-        List<String> facetColumns = new ArrayList<>();
-
-        int colIndex = -1;
-        for (UIComponent child : columns) {
-            UIColumn column = (UIColumn)child;
-            if (!isExportable(context, column)) {
-                continue;
-            }
-            colIndex++;
-            facetColumns.add(getFacetColumnText(context, column, columnType));
-            if (column.getColspan() > 1) {
-                int colsToMerge = column.getColspan() - 1;
-                mergedAreas.add(new CellRangeAddress(0, 0, colIndex, colIndex + colsToMerge));
-                colIndex += colsToMerge;
-                IntStream.range(0, colsToMerge).forEach(i -> facetColumns.add(null));
-            }
-        }
-
-        return facetColumns;
-    }
 
     private List<String> exportFrozenScrollableGroup(FacesContext context, ExCellaExporter.ColumnType columnType,
             ColumnGroup frozenGroup, ColumnGroup scrollableGroup, ReportSheet reportSheet) {
@@ -595,74 +382,6 @@ public class DataTableExcellaExporter extends DataTableExporter implements ExCel
         }
 
         return facetColumns;
-    }
-
-    private List<String> exportColumnGroupMultiRow(FacesContext context, ColumnGroup columnGroup, ExCellaExporter.ColumnType columnType,
-            ReportSheet reportSheet) {
-
-        return exportColumnGroupMultiRow(context, columnGroup, columnType, reportSheet, 0);
-    }
-
-    private List<String> exportColumnGroupMultiRow(FacesContext context, ColumnGroup columnGroup, ExCellaExporter.ColumnType columnType,
-            ReportSheet reportSheet, int beginColIndex) {
-
-        Map</*colindex*/Integer, List<String>> headerContents = new HashMap<>();
-        int rowIndex = 0;
-        Set<CellRangeAddress> mergedAreas = new HashSet<>();
-        reportSheet.addParam(null, COLUMN_GROUP_MERGED_AREAS_KEY + columnType, mergedAreas);
-
-        for (UIComponent child : columnGroup.getChildren()) {
-            if (!child.isRendered() || !(child instanceof org.primefaces.component.row.Row)) {
-                continue;
-            }
-            org.primefaces.component.row.Row row = (org.primefaces.component.row.Row)child;
-            int colIndex = beginColIndex;
-            boolean foundExportableColumn = false;
-            for (UIComponent rowChild : row.getChildren()) {
-                if (!rowChild.isRendered() || !(rowChild instanceof UIColumn)) {
-                    continue;
-                }
-                UIColumn column = (UIColumn)rowChild;
-                if (!isExportable(context, column)) {
-                    continue;
-                }
-                foundExportableColumn = true;
-                while (true) {
-                    var currRowIndex = rowIndex;
-                    var currColIndex = colIndex;
-                    boolean overlapped = mergedAreas.stream()
-                        .anyMatch(a -> a.isInRange(currRowIndex, currColIndex));
-                    if (!overlapped) { break; }
-                    colIndex++;
-                }
-                List<String> columnContents = headerContents.computeIfAbsent(colIndex, c -> new ArrayList<>());
-                columnContents.add(getFacetColumnText(context, column, columnType));
-                if (column.getRowspan() > 1) {
-                    mergedAreas.add(new CellRangeAddress(rowIndex, rowIndex + column.getRowspan() - 1, colIndex, colIndex));
-
-                    IntStream.range(rowIndex + 1, rowIndex + column.getRowspan())
-                        .forEach(i -> columnContents.add(null));
-                }
-                if (column.getColspan() > 1) {
-                    mergedAreas.add(new CellRangeAddress(rowIndex, rowIndex, colIndex, colIndex + column.getColspan() -1));
-
-                    IntStream.range(colIndex + 1, colIndex + column.getColspan())
-                        .mapToObj(i -> headerContents.computeIfAbsent(i, c -> new ArrayList<>()))
-                        .forEach(c -> c.add(null));
-                    colIndex += column.getColspan() - 1;
-                }
-                colIndex++;
-            }
-            if (foundExportableColumn) {
-                rowIndex++;
-            }
-        }
-        String tagPrefix = columnType == ExCellaExporter.ColumnType.HEADER ? "header" : "footer";
-        headerContents.entrySet().forEach(e -> reportSheet.addParam(RowRepeatParamParser.DEFAULT_TAG, tagPrefix + e.getKey(), e.getValue().toArray()));
-
-        return headerContents.keySet().stream()
-            .map(i -> "$R[]{" + tagPrefix + i + "}")
-            .collect(Collectors.toList());
     }
 
     @Override
