@@ -7,10 +7,12 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
@@ -26,6 +28,7 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellAddress;
+import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.ss.util.CellUtil;
 import org.bbreak.excella.core.SheetData;
 import org.bbreak.excella.core.SheetParser;
@@ -38,6 +41,7 @@ import org.bbreak.excella.reports.tag.ColRepeatParamParser;
 import org.bbreak.excella.reports.tag.RowRepeatParamParser;
 import org.primefaces.component.api.DynamicColumn;
 import org.primefaces.component.api.UIColumn;
+import org.primefaces.component.columngroup.ColumnGroup;
 import org.primefaces.component.export.ExportConfiguration;
 import org.primefaces.component.treetable.TreeTable;
 import org.primefaces.component.treetable.export.TreeTableExporter;
@@ -295,15 +299,30 @@ public class TreeTableExcellaExporter extends TreeTableExporter implements ExCel
 
         int columnSize = columnHeader.size();
 
+        @SuppressWarnings("unchecked")
+        Set<CellRangeAddress> headerMergedAreas = nonNull((Set<CellRangeAddress>) reportSheet.getParam(null, COLUMN_GROUP_MERGED_AREAS_KEY + "header"), new HashSet<>());
+        @SuppressWarnings("unchecked")
+        Set<CellRangeAddress> footerMergedAreas = nonNull((Set<CellRangeAddress>) reportSheet.getParam(null, COLUMN_GROUP_MERGED_AREAS_KEY + "footer"), new HashSet<>());
+        reportSheet.removeParam(null, COLUMN_GROUP_MERGED_AREAS_KEY + "header");
+        reportSheet.removeParam(null, COLUMN_GROUP_MERGED_AREAS_KEY + "footer");
+
         String headersTagName = nonNull(headersTag, DEFAULT_HEADERS_TAG);
         String footersTagName = nonNull(footersTag, DEFAULT_FOOTERS_TAG);
         reportSheet.addParam(ColRepeatParamParser.DEFAULT_TAG, headersTagName, columnHeader.toArray());
         reportSheet.addParam(ColRepeatParamParser.DEFAULT_TAG, footersTagName, columnFooter.toArray());
         listeners.add(new ReportProcessAdaptor() {
 
+            private CellAddress headerPosition;
+
             private CellAddress dataPosition;
 
+            private CellAddress footerPosition;
+
             private int headerSize;
+
+            private void setHeaderPosition(CellAddress address) {
+                headerPosition = address;
+            }
 
             private void setDataPosition(CellAddress address) {
                 dataPosition = address;
@@ -318,15 +337,29 @@ public class TreeTableExcellaExporter extends TreeTableExporter implements ExCel
                 styles = ValueType.initStyles(workbook);
             }
 
+            private int dataColOffset(int col) {
+                return dataPosition != null ? col + dataPosition.getColumn()  : col;
+            }
+
+            private void setFooterPosition(CellAddress address) {
+                footerPosition = address;
+            }
+
             @Override
             public void preParse(Sheet sheet, SheetParser sheetParser) throws org.bbreak.excella.core.exception.ParseException {
+                String headerTag = ColRepeatParamParser.DEFAULT_TAG + "{" + headersTagName + "}";
+                String footerTag = ColRepeatParamParser.DEFAULT_TAG + "{" + footersTagName + "}";
                 String dataTag = ColRepeatParamParser.DEFAULT_TAG + "{" + dataTag() + "}";
                 StreamSupport.stream(sheet.spliterator(), false)
                     .map(Row::spliterator)
                     .flatMap(s -> StreamSupport.stream(s, false))
                     .filter(c -> c.getCellType() == CellType.STRING)
                     .forEach(c -> {
-                        if (dataTag.equals(c.getStringCellValue())) {
+                        if (headerTag.equals(c.getStringCellValue())) {
+                            setHeaderPosition(c.getAddress());
+                        } else if (footerTag.equals(c.getStringCellValue())) {
+                            setFooterPosition(c.getAddress());
+                        } else if (dataTag.equals(c.getStringCellValue())) {
                             setDataPosition(c.getAddress());
                         }
                     });
@@ -336,18 +369,6 @@ public class TreeTableExcellaExporter extends TreeTableExporter implements ExCel
             public void postParse(Sheet sheet, SheetParser sheetParser, SheetData sheetData) throws org.bbreak.excella.core.exception.ParseException {
                 if (!reportSheet.getSheetName().equals(sheetData.getSheetName())) {
                     return;
-                }
-
-                for (int i = 1; i <= levels.size(); i++) {
-                    int level = levels.get(i-1);
-                    Row row = sheet.getRow(i);
-                    if (row == null) {
-                        continue;
-                    }
-                    Cell indexCell = row.getCell(0);
-                    if (indexCell != null) {
-                        CellUtil.setCellStyleProperty(indexCell, CellUtil.INDENTION, (short)level - 1);
-                    }
                 }
 
                 if (dataContainer.isEmpty()) {
@@ -372,9 +393,21 @@ public class TreeTableExcellaExporter extends TreeTableExporter implements ExCel
                     IntStream.range(dataRowOffset(0), dataRowOffset(repeatRows))
                         .mapToObj(sheet::getRow)
                         .filter(Objects::nonNull)
-                        .map(r -> r.getCell(colIndex))
+                        .map(r -> r.getCell(dataColOffset(colIndex)))
                         .filter(Objects::nonNull)
                         .forEach(c -> setCellStyle(c, style));
+                }
+
+                for (int i = 1; i <= levels.size(); i++) {
+                    int level = levels.get(i-1);
+                    Row row = sheet.getRow(dataRowOffset(i-1));
+                    if (row == null) {
+                        continue;
+                    }
+                    Cell indexCell = row.getCell(dataColOffset(0));
+                    if (indexCell != null) {
+                        CellUtil.setCellStyleProperty(indexCell, CellUtil.INDENTION, (short)level - 1);
+                    }
                 }
             }
 
@@ -386,6 +419,35 @@ public class TreeTableExcellaExporter extends TreeTableExporter implements ExCel
                 return "$R[]{" + key + "}";
             }
 
+            @Override
+            public void postBookParse(Workbook workbook, ReportBook reportBook) {
+                IntStream.range(0, workbook.getNumberOfSheets())
+                    .mapToObj(workbook::getSheetAt)
+                    .forEach(this::mergeCells);
+            }
+
+            private void mergeCells(Sheet sheet) {
+                int headerOffset = headerPosition == null ? 0 : headerPosition.getRow();
+                headerMergedAreas.forEach(a -> mergeCell(sheet, headerPosition, headerOffset, a));
+
+                int footerOffset = footerPosition == null ? 0 : dataRowOffset(repeatRows) + footerPosition.getRow() - dataPosition.getRow() - 1;
+                footerMergedAreas.forEach(a -> mergeCell(sheet, footerPosition, footerOffset, a));
+            }
+
+            private void mergeCell(Sheet sheet, CellAddress beginPosition, int rowOffset, CellRangeAddress area) {
+                if (beginPosition == null) {
+                    return;
+                }
+                if (beginPosition.equals(CellAddress.A1) && rowOffset <= 0) {
+                    sheet.addMergedRegion(area);
+                    return;
+                }
+                int colOffset = beginPosition.getColumn();
+
+                var rangeToMerge = new CellRangeAddress(rowOffset + area.getFirstRow(), rowOffset + area.getLastRow(), colOffset + area.getFirstColumn(), colOffset + area.getLastColumn());
+                sheet.addMergedRegion(rangeToMerge);
+            }
+
         });
 
         reportBook.addReportSheet(reportSheet);
@@ -393,13 +455,14 @@ public class TreeTableExcellaExporter extends TreeTableExporter implements ExCel
 
     private Map<ValueType, CellStyle> styles;
 
-    private <T> T nonNull(T obj, T defaultValue) {
-        return obj != null ? obj : defaultValue;
-    }
-
     @Override
     public List<String> exportFacet(FacesContext context, TreeTable table, ExCellaExporter.ColumnType columnType, ReportSheet reportSheet) {
         List<String> facetColumns = new ArrayList<>();
+
+        ColumnGroup group = table.getColumnGroup(columnType.facet());
+        if (group != null && group.isRendered()) {
+            return exportColumnGroup(context, group, columnType, reportSheet);
+        }
 
         for (UIColumn column : getExportableColumns(table)) {
             if (column instanceof DynamicColumn) {
