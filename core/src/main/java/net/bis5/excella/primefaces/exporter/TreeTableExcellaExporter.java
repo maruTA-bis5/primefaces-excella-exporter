@@ -5,32 +5,23 @@ import java.io.OutputStream;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.StreamSupport;
 
 import javax.faces.component.UIComponent;
 import javax.faces.context.FacesContext;
 
 import org.apache.commons.math3.util.Pair;
 import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.CellStyle;
-import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.ss.util.CellAddress;
 import org.apache.poi.ss.util.CellUtil;
 import org.bbreak.excella.core.SheetData;
 import org.bbreak.excella.core.SheetParser;
 import org.bbreak.excella.core.util.StringUtil;
-import org.bbreak.excella.reports.listener.ReportProcessAdaptor;
 import org.bbreak.excella.reports.listener.ReportProcessListener;
 import org.bbreak.excella.reports.model.ReportBook;
 import org.bbreak.excella.reports.model.ReportSheet;
@@ -38,6 +29,7 @@ import org.bbreak.excella.reports.tag.ColRepeatParamParser;
 import org.bbreak.excella.reports.tag.RowRepeatParamParser;
 import org.primefaces.component.api.DynamicColumn;
 import org.primefaces.component.api.UIColumn;
+import org.primefaces.component.columngroup.ColumnGroup;
 import org.primefaces.component.export.ExportConfiguration;
 import org.primefaces.component.treetable.TreeTable;
 import org.primefaces.component.treetable.export.TreeTableExporter;
@@ -282,12 +274,6 @@ public class TreeTableExcellaExporter extends TreeTableExporter implements ExCel
         Object[] columnDataParams = dataContainer.keySet().stream().map(k -> "$R[]{" + k + "}").toArray();
         reportSheet.addParam(ColRepeatParamParser.DEFAULT_TAG, dataTag(), columnDataParams);
 
-        int repeatRows = dataContainer.values().stream()
-            .mapToInt(List::size)
-            .max()
-            .orElse(1);
-
-        Map<String, ValueType> valueTypes = detectValueTypes(dataContainer);
         dataContainer.entrySet()
             .stream()
             .map(this::normalizeValues)
@@ -299,107 +285,44 @@ public class TreeTableExcellaExporter extends TreeTableExporter implements ExCel
         String footersTagName = nonNull(footersTag, DEFAULT_FOOTERS_TAG);
         reportSheet.addParam(ColRepeatParamParser.DEFAULT_TAG, headersTagName, columnHeader.toArray());
         reportSheet.addParam(ColRepeatParamParser.DEFAULT_TAG, footersTagName, columnFooter.toArray());
-        listeners.add(new ReportProcessAdaptor() {
-
-            private CellAddress dataPosition;
-
-            private int headerSize;
-
-            private void setDataPosition(CellAddress address) {
-                dataPosition = address;
-            }
-
-            private int dataRowOffset(int row) {
-                return Math.max(headerSize - 1, 0) + (dataPosition != null ? row + dataPosition.getRow() : row);
-            }
-
+        listeners.add(new StyleUpdateListener(reportSheet, dataContainer, dataTag(), headersTagName, footersTagName, columnSize, columnDataParams) {
             @Override
-            public void preBookParse(Workbook workbook, ReportBook reportBook) {
-                styles = ValueType.initStyles(workbook);
-            }
+            public void postParse(Sheet sheet, SheetParser sheetParser, SheetData sheetData) {
+                super.postParse(sheet, sheetParser, sheetData);
 
-            @Override
-            public void preParse(Sheet sheet, SheetParser sheetParser) throws org.bbreak.excella.core.exception.ParseException {
-                String dataTag = ColRepeatParamParser.DEFAULT_TAG + "{" + dataTag() + "}";
-                StreamSupport.stream(sheet.spliterator(), false)
-                    .map(Row::spliterator)
-                    .flatMap(s -> StreamSupport.stream(s, false))
-                    .filter(c -> c.getCellType() == CellType.STRING)
-                    .forEach(c -> {
-                        if (dataTag.equals(c.getStringCellValue())) {
-                            setDataPosition(c.getAddress());
-                        }
-                    });
-            }
-
-            @Override
-            public void postParse(Sheet sheet, SheetParser sheetParser, SheetData sheetData) throws org.bbreak.excella.core.exception.ParseException {
                 if (!reportSheet.getSheetName().equals(sheetData.getSheetName())) {
                     return;
-                }
-
-                for (int i = 1; i <= levels.size(); i++) {
-                    int level = levels.get(i-1);
-                    Row row = sheet.getRow(i);
-                    if (row == null) {
-                        continue;
-                    }
-                    Cell indexCell = row.getCell(0);
-                    if (indexCell != null) {
-                        CellUtil.setCellStyleProperty(indexCell, CellUtil.INDENTION, (short)level - 1);
-                    }
                 }
 
                 if (dataContainer.isEmpty()) {
                     return;
                 }
-                IntStream.range(0, columnSize)
-                    .mapToObj(i -> "header" + i)
-                    .map(t -> reportSheet.getParam(RowRepeatParamParser.DEFAULT_TAG, t))
-                    .filter(Objects::nonNull)
-                    .map(Object[].class::cast)
-                    .mapToInt(a -> a.length)
-                    .max()
-                    .ifPresentOrElse(s -> headerSize = s, () -> headerSize = 1);
-                for (Entry<String, ValueType> entry : valueTypes.entrySet()) {
-                    String columnTag = getColumnTag(entry.getKey());
-                    ValueType valueType = entry.getValue();
-                    if (valueType == null) {
+
+                for (int i = 1; i <= levels.size(); i++) {
+                    int level = levels.get(i-1);
+                    Row row = sheet.getRow(dataRowOffset(i-1));
+                    if (row == null) {
                         continue;
                     }
-                    CellStyle style = styles.get(valueType);
-                    int colIndex = Arrays.asList(columnDataParams).indexOf(columnTag);
-                    IntStream.range(dataRowOffset(0), dataRowOffset(repeatRows))
-                        .mapToObj(sheet::getRow)
-                        .filter(Objects::nonNull)
-                        .map(r -> r.getCell(colIndex))
-                        .filter(Objects::nonNull)
-                        .forEach(c -> setCellStyle(c, style));
+                    Cell indexCell = row.getCell(dataColOffset(0));
+                    if (indexCell != null) {
+                        CellUtil.setCellStyleProperty(indexCell, CellUtil.INDENTION, (short)level - 1);
+                    }
                 }
             }
-
-            private void setCellStyle(Cell cell, CellStyle style) {
-                CellUtil.setCellStyleProperty(cell, CellUtil.DATA_FORMAT, style.getDataFormat());
-            }
-
-            private String getColumnTag(String key) {
-                return "$R[]{" + key + "}";
-            }
-
         });
 
         reportBook.addReportSheet(reportSheet);
     }
 
-    private Map<ValueType, CellStyle> styles;
-
-    private <T> T nonNull(T obj, T defaultValue) {
-        return obj != null ? obj : defaultValue;
-    }
-
     @Override
     public List<String> exportFacet(FacesContext context, TreeTable table, ExCellaExporter.ColumnType columnType, ReportSheet reportSheet) {
         List<String> facetColumns = new ArrayList<>();
+
+        ColumnGroup group = table.getColumnGroup(columnType.facet());
+        if (group != null && group.isRendered()) {
+            return exportColumnGroup(context, group, columnType, reportSheet);
+        }
 
         for (UIColumn column : getExportableColumns(table)) {
             if (column instanceof DynamicColumn) {
