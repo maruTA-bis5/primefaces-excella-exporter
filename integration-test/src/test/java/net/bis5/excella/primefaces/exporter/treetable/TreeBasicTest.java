@@ -80,7 +80,23 @@ class TreeBasicTest extends AbstractPrimePageTest {
     private void assertFileContent(DataTypeCheck parentRecord1, DataTypeCheck childRecord1, DataTypeCheck parentRecord2, DataTypeCheck childRecord2, String fileName) throws EncryptedDocumentException, IOException {
         try (Workbook workbook = WorkbookFactory.create(new File(getBaseDir()+"/docker-compose/downloads/" + fileName), null, true)) {
             Sheet sheet = workbook.getSheetAt(0);
-            List<String> headers = Arrays.asList("String", "YearMonth", "j.u.Date (date)", "j.u.Date (datetime)", "LocalDate", "LocalDateTime", "Integer (int)", "Integer (BigDecimal scale=2)", "Decimal (double)", "Decimal (BigDecimal)", "Link (value specified)", "Link (value not specified)", "header line break");
+            List<String> headers = Arrays.asList(
+                "String",
+                "YearMonth",
+                "j.u.Date (date)",
+                "j.u.Date (datetime)",
+                "LocalDate",
+                "LocalDateTime",
+                "Integer (int)",
+                "Integer (BigDecimal scale=2)",
+                "Decimal (double)",
+                "Decimal (BigDecimal)",
+                "Link (value specified)",
+                "Link (value not specified)",
+                "header line break",
+                "exportable component",
+                "exportable component(value null)"
+            );
 
             Row headerRow = sheet.getRow(0);
             Row parentNodeRow1 = sheet.getRow(1);
@@ -114,7 +130,9 @@ class TreeBasicTest extends AbstractPrimePageTest {
                     () -> assertCell("BigDecimal as decimal cell", parentNodeRow1.getCell(9), CellType.NUMERIC, ValueType.DECIMAL, parentRecord1.getBigDecimalDecimalProperty().doubleValue(), Cell::getNumericCellValue),
                     () -> assertCell("Link value specified", parentNodeRow1.getCell(10), CellType.STRING, ValueType.STRING, "Link", Cell::getStringCellValue),
                     () -> assertCell("Link value not specified", parentNodeRow1.getCell(11), CellType.NUMERIC, ValueType.DECIMAL, parentRecord1.getBigDecimalDecimalProperty().doubleValue(), Cell::getNumericCellValue),
-                    () -> assertCell("remove br tag", parentNodeRow1.getCell(12), CellType.STRING, ValueType.STRING, "value row line break", Cell::getStringCellValue)
+                    () -> assertCell("remove br tag", parentNodeRow1.getCell(12), CellType.STRING, ValueType.STRING, "value row line break", Cell::getStringCellValue),
+                    () -> assertCell("exportable value holder", parentNodeRow1.getCell(13), CellType.STRING, ValueType.STRING, "Export text1", Cell::getStringCellValue),
+                    () -> assertCell("exportable value holder(value null)", parentNodeRow1.getCell(14), CellType.STRING, ValueType.STRING, "Export text2", Cell::getStringCellValue)
                 ),
                 () -> assertAll("Child node row 2",
                     () -> assertEquals(1, childNodeRow2.getCell(0).getCellStyle().getIndention(), "indention"),
@@ -130,7 +148,9 @@ class TreeBasicTest extends AbstractPrimePageTest {
                     () -> assertCell("BigDecimal as decimal cell", childNodeRow2.getCell(9), CellType.NUMERIC, ValueType.DECIMAL, childRecord1.getBigDecimalDecimalProperty().doubleValue(), Cell::getNumericCellValue),
                     () -> assertCell("Link value specified", childNodeRow2.getCell(10), CellType.STRING, ValueType.STRING, "Link", Cell::getStringCellValue),
                     () -> assertCell("Link value not specified", childNodeRow2.getCell(11), CellType.NUMERIC, ValueType.DECIMAL, childRecord1.getBigDecimalDecimalProperty().doubleValue(), Cell::getNumericCellValue),
-                    () -> assertCell("remove br tag", childNodeRow2.getCell(12), CellType.STRING, ValueType.STRING, "value row line break", Cell::getStringCellValue)
+                    () -> assertCell("remove br tag", childNodeRow2.getCell(12), CellType.STRING, ValueType.STRING, "value row line break", Cell::getStringCellValue),
+                    () -> assertCell("exportable value holder", childNodeRow2.getCell(13), CellType.STRING, ValueType.STRING, "Export text1", Cell::getStringCellValue),
+                    () -> assertCell("exportable value holder(value null)", childNodeRow2.getCell(14), CellType.STRING, ValueType.STRING, "Export text2", Cell::getStringCellValue)
                 ),
                 () -> assertAll("Parent node row 3",
                     () -> assertEquals(0, parentNodeRow3.getCell(0).getCellStyle().getIndention(), "indention"),
@@ -146,7 +166,9 @@ class TreeBasicTest extends AbstractPrimePageTest {
                     () -> assertCell("BigDecimal as decimal cell", parentNodeRow3.getCell(9), CellType.NUMERIC, ValueType.DECIMAL, parentRecord2.getBigDecimalDecimalProperty().doubleValue(), Cell::getNumericCellValue),
                     () -> assertCell("Link value specified", parentNodeRow3.getCell(10), CellType.STRING, ValueType.STRING, "Link", Cell::getStringCellValue),
                     () -> assertCell("Link value not specified", parentNodeRow3.getCell(11), CellType.NUMERIC, ValueType.DECIMAL, parentRecord2.getBigDecimalDecimalProperty().doubleValue(), Cell::getNumericCellValue),
-                    () -> assertCell("remove br tag", parentNodeRow3.getCell(12), CellType.STRING, ValueType.STRING, "value row line break", Cell::getStringCellValue)
+                    () -> assertCell("remove br tag", parentNodeRow3.getCell(12), CellType.STRING, ValueType.STRING, "value row line break", Cell::getStringCellValue),
+                    () -> assertCell("exportable value holder", parentNodeRow3.getCell(13), CellType.STRING, ValueType.STRING, "Export text1", Cell::getStringCellValue),
+                    () -> assertCell("exportable value holder(value null)", parentNodeRow3.getCell(14), CellType.STRING, ValueType.STRING, "Export text2", Cell::getStringCellValue)
                 ),
                 () -> assertAll("Child node row 4",
                     () -> assertEquals(1, childNodeRow4.getCell(0).getCellStyle().getIndention(), "indention"),
@@ -162,7 +184,9 @@ class TreeBasicTest extends AbstractPrimePageTest {
                     () -> assertCell("BigDecimal as decimal cell", childNodeRow4.getCell(9), CellType.NUMERIC, ValueType.DECIMAL, childRecord2.getBigDecimalDecimalProperty().doubleValue(), Cell::getNumericCellValue),
                     () -> assertCell("Link value specified", childNodeRow4.getCell(10), CellType.STRING, ValueType.STRING, "Link", Cell::getStringCellValue),
                     () -> assertCell("Link value not specified", childNodeRow4.getCell(11), CellType.NUMERIC, ValueType.DECIMAL, childRecord2.getBigDecimalDecimalProperty().doubleValue(), Cell::getNumericCellValue),
-                    () -> assertCell("remove br tag", childNodeRow4.getCell(12), CellType.STRING, ValueType.STRING, "value row line break", Cell::getStringCellValue)
+                    () -> assertCell("remove br tag", childNodeRow4.getCell(12), CellType.STRING, ValueType.STRING, "value row line break", Cell::getStringCellValue),
+                    () -> assertCell("exportable value holder", childNodeRow4.getCell(13), CellType.STRING, ValueType.STRING, "Export text1", Cell::getStringCellValue),
+                    () -> assertCell("exportable value holder(value null)", childNodeRow4.getCell(14), CellType.STRING, ValueType.STRING, "Export text2", Cell::getStringCellValue)
                 ),
                 () -> {
                     List<Executable> assertions = new ArrayList<>();
