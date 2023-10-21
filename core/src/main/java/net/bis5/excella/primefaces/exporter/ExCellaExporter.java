@@ -38,7 +38,11 @@ import javax.faces.convert.Converter;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellRangeAddress;
+import org.bbreak.excella.core.listener.PostSheetParseListener;
+import org.bbreak.excella.core.listener.PreSheetParseListener;
 import org.bbreak.excella.reports.exporter.ExcelExporter;
+import org.bbreak.excella.reports.listener.PostBookParseListener;
+import org.bbreak.excella.reports.listener.PreBookParseListener;
 import org.bbreak.excella.reports.listener.ReportProcessAdaptor;
 import org.bbreak.excella.reports.listener.ReportProcessListener;
 import org.bbreak.excella.reports.model.ConvertConfiguration;
@@ -84,24 +88,33 @@ interface ExCellaExporter<T> {
     void setTemplateSheetName(String templateSheetName);
     void setTemplateType(TemplateType templateType);
     TemplateType getTemplateType();
-    void addListener(ReportProcessListener listener);
-    List<ReportProcessListener> getListeners();
+    default void addListener(ReportProcessListener listener) {
+        addPreBookParseListener(listener);
+        addPreSheetParseListener(listener);
+        addPostSheetParseListener(listener);
+        addPostBookParseListener(listener);
+    };
+    void addPreBookParseListener(PreBookParseListener listener);
+    void addPreSheetParseListener(PreSheetParseListener listener);
+    void addPostSheetParseListener(PostSheetParseListener listener);
+    void addPostBookParseListener(PostBookParseListener listener);
+
+    void applyListeners(ReportProcessor reportProcessor);
     void setReportBook(ReportBook reportBook);
     ReportBook getDocument();
 
     default void preExport(FacesContext context, ExportConfiguration config) {
         setReportBook(new ReportBook());
 
-        addListener(new ReportProcessAdaptor() {
-            @Override
-            public void preBookParse(Workbook workbook, ReportBook reportBook) {
-                if (workbook instanceof HSSFWorkbook) {
-                    setTemplateType(TemplateType.XLS);
-                } else {
-                    setTemplateType(TemplateType.XLSX);
-                }
-            }
-        });
+        addPreBookParseListener(this::detectTemplateType);
+    }
+
+    default void detectTemplateType(Workbook workbook, ReportBook reportBook) {
+        if (workbook instanceof HSSFWorkbook) {
+            setTemplateType(TemplateType.XLS);
+        } else {
+            setTemplateType(TemplateType.XLSX);
+        }
     }
 
     default void postExport(FacesContext context, ExportConfiguration config) throws IOException {
@@ -119,7 +132,7 @@ interface ExCellaExporter<T> {
     private Path processExport() throws IOException {
         ReportBook reportBook = getDocument();
         ReportProcessor processor = new ReportProcessor();
-        getListeners().forEach(processor::addReportProcessListener);
+        applyListeners(processor);
         reportBook.setTemplateFileURL(getTemplateFileUrl());
         reportBook.setConfigurations(new ConvertConfiguration(ExcelExporter.FORMAT_TYPE));
         Path outputFile = Files.createTempFile(null, null);

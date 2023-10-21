@@ -14,9 +14,14 @@ import java.util.Objects;
 import javax.faces.component.UIComponent;
 import javax.faces.context.FacesContext;
 
+import org.bbreak.excella.core.listener.PostSheetParseListener;
+import org.bbreak.excella.core.listener.PreSheetParseListener;
+import org.bbreak.excella.reports.listener.PostBookParseListener;
+import org.bbreak.excella.reports.listener.PreBookParseListener;
 import org.bbreak.excella.reports.listener.ReportProcessListener;
 import org.bbreak.excella.reports.model.ReportBook;
 import org.bbreak.excella.reports.model.ReportSheet;
+import org.bbreak.excella.reports.processor.ReportProcessor;
 import org.bbreak.excella.reports.tag.ColRepeatParamParser;
 import org.bbreak.excella.reports.tag.RowRepeatParamParser;
 import org.primefaces.component.api.DynamicColumn;
@@ -55,6 +60,8 @@ public class DataTableExcellaExporter extends DataTableExporter implements ExCel
     private String headersTag;
 
     private String footersTag;
+
+    private final ListenerHolder listenerHolder = new ListenerHolder();
 
     /**
      * @deprecated Use {@link #builder()}
@@ -161,13 +168,28 @@ public class DataTableExcellaExporter extends DataTableExporter implements ExCel
     }
 
     @Override
-    public void addListener(ReportProcessListener listener) {
-        listeners.add(listener);
+    public void addPreBookParseListener(PreBookParseListener listener) {
+        listenerHolder.addPreBookParseListener(listener);
     }
 
     @Override
-    public List<ReportProcessListener> getListeners() {
-        return listeners;
+    public void addPreSheetParseListener(PreSheetParseListener listener) {
+        listenerHolder.addPreSheetParseListener(listener);
+    }
+
+    @Override
+    public void addPostSheetParseListener(PostSheetParseListener listener) {
+        listenerHolder.addPostSheetParseListener(listener);
+    }
+
+    @Override
+    public void addPostBookParseListener(PostBookParseListener listener) {
+        listenerHolder.addPostBookParseListener(listener);
+    }
+
+    @Override
+    public void applyListeners(ReportProcessor reportProcessor) {
+        listenerHolder.applyListeners(reportProcessor);
     }
 
     @Override

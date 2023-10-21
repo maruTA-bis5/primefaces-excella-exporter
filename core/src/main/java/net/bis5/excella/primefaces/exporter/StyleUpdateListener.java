@@ -31,13 +31,13 @@ import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.ss.util.CellUtil;
 import org.bbreak.excella.core.SheetData;
 import org.bbreak.excella.core.SheetParser;
-import org.bbreak.excella.reports.listener.ReportProcessAdaptor;
+import org.bbreak.excella.reports.listener.ReportProcessListener;
 import org.bbreak.excella.reports.model.ReportBook;
 import org.bbreak.excella.reports.model.ReportSheet;
 import org.bbreak.excella.reports.tag.ColRepeatParamParser;
 import org.bbreak.excella.reports.tag.RowRepeatParamParser;
 
-class StyleUpdateListener extends ReportProcessAdaptor {
+class StyleUpdateListener implements ReportProcessListener {
 
     private CellAddress headerPosition;
 
