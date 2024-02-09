@@ -29,22 +29,22 @@
       <h:form id="form">
           <p:commandLink id="excellaExportNonAjax" ajax="false">
               <h:outputLabel>ExCella Reports (non-Ajax)</h:outputLabel>
-              <p:dataExporter type="xls" target="tbl" fileName="tt-cars-non-ajax-nodevar" exporter="#{excellaExporter.treeTableExporter}" />
+              <p:dataExporter type="excella" target="tbl" fileName="tt-cars-non-ajax-nodevar" />
           </p:commandLink>
           <br />
           <p:commandLink id="excellaExportAjax" ajax="true">
               <h:outputLabel>ExCella Reports (Ajax)</h:outputLabel>
-              <p:dataExporter type="xls" target="tbl" fileName="tt-cars-ajax-nodevar" exporter="#{excellaExporter.treeTableExporter}" />
+              <p:dataExporter type="excella" target="tbl" fileName="tt-cars-ajax-nodevar" />
           </p:commandLink>
           <br />
           <p:commandLink id="excellaExportNonAjaxSelectionOnly" ajax="false">
               <h:outputLabel>ExCella Reports (non-Ajax SelectionOnly)</h:outputLabel>
-              <p:dataExporter type="xls" target="tbl" fileName="tt-cars-non-ajax-nodevar-selection" selectionOnly="true" exporter="#{excellaExporter.treeTableExporter}" />
+              <p:dataExporter type="excella" target="tbl" fileName="tt-cars-non-ajax-nodevar-selection" selectionOnly="true" />
           </p:commandLink>
           <br />
           <p:commandLink id="excellaExportAjaxSelectionOnly" ajax="true">
               <h:outputLabel>ExCella Reports (Ajax SelectionOnly)</h:outputLabel>
-              <p:dataExporter type="xls" target="tbl" fileName="tt-cars-ajax-nodevar-selection" selectionOnly="true" exporter="#{excellaExporter.treeTableExporter}" />
+              <p:dataExporter type="excella" target="tbl" fileName="tt-cars-ajax-nodevar-selection" selectionOnly="true" />
           </p:commandLink>
 
           <p:treeTable id="tbl" var="row" value="#{ttBasicView.root}" nodeVar="node" selection="${ttBasicView.selection}" selectionMode="checkbox">

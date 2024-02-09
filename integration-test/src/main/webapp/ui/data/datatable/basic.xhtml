@@ -30,12 +30,12 @@
       <h:form id="form">
           <p:commandLink id="excellaExportNonAjax" ajax="false">
               <h:outputLabel>ExCella Reports (non-Ajax)</h:outputLabel>
-              <p:dataExporter type="xls" target="tbl2" fileName="cars-non-ajax" exporter="#{excellaExporter.dataTableExporter}" />
+              <p:dataExporter type="excella" target="tbl2" fileName="cars-non-ajax" />
           </p:commandLink>
           <br />
           <p:commandLink id="excellaExportAjax" ajax="true">
               <h:outputLabel>ExCella Reports (Ajax)</h:outputLabel>
-              <p:dataExporter type="xls" target="tbl2" fileName="cars-ajax" exporter="#{excellaExporter.dataTableExporter}" />
+              <p:dataExporter type="excella" target="tbl2" fileName="cars-ajax" />
           </p:commandLink>
 
           <p:dataTable id="tbl2" var="row" value="#{dtBasicView.dataTypes}">

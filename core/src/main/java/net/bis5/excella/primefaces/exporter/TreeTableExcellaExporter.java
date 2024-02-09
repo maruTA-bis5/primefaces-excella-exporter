@@ -2,16 +2,18 @@ package net.bis5.excella.primefaces.exporter;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.reflect.Array;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import javax.faces.component.UIComponent;
 import javax.faces.context.FacesContext;
 
 import org.apache.commons.math3.util.Pair;
@@ -34,10 +36,9 @@ import org.primefaces.component.export.ExportConfiguration;
 import org.primefaces.component.treetable.TreeTable;
 import org.primefaces.component.treetable.export.TreeTableExporter;
 import org.primefaces.model.TreeNode;
+import org.primefaces.util.LangUtils;
 
-public class TreeTableExcellaExporter extends TreeTableExporter implements ExCellaExporter<TreeTable> {
-
-    private String templateSheetName;
+public class TreeTableExcellaExporter extends TreeTableExporter<ReportBook, ExCellaExporterOptions> implements ExCellaExporter<TreeTable> {
 
     private static final String TREE_LEVEL_KEY = "TREE_LEVEL_KEY";
 
@@ -47,44 +48,38 @@ public class TreeTableExcellaExporter extends TreeTableExporter implements ExCel
 
     private static final String DEFAULT_FOOTERS_TAG = "footers";
 
-    private String dataColumnsTag;
-
-    private String headersTag;
-
-    private String footersTag;
-
     private final List<ReportProcessListener> listeners = new ArrayList<>();
-
-    private ReportBook reportBook;
 
     private TemplateType templateType;
 
-    private URL templateUrl;
+    private ReportSheet currentSheet;
 
-    private Path templatePath;
-
-    /**
-     * @deprecated Use {@link #builder()}
-     */
-    @Deprecated(forRemoval = true)
     public TreeTableExcellaExporter() {
-        // deprecated
+        super(new ExCellaExporterOptions(), ALL_FACETS, true);
     }
 
     private TreeTableExcellaExporter(Builder builder) {
-        this.templatePath = builder.templatePath;
-        this.templateUrl = builder.templateUrl;
-        this.templateSheetName = builder.templateSheetName;
-        this.dataColumnsTag = builder.dataColumnsTag;
-        this.headersTag = builder.headersTag;
-        this.footersTag = builder.footersTag;
-        this.templateUrl = builder.templateUrl;
+        super(builder.options, ALL_FACETS, true);
+        setTemplatePath(builder.templatePath);
+        setTemplateUrl(builder.templateUrl);
+        setTemplateSheetName(builder.templateSheetName);
+        setDataColumnsTag(builder.dataColumnsTag);
+        setHeadersTag(builder.headersTag);
+        setFootersTag(builder.footersTag);
     }
 
+    /**
+     * @deprecated Use {@link ExCellaExporterOptions}. This constructor will be removed in 5.0.0.
+     */
+    @Deprecated(forRemoval = true)
     public static Builder builder() {
         return new Builder();
     }
 
+    /**
+     * @deprecated Use {@link ExCellaExporterOptions}. This constructor will be removed in 5.0.0.
+     */
+    @Deprecated(forRemoval = true)
     public static class Builder {
         private Path templatePath;
         private URL templateUrl;
@@ -92,6 +87,7 @@ public class TreeTableExcellaExporter extends TreeTableExporter implements ExCel
         private String dataColumnsTag;
         private String headersTag;
         private String footersTag;
+        private ExCellaExporterOptions options = new ExCellaExporterOptions();
 
         public Builder templatePath(Path templatePath) {
             this.templatePath = templatePath;
@@ -123,21 +119,50 @@ public class TreeTableExcellaExporter extends TreeTableExporter implements ExCel
             return this;
         }
 
+        public Builder options(ExCellaExporterOptions options) {
+            this.options = options;
+            return this;
+        }
+
         public TreeTableExcellaExporter build() {
             return new TreeTableExcellaExporter(this);
         }
     }
 
+    /**
+     * @deprecated Use {@link #builder()}. This method will be removed in 5.0.0.
+     */
+    @Deprecated(forRemoval = true)
     public void setDataColumnsTag(String tag) {
-        dataColumnsTag = tag;
+        getExporterOptions().setDataColumnsTag(tag);
     }
 
+    private String getDataColumnsTag() {
+        return getExporterOptions().getDataColumnsTag();
+    }
+
+    /**
+     * @deprecated Use {@link #builder()}. This method will be removed in 5.0.0.
+     */
+    @Deprecated(forRemoval = true)
     public void setHeadersTag(String tag) {
-        headersTag = tag;
+        getExporterOptions().setHeadersTag(tag);
     }
 
+    private String getHeadersTag() {
+        return getExporterOptions().getHeadersTag();
+    }
+
+    /**
+     * @deprecated Use {@link #builder()}. This method will be removed in 5.0.0.
+     */
+    @Deprecated(forRemoval = true)
     public void setFootersTag(String tag) {
-        footersTag = tag;
+        getExporterOptions().setFootersTag(tag);
+    }
+
+    private String getFootersTag() {
+        return getExporterOptions().getFootersTag();
     }
 
     @Override
@@ -150,33 +175,60 @@ public class TreeTableExcellaExporter extends TreeTableExporter implements ExCel
         return templateType;
     }
 
+    /**
+     * @deprecated Use {@link #builder()}. This method will be removed in 5.0.0.
+     */
+    @Deprecated(forRemoval = true)
     @Override
     public void setTemplatePath(Path path) {
-        templatePath = path;
+        getExporterOptions().setTemplatePath(path);
     }
 
+    /**
+     * @deprecated Use {@link #builder()}. This method will be removed in 5.0.0.
+     * @implNote Make this getter private in 5.0.0.
+     */
+    @Deprecated(forRemoval = true)
     @Override
     public Path getTemplatePath() {
-        return templatePath;
+        return getExporterOptions().getTemplatePath();
     }
 
+    /**
+     * @deprecated Use {@link #builder()}. This method will be removed in 5.0.0.
+     */
+    @Deprecated(forRemoval = true)
     @Override
     public void setTemplateUrl(URL url) {
-        templateUrl = url;
+        getExporterOptions().setTemplateUrl(url);
     }
 
+    /**
+     * @deprecated Use {@link #builder()}. This method will be removed in 5.0.0.
+     * @implNote Make this getter private in 5.0.0.
+     */
+    @Deprecated(forRemoval = true)
     @Override
     public URL getTemplateUrl() {
-        return templateUrl;
+        return getExporterOptions().getTemplateUrl();
     }
 
+    /**
+     * @deprecated Use {@link #builder()}. This method will be removed in 5.0.0.
+     */
+    @Deprecated(forRemoval = true)
     public void setTemplateSheetName(String name) {
-        templateSheetName = name;
+        getExporterOptions().setTemplateSheetName(name);
     }
 
+    /**
+     * @deprecated Use {@link #builder()}. This method will be removed in 5.0.0.
+     * @implNote Make this getter private in 5.0.0.
+     */
+    @Deprecated(forRemoval = true)
     @Override
     public String getTemplateSheetName() {
-        return templateSheetName;
+        return getExporterOptions().getTemplateSheetName();
     }
 
     @Override
@@ -190,45 +242,103 @@ public class TreeTableExcellaExporter extends TreeTableExporter implements ExCel
     }
 
     @Override
-    public void setReportBook(ReportBook reportBook) {
-        this.reportBook = reportBook;
-    }
-
-    @Override
     public ReportBook getDocument() {
-        return reportBook;
+        return document;
     }
 
     @Override
-    public void preExport(FacesContext context, ExportConfiguration config) {
-        ExCellaExporter.super.preExport(context, config);
+    public void preExport(FacesContext context) throws IOException {
+        super.preExport(context);
+        ExCellaExporter.super.preExport(context);
     }
 
     @Override
-    public void postExport(FacesContext context, ExportConfiguration config) throws IOException {
-        ExCellaExporter.super.postExport(context, config);
+    public void postExport(FacesContext context) throws IOException {
+        super.postExport(context);
+        ExCellaExporter.super.postExport(context);
     }
 
     @Override
-    public OutputStream getOutputStream() {
-        return super.getOutputStream();
+    public OutputStream os() { // change visibility
+        return super.os();
     }
 
     @Override
     public void reset() {
-        reportBook = null;
         listeners.clear();
     }
 
     @Override
-    public void doExport(FacesContext facesContext, TreeTable table, ExportConfiguration config, int index)
-            throws IOException {
-        ExCellaExporter.super.doExport(facesContext, table, config, index);
+    public void exportTable(FacesContext facesContext, TreeTable table, int index) throws IOException {
+        ExCellaExporter.super.exportTable(facesContext, table, index);
     }
 
+    // copied from TreeTableExporter
     @Override
-    public void exportSelectionOnly(FacesContext context, TreeTable table, Object document) {
-        super.exportSelectionOnly(context, table, document);
+    public void exportSelectionOnly(FacesContext context, TreeTable table) {
+        Object selection = table.getSelection();
+        String var = table.getVar(); // NOSONAR
+        String nodeVar = table.getNodeVar(); // added
+
+        if (selection != null) {
+            List<String> selectedRowKeys = Arrays.asList(table.getSelectedRowKeysAsString().split(",")); // added
+            Map<String, Object> requestMap = context.getExternalContext().getRequestMap();
+
+            if (selection.getClass().isArray()) {
+                int size = Array.getLength(selection);
+
+                for (int i = 0; i < size; i++) {
+                    // begin: modified
+                    var data = Array.get(selection, i);
+                    requestMap.put(var, data);
+                    var node = findNodeByRowKey(table.getValue(), selectedRowKeys.get(i));
+                    if (LangUtils.isNotEmpty(nodeVar)) {
+                        requestMap.put(nodeVar, node);
+                    }
+                    exportSelectedRow(context, table, node);
+                    // end: modified
+                }
+            }
+            else if (Collection.class.isAssignableFrom(selection.getClass())) {
+                // begin: modified
+                var selectionList = new ArrayList<Object>((Collection<?>)selection);
+                for (int i = 0; i < selectionList.size(); i++) {
+                    Object obj = selectionList.get(i);
+                    var node = findNodeByRowKey(table.getValue(), selectedRowKeys.get(i));
+                    if (LangUtils.isNotEmpty(nodeVar)) {
+                        requestMap.put(nodeVar, node);
+                    }
+                    // end: modified
+
+                    if (obj instanceof TreeNode) {
+                        requestMap.put(var, node.getData());
+                    }
+                    else {
+                        requestMap.put(var, obj);
+                    }
+                    exportSelectedRow(context, table, node); // modified
+                }
+            }
+            else {
+                var node = findNodeByRowKey(table.getValue(), selectedRowKeys.get(0));
+                requestMap.put(var, selection);
+                if (LangUtils.isNotEmpty(nodeVar)) {
+                    requestMap.put(nodeVar, node);
+                }
+                exportSelectedRow(context, table, node); // modified
+            }
+        }
+    }
+
+
+    private void exportSelectedRow(FacesContext context, TreeTable table, TreeNode<?> node) {
+        int level = 0;
+        TreeNode<?> parent = node.getParent();
+        while (parent != null) {
+            level++;
+            parent = parent.getParent();
+        }
+        exportRow(context, table, node, level);
     }
 
     @Override
@@ -237,8 +347,8 @@ public class TreeTableExcellaExporter extends TreeTableExporter implements ExCel
     }
 
     @Override
-    public void exportPageOnly(FacesContext context, TreeTable table, Object document) {
-        super.exportPageOnly(context, table, document);
+    public void exportPageOnly(FacesContext context, TreeTable table) {
+        super.exportPageOnly(context, table);
     }
 
     @Override
@@ -249,8 +359,8 @@ public class TreeTableExcellaExporter extends TreeTableExporter implements ExCel
     }
 
     @Override
-    public void exportAll(FacesContext context, TreeTable table, Object document) {
-        super.exportAll(context, table, document);
+    public void exportAll(FacesContext context, TreeTable table) {
+        super.exportAll(context, table);
     }
 
     @Override
@@ -260,7 +370,7 @@ public class TreeTableExcellaExporter extends TreeTableExporter implements ExCel
     }
 
     private String dataTag() {
-        return nonNull(dataColumnsTag, DEFAULT_DATA_COLUMNS_TAG);
+        return nonNull(getDataColumnsTag(), DEFAULT_DATA_COLUMNS_TAG);
     }
 
     @Override
@@ -281,8 +391,8 @@ public class TreeTableExcellaExporter extends TreeTableExporter implements ExCel
 
         int columnSize = columnHeader.size();
 
-        String headersTagName = nonNull(headersTag, DEFAULT_HEADERS_TAG);
-        String footersTagName = nonNull(footersTag, DEFAULT_FOOTERS_TAG);
+        String headersTagName = nonNull(getHeadersTag(), DEFAULT_HEADERS_TAG);
+        String footersTagName = nonNull(getFootersTag(), DEFAULT_FOOTERS_TAG);
         reportSheet.addParam(ColRepeatParamParser.DEFAULT_TAG, headersTagName, columnHeader.toArray());
         reportSheet.addParam(ColRepeatParamParser.DEFAULT_TAG, footersTagName, columnFooter.toArray());
         listeners.add(new StyleUpdateListener(reportSheet, dataContainer, dataTag(), headersTagName, footersTagName, columnSize, columnDataParams) {
@@ -312,16 +422,15 @@ public class TreeTableExcellaExporter extends TreeTableExporter implements ExCel
             }
         });
 
-        reportBook.addReportSheet(reportSheet);
+        getDocument().addReportSheet(reportSheet);
     }
 
     @Override
-    public List<String> exportFacet(FacesContext context, TreeTable table, ExCellaExporter.ColumnType columnType, ReportSheet reportSheet) {
-        List<String> facetColumns = new ArrayList<>();
-
+    public void exportFacet(FacesContext context, TreeTable table, ExCellaExporter.ColumnType columnType, ReportSheet reportSheet, List<String> facetColumns) {
         ColumnGroup group = table.getColumnGroup(columnType.facet());
         if (group != null && group.isRendered()) {
-            return exportColumnGroup(context, group, columnType, reportSheet);
+            exportColumnGroup(context, group, columnType, reportSheet, facetColumns);
+            return;
         }
 
         for (UIColumn column : getExportableColumns(table)) {
@@ -337,45 +446,21 @@ public class TreeTableExcellaExporter extends TreeTableExporter implements ExCel
             .filter(c -> !Objects.isNull(c)) //
             .allMatch(String::isEmpty);
         if (allEmpty) {
-            return Collections.emptyList();
+            facetColumns.clear();
         }
-        return facetColumns;
     }
 
     @Override
-    protected void exportRow(FacesContext context, TreeTable table, Object document, int rowIndex) {
-        Pair<TreeNode<?>, Integer> currentNode = traverseTreeNode(table.getValue(), rowIndex);
+    protected void exportRow(FacesContext context, TreeTable table, int rowIndex) {
         Map<String, Object> requestMap = context.getExternalContext().getRequestMap();
-        String nodeVar = table.getNodeVar();
-        Object origNodeVar = null;
-        if (nodeVar != null) {
-            origNodeVar = requestMap.get(nodeVar);
-            requestMap.put(nodeVar, currentNode.getFirst());
+        TreeNode<?> currentNode = traverseTreeNode(table.getValue(), rowIndex).getKey();
+        var nodeVar = table.getNodeVar();
+        if (LangUtils.isNotEmpty(nodeVar)) {
+            requestMap.put(nodeVar, currentNode);
         }
 
-        super.exportRow(context, table, document, rowIndex);
-
-        ReportSheet sheet = (ReportSheet) document;
-        @SuppressWarnings("unchecked")
-        Map<String, List<Object>> dataContainer = (Map<String, List<Object>>) sheet.getParam(null, DATA_CONTAINER_KEY);
-        dataContainer.computeIfAbsent(TREE_LEVEL_KEY, ignore -> new ArrayList<>())
-            .add(currentNode.getValue());
-
-        if (nodeVar != null) {
-            if (origNodeVar != null) {
-                requestMap.put(nodeVar, origNodeVar);
-            } else {
-                requestMap.remove(nodeVar);
-            }
-        }
-    }
-
-    @Override
-    protected void exportRow(TreeTable table, Object document) {
-        // exportRow(TreeTable, Object) is called for selectionOnly mode.
-        Map<String, Object> requestMap = FacesContext.getCurrentInstance().getExternalContext().getRequestMap();
-        TreeNode<?> node = (TreeNode<?>) requestMap.get(table.getVar());
         int level = 0;
+        TreeNode<?> node = currentNode;
         while(true) {
             if (node.getParent() == null) {
                 break;
@@ -384,69 +469,62 @@ public class TreeTableExcellaExporter extends TreeTableExporter implements ExCel
             level++;
         }
 
-        ReportSheet sheet = (ReportSheet) document;
-        @SuppressWarnings("unchecked")
-        Map<String, List<Object>> dataContainer = (Map<String, List<Object>>) sheet.getParam(null, DATA_CONTAINER_KEY);
-        dataContainer.computeIfAbsent(TREE_LEVEL_KEY, ignore -> new ArrayList<>()).add(level);
+        exportRow(context, table, currentNode, level, rowIndex);
 
-        super.exportRow(table, document);
-    }
-
-    @Override
-    protected void exportCells(TreeTable table, Object document) {
-        Map<String, Object> requestMap = FacesContext.getCurrentInstance().getExternalContext().getRequestMap();
-        // patch for PrimeFaces#9310
-        String var = table.getVar(); // NOSONAR
-        Object origVar = requestMap.get(var);
-        if (origVar instanceof TreeNode) {
-            requestMap.put(var, ((TreeNode<?>)origVar).getData());
-        }
-
-        String nodeVar = table.getNodeVar();
-        Object origNodeVar = null;
-        if (nodeVar != null) {
-            origNodeVar = requestMap.get(nodeVar);
-            if (origNodeVar == null && origVar instanceof TreeNode) {
-                // May be exporting selection only mode
-                requestMap.put(nodeVar, origVar);
-            }
-        }
-
-        ReportSheet sheet = (ReportSheet) document;
-
-        @SuppressWarnings("unchecked")
-        Map<String, List<Object>> dataContainer = (Map<String, List<Object>>) sheet.getParam(null, DATA_CONTAINER_KEY);
-        int colIndex = 0;
-        for (UIColumn column : getExportableColumns(table)) {
-            if (column instanceof DynamicColumn) {
-                ((DynamicColumn)column).applyStatelessModel();
-            }
-            if (!isExportable(FacesContext.getCurrentInstance(), column)) {
-                continue;
-            }
-            addCellValue(FacesContext.getCurrentInstance(), dataContainer, colIndex++, column);
-        }
-
-        if (nodeVar != null && origNodeVar == null) {
+        if (LangUtils.isNotEmpty(nodeVar)) {
             requestMap.remove(nodeVar);
         }
-        if (var != null && origVar != null) {
-            requestMap.put(var, origVar);
+    }
+
+    private void exportRow(FacesContext context, TreeTable table, TreeNode<?> node, int level) {
+        exportRow(context, table, node, level, -1);
+    }
+
+    private void exportRow(FacesContext context, TreeTable table, TreeNode<?> node, int level, int rowIndex) {
+        Map<String, List<Object>> dataContainer = getDataContainer(currentSheet);
+        dataContainer.computeIfAbsent(TREE_LEVEL_KEY, ignore -> new ArrayList<>()).add(level);
+
+        if (rowIndex == -1) {
+            // selectionOnly mode - detect rowIndex
+            rowIndex = resolveRowIndex(table, node);
+        }
+
+        super.exportRow(context, table, rowIndex);
+    }
+
+    private int resolveRowIndex(TreeTable table, TreeNode<?> node) {
+        TreeNode<?> root = table.getValue();
+        var rowIndex = new MutableInt(-2);
+        resolveRowIndex(root, node, rowIndex);
+
+        return rowIndex.getValue() - 1;
+    }
+
+    private void resolveRowIndex(TreeNode<?> currentNode, TreeNode<?> targetNode, MutableInt rowIndex) {
+        if (currentNode.getRowKey().equals(targetNode.getRowKey())) {
+            return;
+        }
+        if (currentNode.getChildren() != null) {
+            for (TreeNode<?> childNode : currentNode.getChildren()) {
+                rowIndex.increment();
+                resolveRowIndex(childNode, targetNode, rowIndex);
+            }
         }
     }
 
-    @Override
-    public String exportValue(FacesContext context, UIComponent component) {
-        String value = super.exportValue(context, component);
-        if (component.getClass().getSimpleName().equals("UIInstructions")) {
-            return exportUIInstructionsValue(context, component, value);
+    protected static TreeNode<?> findNodeByRowKey(TreeNode<?> node, String rowKey) {
+        if (node.getRowKey().equals(rowKey)) {
+            return node;
         }
-        return value;
-    }
-
-    @Override
-    public String exportColumnByFunction(FacesContext context, UIColumn column) {
-        return super.exportColumnByFunction(context, column);
+        if (node.getChildren() != null) {
+            for (TreeNode<?> childNode : node.getChildren()) {
+                TreeNode<?> foundNode = findNodeByRowKey(childNode, rowKey);
+                if (foundNode != null) {
+                    return foundNode;
+                }
+            }
+        }
+        return null;
     }
 
     protected static Pair<TreeNode<?>, Integer> traverseTreeNode(TreeNode<?> node, int dataRowIndex) {
@@ -493,6 +571,10 @@ public class TreeTableExcellaExporter extends TreeTableExporter implements ExCel
         public void decrement() {
             value--;
         }
+
+        public void increment() {
+            value++;
+        }
     }
 
     @Override
@@ -503,6 +585,27 @@ public class TreeTableExcellaExporter extends TreeTableExporter implements ExCel
     @Override
     public String getFileExtension() {
         return ExCellaExporter.super.getFileExtension();
+    }
+
+    @Override
+    public void setCurrentSheet(ReportSheet reportSheet) {
+        this.currentSheet = reportSheet;
+    }
+
+    @Override
+    public ExportConfiguration getExportConfiguration() {
+        return exportConfiguration;
+    }
+
+    @Override
+    protected void exportCellValue(FacesContext context, TreeTable table, UIColumn col, String text, int index) {
+        Map<String, List<Object>> dataContainer = getDataContainer(currentSheet);
+        addCellValue(context, dataContainer, table, index, col);
+    }
+
+    @Override
+    protected ReportBook createDocument(FacesContext context) throws IOException {
+        return new ReportBook();
     }
 
 }

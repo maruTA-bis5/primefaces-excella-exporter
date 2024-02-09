@@ -5,8 +5,6 @@ import java.io.OutputStream;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -30,7 +28,7 @@ import org.primefaces.component.export.Exporter;
 /**
  * ExCella Reportsを用いてDataTableのデータを出力する{@link Exporter}実装
  */
-public class DataTableExcellaExporter extends DataTableExporter implements ExCellaExporter<DataTable> {
+public class DataTableExcellaExporter extends DataTableExporter<ReportBook, ExCellaExporterOptions> implements ExCellaExporter<DataTable> {
 
     private static final String DEFAULT_DATA_COLUMNS_TAG = "dataColumns";
 
@@ -38,45 +36,38 @@ public class DataTableExcellaExporter extends DataTableExporter implements ExCel
 
     private static final String DEFAULT_FOOTERS_TAG = "footers";
 
-    private ReportBook reportBook;
-
-    private URL templateUrl;
-
-    private Path templatePath;
-
-    private String templateSheetName;
-
     private TemplateType templateType;
 
     private List<ReportProcessListener> listeners = new ArrayList<>();
 
-    private String dataColumnsTag;
+    private ReportSheet currentSheet;
 
-    private String headersTag;
-
-    private String footersTag;
-
-    /**
-     * @deprecated Use {@link #builder()}
-     */
-    @Deprecated(forRemoval = true)
     public DataTableExcellaExporter() {
-        // deprecated
+        super(new ExCellaExporterOptions(), ALL_FACETS, true);
     }
 
     private DataTableExcellaExporter(Builder builder) {
-        this.templatePath = builder.templatePath;
-        this.templateUrl = builder.templateUrl;
-        this.templateSheetName = builder.templateSheetName;
-        this.dataColumnsTag = builder.dataColumnsTag;
-        this.headersTag = builder.headersTag;
-        this.footersTag = builder.footersTag;
+        super(builder.options, ALL_FACETS, true);
+        setTemplatePath(builder.templatePath);
+        setTemplateUrl(builder.templateUrl);
+        setTemplateSheetName(builder.templateSheetName);
+        setDataColumnsTag(builder.dataColumnsTag);
+        setHeadersTag(builder.headersTag);
+        setFootersTag(builder.footersTag);
     }
 
+    /**
+     * @deprecated Use {@link ExCellaExporterOptions}. This method will be removed in 5.0.0.
+     */
+    @Deprecated(forRemoval = true)
     public static Builder builder() {
         return new Builder();
     }
 
+    /**
+     * @deprecated Use {@link ExCellaExporterOptions}. This class will be removed in 5.0.0.
+     */
+    @Deprecated(forRemoval = true)
     public static class Builder {
         private Path templatePath;
         private URL templateUrl;
@@ -84,6 +75,7 @@ public class DataTableExcellaExporter extends DataTableExporter implements ExCel
         private String dataColumnsTag;
         private String headersTag;
         private String footersTag;
+        private ExCellaExporterOptions options = new ExCellaExporterOptions();
 
         public Builder templatePath(Path templatePath) {
             this.templatePath = templatePath;
@@ -115,29 +107,52 @@ public class DataTableExcellaExporter extends DataTableExporter implements ExCel
             return this;
         }
 
+        public Builder options(ExCellaExporterOptions options) {
+            this.options = options;
+            return this;
+        }
+
         public DataTableExcellaExporter build() {
             return new DataTableExcellaExporter(this);
         }
     }
 
+    /**
+     * @deprecated Use {@link ExCellaExporterOptions}. This method will be removed in 5.0.0.
+     */
+    @Deprecated(forRemoval = true)
     @Override
     public void setTemplatePath(Path templatePath) {
-        this.templatePath = templatePath;
+        getExporterOptions().setTemplatePath(templatePath);
     }
 
+    /**
+     * @deprecated Use {@link ExCellaExporterOptions}. This method will be removed in 5.0.0.
+     * @implNote Make this getter private in 5.0.0.
+     */
+    @Deprecated(forRemoval = true)
     @Override
     public Path getTemplatePath() {
-        return templatePath;
+        return getExporterOptions().getTemplatePath();
     }
 
+    /**
+     * @deprecated Use {@link ExCellaExporterOptions}. This method will be removed in 5.0.0.
+     */
+    @Deprecated(forRemoval = true)
     @Override
     public void setTemplateUrl(URL templateUrl) {
-        this.templateUrl = templateUrl;
+        getExporterOptions().setTemplateUrl(templateUrl);
     }
 
+    /**
+     * @deprecated Use {@link ExCellaExporterOptions}. This method will be removed in 5.0.0.
+     * @implNote Make this getter private in 5.0.0.
+     */
+    @Deprecated(forRemoval = true)
     @Override
     public URL getTemplateUrl() {
-        return templateUrl;
+        return getExporterOptions().getTemplateUrl();
     }
 
     @Override
@@ -150,14 +165,23 @@ public class DataTableExcellaExporter extends DataTableExporter implements ExCel
         return templateType;
     }
 
+    /**
+     * @deprecated Use {@link #builder()}. This method will be removed in 5.0.0.
+     */
+    @Deprecated(forRemoval = true)
     @Override
     public void setTemplateSheetName(String templateSheetName) {
-        this.templateSheetName = templateSheetName;
+        getExporterOptions().setTemplateSheetName(templateSheetName);
     }
 
+    /**
+     * @deprecated Use {@link ExCellaExporterOptions}. This method will be removed in 5.0.0.
+     * @implNote Make this getter private in 5.0.0.
+     */
+    @Deprecated(forRemoval = true)
     @Override
     public String getTemplateSheetName() {
-        return templateSheetName;
+        return getExporterOptions().getTemplateSheetName();
     }
 
     @Override
@@ -171,81 +195,82 @@ public class DataTableExcellaExporter extends DataTableExporter implements ExCel
     }
 
     @Override
-    public void setReportBook(ReportBook reportBook) {
-        this.reportBook = reportBook;
-    }
-
-    @Override
     public ReportBook getDocument() {
-        return reportBook;
+        return document;
     }
 
     @Override
-    public void preExport(FacesContext context, ExportConfiguration exportConfiguration) {
-        ExCellaExporter.super.preExport(context, exportConfiguration);
+    public void setCurrentSheet(ReportSheet reportSheet) {
+        this.currentSheet = reportSheet;
     }
 
     @Override
-    public void postExport(FacesContext context, ExportConfiguration exportConfiguration) throws IOException {
-        ExCellaExporter.super.postExport(context, exportConfiguration);
+    public void preExport(FacesContext context) throws IOException {
+        super.preExport(context);
+        ExCellaExporter.super.preExport(context);
     }
 
     @Override
-    public OutputStream getOutputStream() {
-        return super.getOutputStream();
+    public void postExport(FacesContext context) throws IOException {
+        super.postExport(context);
+        ExCellaExporter.super.postExport(context);
     }
 
     @Override
-    protected void exportCells(DataTable table, Object document) {
-        ReportSheet sheet = (ReportSheet) document;
-        Map<String, List<Object>> dataContainer = getDataContainer(sheet);
-        int colIndex = 0;
-        for (UIColumn column : getExportableColumns(table)) {
-            if (column instanceof DynamicColumn) {
-                ((DynamicColumn) column).applyStatelessModel();
-            }
-            if (!isExportable(FacesContext.getCurrentInstance(), column)) {
-                continue;
-            }
-            addCellValue(FacesContext.getCurrentInstance(), dataContainer, colIndex++, column);
-        }
+    public OutputStream os() { // change visivility
+        return super.os();
     }
 
     @Override
-    public String exportColumnByFunction(FacesContext context, UIColumn column) {
-        return super.exportColumnByFunction(context, column);
+    protected void exportCellValue(FacesContext context, DataTable table, UIColumn col, String text, int index) {
+        Map<String, List<Object>> dataContainer = getDataContainer(currentSheet);
+        addCellValue(context, dataContainer, table, index, col);
     }
 
-    @Override
-    public String exportValue(FacesContext context, UIComponent component) {
-        String value = super.exportValue(context, component);
-        if (component.getClass().getSimpleName().equals("UIInstructions")) {
-            return exportUIInstructionsValue(context, component, value);
-        }
-        return value;
-    }
-
+    /**
+     * @deprecated Use {@link #builder()}. This method will be removed in 5.0.0.
+     */
+    @Deprecated(forRemoval = true)
     public void setDataColumnsTag(String dataColumnsTag) {
-        this.dataColumnsTag = dataColumnsTag;
+        getExporterOptions().setDataColumnsTag(dataColumnsTag);
     }
 
+    private String getDataColumnsTag() {
+        return getExporterOptions().getDataColumnsTag();
+    }
+
+    /**
+     * @deprecated Use {@link #builder()}. This method will be removed in 5.0.0.
+     */
+    @Deprecated(forRemoval = true)
     public void setHeadersTag(String headersTag) {
-        this.headersTag = headersTag;
+        getExporterOptions().setHeadersTag(headersTag);
     }
 
+    private String getHeadersTag() {
+        return getExporterOptions().getHeadersTag();
+    }
+
+    /**
+     * @deprecated Use {@link #builder()}. This method will be removed in 5.0.0.
+     */
+    @Deprecated(forRemoval = true)
     public void setFootersTag(String footersTag) {
-        this.footersTag = footersTag;
+        getExporterOptions().setFootersTag(footersTag);
+    }
+
+    private String getFootersTag() {
+        return getExporterOptions().getFootersTag();
     }
 
     @Override
-    public void doExport(FacesContext facesContext, DataTable table, ExportConfiguration config, int index)
-            throws IOException {
-        ExCellaExporter.super.doExport(facesContext, table, config, index);
+    public void exportTable(FacesContext facesContext, DataTable table, int index) throws IOException {
+        ExCellaExporter.super.exportTable(facesContext, table, index);
     }
 
     @Override
-    public void exportSelectionOnly(FacesContext facesContext, DataTable table, Object document) {
-        super.exportSelectionOnly(facesContext, table, document);
+    public void exportSelectionOnly(FacesContext facesContext, DataTable table) {
+        super.exportSelectionOnly(facesContext, table);
     }
 
     @Override
@@ -254,8 +279,8 @@ public class DataTableExcellaExporter extends DataTableExporter implements ExCel
     }
 
     @Override
-    public void exportPageOnly(FacesContext context, DataTable table, Object document) {
-        super.exportPageOnly(context, table, document);
+    public void exportPageOnly(FacesContext context, DataTable table) {
+        super.exportPageOnly(context, table);
     }
 
     @Override
@@ -264,8 +289,8 @@ public class DataTableExcellaExporter extends DataTableExporter implements ExCel
     }
 
     @Override
-    public void exportAll(FacesContext context, DataTable table, Object document) {
-        super.exportAll(context, table, document);
+    public void exportAll(FacesContext context, DataTable table) {
+        super.exportAll(context, table);
     }
 
     @Override
@@ -273,18 +298,8 @@ public class DataTableExcellaExporter extends DataTableExporter implements ExCel
         return table.getRowCount();
     }
 
-    public Map<String, List<Object>> getDataContainer(ReportSheet reportSheet) {
-        @SuppressWarnings("unchecked")
-        Map<String, List<Object>> dataContainer = (Map<String, List<Object>>) reportSheet.getParam(null, DATA_CONTAINER_KEY);
-        if (dataContainer == null) {
-            dataContainer = new HashMap<>();
-            reportSheet.addParam(null, DATA_CONTAINER_KEY, dataContainer);
-        }
-        return dataContainer;
-    }
-
     private String dataTag() {
-        return dataColumnsTag != null ? dataColumnsTag : DEFAULT_DATA_COLUMNS_TAG;
+        return Objects.requireNonNullElse(getDataColumnsTag(), DEFAULT_DATA_COLUMNS_TAG);
     }
 
     @Override
@@ -297,32 +312,33 @@ public class DataTableExcellaExporter extends DataTableExporter implements ExCel
             .map(this::normalizeValues)
             .forEach(e -> reportSheet.addParam(RowRepeatParamParser.DEFAULT_TAG, e.getKey(), e.getValue().toArray()));
 
-        String headersTagName = headersTag != null ? headersTag : DEFAULT_HEADERS_TAG;
-        String footersTagName = footersTag != null ? footersTag : DEFAULT_FOOTERS_TAG;
+        String headersTagName = Objects.requireNonNullElse(getHeadersTag(), DEFAULT_HEADERS_TAG);
+        String footersTagName = Objects.requireNonNullElse(getFootersTag(), DEFAULT_FOOTERS_TAG);
         reportSheet.addParam(ColRepeatParamParser.DEFAULT_TAG, headersTagName, columnHeader.toArray());
         reportSheet.addParam(ColRepeatParamParser.DEFAULT_TAG, footersTagName, columnFooter.toArray());
 
         final int columnSize = columnHeader.size();
 
-        reportBook.addReportSheet(reportSheet);
+        getDocument().addReportSheet(reportSheet);
 
         listeners.add(new StyleUpdateListener(reportSheet, dataContainer, dataTag(), headersTagName, footersTagName, columnSize, columnDataParams));
 
     }
 
     @Override
-    public List<String> exportFacet(FacesContext context, DataTable table, ExCellaExporter.ColumnType columnType, ReportSheet reportSheet) {
-        List<String> facetColumns = new ArrayList<>();
+    public void exportFacet(FacesContext context, DataTable table, ExCellaExporter.ColumnType columnType, ReportSheet reportSheet, List<String> facetColumns) {
 
         ColumnGroup group = table.getColumnGroup(columnType.facet());
         if (group != null && group.isRendered()) {
-            return exportColumnGroup(context, group, columnType, reportSheet);
+            exportColumnGroup(context, group, columnType, reportSheet, facetColumns);
+            return;
         }
         if (table.getFrozenColumns() > 0) {
             ColumnGroup frozenGroup = table.getColumnGroup(columnType == ExCellaExporter.ColumnType.HEADER ? "frozenHeader" : "frozenFooter");
             ColumnGroup scrollableGroup = table.getColumnGroup(columnType == ExCellaExporter.ColumnType.HEADER ? "scrollableHeader" : "scrollableFooter");
             if (frozenGroup != null && scrollableGroup != null && frozenGroup.isRendered() && scrollableGroup.isRendered()) {
-                return exportFrozenScrollableGroup(context, columnType, frozenGroup, scrollableGroup, reportSheet);
+                exportFrozenScrollableGroup(context, columnType, frozenGroup, scrollableGroup, reportSheet, facetColumns);
+                return;
             }
         }
 
@@ -339,26 +355,24 @@ public class DataTableExcellaExporter extends DataTableExporter implements ExCel
             .filter(c -> !Objects.isNull(c)) //
             .allMatch(String::isEmpty);
         if (allEmpty) {
-            return Collections.emptyList();
+            facetColumns.clear();
         }
-        return facetColumns;
     }
 
 
-    private List<String> exportFrozenScrollableGroup(FacesContext context, ExCellaExporter.ColumnType columnType,
-            ColumnGroup frozenGroup, ColumnGroup scrollableGroup, ReportSheet reportSheet) {
-        List<String> facetColumns = new ArrayList<>();
+    private void exportFrozenScrollableGroup(FacesContext context, ExCellaExporter.ColumnType columnType,
+            ColumnGroup frozenGroup, ColumnGroup scrollableGroup, ReportSheet reportSheet, List<String> facetColumns) {
 
         for (UIComponent child : frozenGroup.getChildren()) {
             if (child instanceof org.primefaces.component.row.Row) {
                 if (frozenGroup.getChildren().size() > 1) {
-                    facetColumns.addAll(exportColumnGroupMultiRow(context, frozenGroup, columnType, reportSheet));
+                    exportColumnGroupMultiRow(context, frozenGroup, columnType, reportSheet, facetColumns);
                     break;
                 } else {
-                    facetColumns.addAll(exportColumnGroup(context, frozenGroup, columnType, reportSheet));
+                    exportColumnGroup(context, frozenGroup, columnType, reportSheet, facetColumns);
                 }
             } else if (child instanceof UIColumn) {
-                facetColumns.addAll(exportColumnGroup(context, frozenGroup, columnType, reportSheet));
+                exportColumnGroup(context, frozenGroup, columnType, reportSheet, facetColumns);
             } else {
                 // ignore
             }
@@ -369,24 +383,21 @@ public class DataTableExcellaExporter extends DataTableExporter implements ExCel
         for (UIComponent child : scrollableGroup.getChildren()) {
             if (child instanceof org.primefaces.component.row.Row) {
                 if (scrollableGroup.getChildren().size() > 1) {
-                    facetColumns.addAll(exportColumnGroupMultiRow(context, scrollableGroup, columnType, reportSheet, frozenColumns));
+                    exportColumnGroupMultiRow(context, scrollableGroup, columnType, reportSheet, facetColumns, frozenColumns);
                     break;
                 } else {
-                    facetColumns.addAll(exportColumnGroup(context, scrollableGroup, columnType, reportSheet));
+                    exportColumnGroup(context, scrollableGroup, columnType, reportSheet, facetColumns);
                 }
             } else if (child instanceof UIColumn) {
-                facetColumns.addAll(exportColumnGroup(context, scrollableGroup, columnType, reportSheet));
+                exportColumnGroup(context, scrollableGroup, columnType, reportSheet, facetColumns);
             } else {
                 // ignore
             }
         }
-
-        return facetColumns;
     }
 
     @Override
     public void reset() {
-        reportBook = null;
         listeners.clear();
     }
 
@@ -398,6 +409,17 @@ public class DataTableExcellaExporter extends DataTableExporter implements ExCel
     @Override
     public String getFileExtension() {
         return ExCellaExporter.super.getFileExtension();
+    }
+
+    @Override
+    public ExportConfiguration getExportConfiguration() {
+        return exportConfiguration;
+    }
+
+
+    @Override
+    protected ReportBook createDocument(FacesContext context) throws IOException {
+        return new ReportBook();
     }
 
 }

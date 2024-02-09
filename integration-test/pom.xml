@@ -237,6 +237,8 @@
             <version>${wildfly-jar-maven-plugin.version}</version>
             <configuration>
               <jvmArguments>
+                <arg>-Djboss.bind.address=0.0.0.0</arg>
+                <arg>${failsafeArgLine}</arg>
                 <arg>-agentlib:jdwp=transport=dt_socket,address=8787,server=y,suspend=n</arg>
               </jvmArguments>
             </configuration>

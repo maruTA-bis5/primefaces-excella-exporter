@@ -27,11 +27,11 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import javax.el.MethodExpression;
 import javax.el.ValueExpression;
 import javax.faces.component.UIComponent;
 import javax.faces.component.UIParameter;
 import javax.faces.component.ValueHolder;
-import javax.faces.context.ExternalContext;
 import javax.faces.context.FacesContext;
 import javax.faces.convert.Converter;
 
@@ -46,20 +46,22 @@ import org.bbreak.excella.reports.model.ReportBook;
 import org.bbreak.excella.reports.model.ReportSheet;
 import org.bbreak.excella.reports.processor.ReportProcessor;
 import org.bbreak.excella.reports.tag.RowRepeatParamParser;
-import org.primefaces.PrimeFaces;
 import org.primefaces.component.api.UIColumn;
+import org.primefaces.component.api.UITable;
 import org.primefaces.component.celleditor.CellEditor;
 import org.primefaces.component.columngroup.ColumnGroup;
 import org.primefaces.component.export.ExportConfiguration;
+import org.primefaces.component.export.ExporterUtils;
 import org.primefaces.component.link.Link;
 import org.primefaces.util.ComponentUtils;
 import org.primefaces.util.Constants;
+import org.primefaces.util.LangUtils;
 
 import net.bis5.excella.primefaces.exporter.component.ExportableComponent;
 import net.bis5.excella.primefaces.exporter.convert.ExporterConverter;
 
 // internal
-interface ExCellaExporter<T> {
+interface ExCellaExporter<T extends UITable<?>> {
 
     String COLUMN_GROUP_MERGED_AREAS_KEY = "HEADER_MERGED_AREAS_KEY";
 
@@ -67,9 +69,28 @@ interface ExCellaExporter<T> {
     String DEFAULT_TEMPLATE_SHEET_NAME = "DATA";
     String DATA_CONTAINER_KEY = "DATA_CONTAINER_KEY";
 
+    /**
+     * @deprecated use each exporter's builder(). This method will be removed in 5.0.0.
+     */
+    @Deprecated(forRemoval = true)
     void setTemplatePath(Path templatePath);
+
+    /**
+     * @deprecated Use {@link ExCellaExporterOptions}. This method will be removed in 5.0.0.
+     * @implNote Make this getter private in 5.0.0.
+     */
+    @Deprecated(forRemoval = true)
     Path getTemplatePath();
+    /**
+     * @deprecated use each exporter's builder(). This method will be removed in 5.0.0.
+     */
+    @Deprecated(forRemoval = true)
     void setTemplateUrl(URL templateUrl);
+    /**
+     * @deprecated Use {@link ExCellaExporterOptions}. This method will be removed in 5.0.0.
+     * @implNote Make this getter private in 5.0.0.
+     */
+    @Deprecated(forRemoval = true)
     URL getTemplateUrl();
 
     private URL getTemplateFileUrl() throws MalformedURLException {
@@ -81,17 +102,19 @@ interface ExCellaExporter<T> {
         return DEFAULT_TEMPLATE_URL;
     }
 
+    /**
+     * @deprecated use each exporter's builder(). This method will be removed in 5.0.0.
+     */
+    @Deprecated(forRemoval = true)
     void setTemplateSheetName(String templateSheetName);
     void setTemplateType(TemplateType templateType);
     TemplateType getTemplateType();
     void addListener(ReportProcessListener listener);
     List<ReportProcessListener> getListeners();
-    void setReportBook(ReportBook reportBook);
     ReportBook getDocument();
+    void setCurrentSheet(ReportSheet reportSheet);
 
-    default void preExport(FacesContext context, ExportConfiguration config) {
-        setReportBook(new ReportBook());
-
+    default void preExport(FacesContext context) throws IOException {
         addListener(new ReportProcessAdaptor() {
             @Override
             public void preBookParse(Workbook workbook, ReportBook reportBook) {
@@ -104,12 +127,12 @@ interface ExCellaExporter<T> {
         });
     }
 
-    default void postExport(FacesContext context, ExportConfiguration config) throws IOException {
+    default void postExport(FacesContext context) throws IOException {
         // TODO configを考慮する(何をする?)
         Path outputFile = processExport();
 
         try {
-            writeResponse(context, outputFile, config);
+            writeResponse(outputFile);
         } finally {
             reset();
             Files.delete(outputFile);
@@ -135,53 +158,52 @@ interface ExCellaExporter<T> {
         return Paths.get(outputFile.toString() + getTemplateType().getSuffix());
     }
 
-    private void writeResponse(FacesContext context, Path outputFile, ExportConfiguration config) throws IOException {
-        if (!PrimeFaces.current().isAjaxRequest()) {
-            // overwrite response header by actual information
-            ExternalContext externalContext = context.getExternalContext();
-            externalContext.setResponseContentType(getTemplateType().getContentType());
-
-            externalContext.setResponseHeader("Content-disposition",
-                ComponentUtils.createContentDisposition("attachment", config.getOutputFileName() + getTemplateType().getSuffix()));
-        }
-
-        OutputStream out = getOutputStream();
+    private void writeResponse(Path outputFile) throws IOException {
+        OutputStream out = os();
         Files.copy(outputFile, out); // どうせOutputStreamに吐き出すんだから一時ファイル経由したくない気持ちもありつつ
         out.flush();
     }
 
-    OutputStream getOutputStream();
+    OutputStream os();
 
     void reset();
 
+    /**
+     * @deprecated Use {@link ExCellaExporterOptions}. This method will be removed in 5.0.0.
+     * @implNote Make this getter private in 5.0.0.
+     */
+    @Deprecated(forRemoval = true)
     String getTemplateSheetName();
 
-    default void doExport(FacesContext facesContext, T table, ExportConfiguration config, int index) throws IOException {
+    default void exportTable(FacesContext facesContext, T table, int index) throws IOException {
         // 一度の出力で複数のテーブルが対象となった場合、このメソッドは引数のtable, indexを変えて複数回呼ばれる。
         // このExporterでは1テーブルを1シートに出力する方針とする。
         String sheetName = getTemplateSheetName() != null ? getTemplateSheetName() : DEFAULT_TEMPLATE_SHEET_NAME;
         ReportSheet reportSheet = new ReportSheet(sheetName, sheetName + "_" + index);
+        setCurrentSheet(reportSheet);
         Map<String, List<Object>> dataContainer = new LinkedHashMap<>();
         reportSheet.addParam(null, DATA_CONTAINER_KEY, dataContainer);
 
-        List<String> columnHeader = exportFacet(facesContext, table, ColumnType.HEADER, reportSheet);
+        List<String> columnHeader = new ArrayList<>();
+        exportFacet(facesContext, table, ColumnType.HEADER, reportSheet, columnHeader);
 
-        if (config.isPageOnly()) {
-            exportPageOnly(facesContext, table, reportSheet, config);
-        } else if (config.isSelectionOnly()) {
-            exportSelectionOnly(facesContext, table, reportSheet, config);
+        if (getExportConfiguration().isPageOnly()) {
+            exportPageOnly(facesContext, table, getExportConfiguration());
+        } else if (getExportConfiguration().isSelectionOnly()) {
+            exportSelectionOnly(facesContext, table, getExportConfiguration());
         } else {
-            exportAll(facesContext, table, reportSheet, config);
+            exportAll(facesContext, table, getExportConfiguration());
         }
 
-        List<String> columnFooter = exportFacet(facesContext, table, ColumnType.FOOTER, reportSheet);
+        List<String> columnFooter = new ArrayList<>();
+        exportFacet(facesContext, table, ColumnType.FOOTER, reportSheet, columnFooter);
 
         reportSheet.removeParam(null, DATA_CONTAINER_KEY);
 
         setExportParameters(reportSheet, columnHeader, columnFooter, dataContainer);
     }
 
-    default void exportPageOnly(FacesContext context, T table, Object document, ExportConfiguration config) {
+    default void exportPageOnly(FacesContext context, T table, ExportConfiguration config) {
         if (config.getOptions() instanceof ExCellaExporterOptions) {
             boolean throwExceptionWhenNoData = ((ExCellaExporterOptions)config.getOptions()).isThrowExceptionWhenNoData();
             if (throwExceptionWhenNoData && getPageRows(table) == 0) {
@@ -189,40 +211,40 @@ interface ExCellaExporter<T> {
             }
         }
 
-        exportPageOnly(context, table, document);
+        exportPageOnly(context, table);
     }
 
     int getPageRows(T table);
 
-    void exportPageOnly(FacesContext context, T table, Object document);
+    void exportPageOnly(FacesContext context, T table);
 
-    default void exportSelectionOnly(FacesContext context, T table, Object document, ExportConfiguration config) {
+    default void exportSelectionOnly(FacesContext context, T table, ExportConfiguration config) {
         if (config.getOptions() instanceof ExCellaExporterOptions) {
             boolean throwExceptionWhenNoData = ((ExCellaExporterOptions)config.getOptions()).isThrowExceptionWhenNoData();
             if (throwExceptionWhenNoData && isSelectionEmpty(table)) {
                 throw new EmptyDataException();
             }
         }
-        exportSelectionOnly(context, table, document);
+        exportSelectionOnly(context, table);
     }
 
     boolean isSelectionEmpty(T table);
 
-    void exportSelectionOnly(FacesContext context, T table, Object document);
+    void exportSelectionOnly(FacesContext context, T table);
 
-    default void exportAll(FacesContext context, T table, Object document, ExportConfiguration config) {
+    default void exportAll(FacesContext context, T table, ExportConfiguration config) {
         if (config.getOptions() instanceof ExCellaExporterOptions) {
             boolean throwExceptionWhenNoData = ((ExCellaExporterOptions)config.getOptions()).isThrowExceptionWhenNoData();
             if (throwExceptionWhenNoData && getTotalRows(table) == 0) {
                 throw new EmptyDataException();
             }
         }
-        exportAll(context, table, document);
+        exportAll(context, table);
     }
 
     int getTotalRows(T table);
 
-    void exportAll(FacesContext context, T table, Object document);
+    void exportAll(FacesContext context, T table);
 
     enum ColumnType {
         HEADER("header"),
@@ -244,11 +266,18 @@ interface ExCellaExporter<T> {
         }
     }
 
-    List<String> exportFacet(FacesContext context, T table, ColumnType columnType, ReportSheet reportSheet);
+    void exportFacet(FacesContext context, T table, ColumnType columnType, ReportSheet reportSheet, List<String> cellValues);
 
     void setExportParameters(ReportSheet reportSheet, List<String> columnHeader, List<String> columnFooter, Map<String, List<Object>> dataContainer);
 
-    String exportValue(FacesContext context, UIComponent component);
+    default String exportValue(FacesContext context, UIComponent component) {
+        String value = ExporterUtils.getComponentValue(context, component);
+        if (component.getClass().getSimpleName().equals("UIInstructions")) {
+            return exportUIInstructionsValue(context, component, value);
+        }
+        return value;
+    }
+
 
     default String exportUIInstructionsValue(FacesContext context, UIComponent component, String value) {
         // evaluate el expr
@@ -266,28 +295,43 @@ interface ExCellaExporter<T> {
         return value.replaceAll("<[bB][rR] ?/>", "");
     }
 
-    default void addCellValue(FacesContext context, Map<String, List<Object>> dataContainer, int colIndex,
+    default void addCellValue(FacesContext context, Map<String, List<Object>> dataContainer, T table, int colIndex,
             UIColumn column) {
         String columnKey = "data" + colIndex;
 
         Object exportValue;
-        if (column.getExportFunction() != null) {
-            exportValue = exportColumnByFunction(context, column);
-        } else if (column.getChildren().size() == 1) {
+        if (column.getChildren().size() == 1) {
             exportValue = exportObjectValue(context, column.getChildren().get(0));
         } else {
-            List<UIComponent> components = column.getChildren();
-            StringBuilder builder = new StringBuilder();
-            components.stream() //
-                    .filter(UIComponent::isRendered) //
-                    .map(c -> exportValue(context, c)) //
-                    .map(v -> v == null ? "" : v) //
-                    .forEach(builder::append);
-            exportValue = builder.toString();
+            exportValue = getColumnValue(context, table, column, true);
         }
 
         List<Object> values = dataContainer.computeIfAbsent(columnKey, ignore -> new ArrayList<>());
         values.add(exportValue);
+    }
+
+    // clone of ExporterUtils#getColumnValue
+    default String getColumnValue(FacesContext context, T table, UIColumn column, boolean joinComponents) {
+        if (column.getExportValue() != null) {
+            return column.getExportValue();
+        }
+        else if (column.getExportFunction() != null) {
+            MethodExpression exportFunction = column.getExportFunction();
+            return (String) exportFunction.invoke(context.getELContext(), new Object[]{column});
+        }
+        else if (LangUtils.isNotBlank(column.getField())) {
+            String value = table.getConvertedFieldValue(context, column);
+            return Objects.toString(value, Constants.EMPTY_STRING);
+        }
+        else {
+            return column.getChildren()
+                    .stream()
+                    .filter(UIComponent::isRendered)
+                    .map(c -> exportValue(context, c)) // modified: use exportValue instead of ExporterUtils.getColumnValue
+                    .filter(LangUtils::isNotBlank)
+                    .limit(!joinComponents ? 1 : column.getChildren().size())
+                    .collect(Collectors.joining(Constants.SPACE));
+        }
     }
 
     default Entry<String, List<Object>> normalizeValues(Entry<String, List<Object>> entry) {
@@ -315,7 +359,10 @@ interface ExCellaExporter<T> {
         return rawValue;
     }
 
-    String exportColumnByFunction(FacesContext context, UIColumn column);
+    default String exportColumnByFunction(FacesContext context, UIColumn column) {
+        MethodExpression exportFunction = column.getExportFunction();
+        return (String) exportFunction.invoke(context.getELContext(), new Object[]{column});
+    }
 
     default Object exportObjectValue(FacesContext context, UIComponent component) {
         if (!component.isRendered()) {
@@ -395,6 +442,10 @@ interface ExCellaExporter<T> {
 
     ExportConfiguration getExportConfiguration();
 
+    default ExCellaExporterOptions getExporterOptions() {
+        return Objects.requireNonNullElse((ExCellaExporterOptions)getExportConfiguration().getOptions(), new ExCellaExporterOptions());
+    }
+
     default String getFacetColumnText(FacesContext context, UIColumn column, ExCellaExporter.ColumnType columnType) {
         UIComponent facet = column.getFacet(columnType.facet());
         String text;
@@ -420,17 +471,11 @@ interface ExCellaExporter<T> {
     }
 
     default String getFileExtension() {
-        String url;
-        try {
-            url = getTemplateFileUrl().toString();
-        } catch (MalformedURLException e) {
-            throw new IllegalStateException(e);
-        }
-        return url.substring(url.lastIndexOf("."), url.length());
+        // .xls is a legacy file type. so, we use .xlsx as default.
+        return ".xlsx";
     }
 
-    default List<String> exportColumnGroup(FacesContext context, ColumnGroup columnGroup, ExCellaExporter.ColumnType columnType, ReportSheet reportSheet) {
-        List<String> facetColumns = new ArrayList<>();
+    default void exportColumnGroup(FacesContext context, ColumnGroup columnGroup, ExCellaExporter.ColumnType columnType, ReportSheet reportSheet, List<String> facetColumns) {
         context.getAttributes().put(Constants.HELPER_RENDERER, "columnGroup");
 
         @SuppressWarnings("unchecked")
@@ -443,29 +488,28 @@ interface ExCellaExporter<T> {
             }
             if (child instanceof org.primefaces.component.row.Row) {
                 if (columnGroup.getChildren().size() > 1) {
-                    return exportColumnGroupMultiRow(context, columnGroup, columnType, reportSheet);
+                    exportColumnGroupMultiRow(context, columnGroup, columnType, reportSheet, facetColumns);
                 } else {
-                    return exportFacetColumns(context, child.getChildren(), columnType, reportSheet);
+                    exportFacetColumns(context, child.getChildren(), columnType, reportSheet, facetColumns);
                 }
             } else if (child instanceof UIColumn) {
-                return exportFacetColumns(context, columnGroup.getChildren(), columnType, reportSheet);
+                exportFacetColumns(context, columnGroup.getChildren(), columnType, reportSheet, facetColumns);
             } else {
                 // ignore
             }
         }
 
         context.getAttributes().remove(Constants.HELPER_RENDERER);
-        return facetColumns;
     }
 
-    default List<String> exportColumnGroupMultiRow(FacesContext context, ColumnGroup columnGroup, ExCellaExporter.ColumnType columnType,
-            ReportSheet reportSheet) {
+    default void exportColumnGroupMultiRow(FacesContext context, ColumnGroup columnGroup, ExCellaExporter.ColumnType columnType,
+            ReportSheet reportSheet, List<String> facetColumns) {
 
-        return exportColumnGroupMultiRow(context, columnGroup, columnType, reportSheet, 0);
+        exportColumnGroupMultiRow(context, columnGroup, columnType, reportSheet, facetColumns, 0);
     }
 
-    default List<String> exportColumnGroupMultiRow(FacesContext context, ColumnGroup columnGroup, ExCellaExporter.ColumnType columnType,
-            ReportSheet reportSheet, int beginColIndex) {
+    default void exportColumnGroupMultiRow(FacesContext context, ColumnGroup columnGroup, ExCellaExporter.ColumnType columnType,
+            ReportSheet reportSheet, List<String> facetColumns, int beginColIndex) {
 
         Map</*colindex*/Integer, List<String>> headerContents = new HashMap<>();
         int rowIndex = 0;
@@ -521,17 +565,15 @@ interface ExCellaExporter<T> {
         String tagPrefix = columnType == ExCellaExporter.ColumnType.HEADER ? "header" : "footer";
         headerContents.entrySet().forEach(e -> reportSheet.addParam(RowRepeatParamParser.DEFAULT_TAG, tagPrefix + e.getKey(), e.getValue().toArray()));
 
-        return headerContents.keySet().stream()
+        headerContents.keySet().stream()
             .map(i -> "$R[]{" + tagPrefix + i + "}")
-            .collect(Collectors.toList());
+            .collect(Collectors.toCollection(() -> facetColumns));
     }
 
-    private List<String> exportFacetColumns(FacesContext context, List<UIComponent> columns, ExCellaExporter.ColumnType columnType, ReportSheet reportSheet) {
+    private void exportFacetColumns(FacesContext context, List<UIComponent> columns, ExCellaExporter.ColumnType columnType, ReportSheet reportSheet, List<String> facetColumns) {
         @SuppressWarnings("unchecked")
         Set<CellRangeAddress> mergedAreas = nonNull((Set<CellRangeAddress>) reportSheet.getParam(null, COLUMN_GROUP_MERGED_AREAS_KEY + columnType), new HashSet<>());
         reportSheet.addParam(null, COLUMN_GROUP_MERGED_AREAS_KEY + columnType, mergedAreas);
-
-        List<String> facetColumns = new ArrayList<>();
 
         int colIndex = -1;
         for (UIComponent child : columns) {
@@ -548,12 +590,20 @@ interface ExCellaExporter<T> {
                 IntStream.range(0, colsToMerge).forEach(i -> facetColumns.add(null));
             }
         }
-
-        return facetColumns;
     }
 
     default <V> V nonNull(V obj, V defaultValue) {
         return obj != null ? obj : defaultValue;
+    }
+
+    default Map<String, List<Object>> getDataContainer(ReportSheet reportSheet) {
+        @SuppressWarnings("unchecked")
+        Map<String, List<Object>> dataContainer = (Map<String, List<Object>>) reportSheet.getParam(null, DATA_CONTAINER_KEY);
+        if (dataContainer == null) {
+            dataContainer = new HashMap<>();
+            reportSheet.addParam(null, DATA_CONTAINER_KEY, dataContainer);
+        }
+        return dataContainer;
     }
 
 }

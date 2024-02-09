@@ -23,8 +23,9 @@ import javax.faces.view.ViewScoped;
 import javax.inject.Named;
 
 import org.primefaces.component.export.ExporterOptions;
-import org.primefaces.showcase.view.data.ExCellaExporterOptionsImpl;
 import org.primefaces.showcase.view.data.datatable.BasicView.DataTypeCheck;
+
+import net.bis5.excella.primefaces.exporter.ExCellaExporterOptions;
 
 
 @Named("dtNoDataView")
@@ -42,7 +43,7 @@ public class NoDataView implements Serializable {
     private List<DataTypeCheck> dataTypes = new ArrayList<>();
 
     public ExporterOptions getExceptionOptions() {
-        var options = new ExCellaExporterOptionsImpl();
+        var options = new ExCellaExporterOptions();
         options.setThrowExceptionWhenNoData(true);
         return options;
     }
