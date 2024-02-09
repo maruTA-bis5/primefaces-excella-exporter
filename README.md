@@ -32,7 +32,15 @@ This library provides the implementation of PrimeFaces' Exporter using [ExCella 
         <url>https://excella-core.github.io/maven2/</url>
       </repository>
     </repositories>
-    ````
+    ```
+1. Set `type="excella"` to `<p:dataExporter>`.
+    ```xml
+    <p:dataExporter
+        type="excella"
+        target="table" />
+    ```
+
+### Legacy way (~3.x)
 1. Create backing bean provides exporter instance.
     ```java
     @Model
