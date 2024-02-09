@@ -524,7 +524,7 @@ public class TreeTableExcellaExporter extends TreeTableExporter<ReportBook, ExCe
                 }
             }
         }
-        return null;
+        throw new IllegalArgumentException("Node for rowKey " + rowKey + " is not found");
     }
 
     protected static Pair<TreeNode<?>, Integer> traverseTreeNode(TreeNode<?> node, int dataRowIndex) {
