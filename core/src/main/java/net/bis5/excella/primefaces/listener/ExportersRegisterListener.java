@@ -1,14 +1,8 @@
 package net.bis5.excella.primefaces.listener;
 
-import java.util.logging.Logger;
-
 import javax.faces.FacesException;
-import javax.faces.application.Application;
 import javax.faces.context.FacesContext;
 import javax.faces.context.FacesContextFactory;
-import javax.faces.event.AbortProcessingException;
-import javax.faces.event.SystemEvent;
-import javax.faces.event.SystemEventListener;
 import javax.faces.lifecycle.Lifecycle;
 
 import org.primefaces.component.datatable.DataTable;
