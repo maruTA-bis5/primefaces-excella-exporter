@@ -23,8 +23,9 @@ import javax.inject.Named;
 import org.primefaces.component.export.ExporterOptions;
 import org.primefaces.model.DefaultTreeNode;
 import org.primefaces.model.TreeNode;
-import org.primefaces.showcase.view.data.ExCellaExporterOptionsImpl;
 import org.primefaces.showcase.view.data.treetable.BasicView.DataTypeCheck;
+
+import net.bis5.excella.primefaces.exporter.ExCellaExporterOptions;
 
 
 @Named("ttNoDataView")
@@ -42,7 +43,7 @@ public class NoDataView implements Serializable {
     private TreeNode<DataTypeCheck> root = new DefaultTreeNode<>();
 
     public ExporterOptions getExceptionOptions() {
-        var options = new ExCellaExporterOptionsImpl();
+        var options = new ExCellaExporterOptions();
         options.setThrowExceptionWhenNoData(true);
         return options;
     }

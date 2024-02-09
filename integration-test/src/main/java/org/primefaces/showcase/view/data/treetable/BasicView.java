@@ -106,7 +106,7 @@ public class BasicView implements Serializable {
         private final BigDecimal bigDecimalDecimalProperty = new BigDecimal("204.89");
 
         private static Date newDate() {
-            return Date.from(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant());
+            return Date.from(LocalDate.of(2020, 3, 14).atStartOfDay(ZoneId.systemDefault()).toInstant());
         }
         public String getStringProperty() {
             return stringProperty;

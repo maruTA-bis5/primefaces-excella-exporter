@@ -18,20 +18,17 @@ package org.primefaces.showcase.view.data.treetable;
 import javax.faces.view.ViewScoped;
 import javax.inject.Named;
 
-import org.primefaces.component.export.Exporter;
-import org.primefaces.component.treetable.TreeTable;
-
-import net.bis5.excella.primefaces.exporter.TreeTableExcellaExporter;
+import net.bis5.excella.primefaces.exporter.ExCellaExporterOptions;
 
 
 @Named("ttMergedHfView")
 @ViewScoped
 public class MergedHeaderFooterView extends BasicView {
 
-    public Exporter<TreeTable> getTreeTableExporter() {
-        return TreeTableExcellaExporter.builder()
-            .templateUrl(MergedHeaderFooterView.class.getResource("/PositionChangedTemplate.xlsx"))
-            .build();
+    public ExCellaExporterOptions getExporterOptions() {
+        var options = new ExCellaExporterOptions();
+        options.setTemplateUrl(MergedHeaderFooterView.class.getResource("/PositionChangedTemplate.xlsx"));
+        return options;
     }
 
 }

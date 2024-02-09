@@ -29,12 +29,12 @@
       <h:form id="form">
           <p:commandLink id="excellaExportNonAjax" ajax="false">
               <h:outputLabel>ExCella Reports (non-Ajax)</h:outputLabel>
-              <p:dataExporter type="xls" target="tbl" fileName="merged-hf-non-ajax" exporter="#{dtMergedHfView.dataTableExporter}" />
+              <p:dataExporter type="excella" target="tbl" fileName="merged-hf-non-ajax" options="#{dtMergedHfView.exporterOptions}" />
           </p:commandLink>
           <br />
           <p:commandLink id="excellaExportAjax" ajax="true">
               <h:outputLabel>ExCella Reports (Ajax)</h:outputLabel>
-              <p:dataExporter type="xls" target="tbl" fileName="merged-hf-ajax" exporter="#{dtMergedHfView.dataTableExporter}" />
+              <p:dataExporter type="excella" target="tbl" fileName="merged-hf-ajax" options="#{dtMergedHfView.exporterOptions}" />
           </p:commandLink>
 
           <p:dataTable id="tbl" var="row" value="#{dtMergedHfView.dataTypes}">
@@ -81,12 +81,12 @@
 
           <p:commandLink id="excellaExportNonAjaxSingleRow" ajax="false">
               <h:outputLabel>ExCella Reports (non-Ajax) - Single Row</h:outputLabel>
-              <p:dataExporter type="xls" target="tbl-sr" fileName="merged-hf-non-ajax-sr" exporter="#{dtMergedHfView.dataTableExporter}" />
+              <p:dataExporter type="excella" target="tbl-sr" fileName="merged-hf-non-ajax-sr" options="#{dtMergedHfView.exporterOptions}" />
           </p:commandLink>
           <br />
           <p:commandLink id="excellaExportAjaxSingleRow" ajax="true">
               <h:outputLabel>ExCella Reports (Ajax) - Single Row</h:outputLabel>
-              <p:dataExporter type="xls" target="tbl-sr" fileName="merged-hf-ajax-sr" exporter="#{dtMergedHfView.dataTableExporter}" />
+              <p:dataExporter type="excella" target="tbl-sr" fileName="merged-hf-ajax-sr" options="#{dtMergedHfView.exporterOptions}" />
           </p:commandLink>
 
           <p:dataTable id="tbl-sr" var="row" value="#{dtMergedHfView.dataTypes}">

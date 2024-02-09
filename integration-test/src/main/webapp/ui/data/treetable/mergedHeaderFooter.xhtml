@@ -29,12 +29,12 @@
       <h:form id="form">
           <p:commandLink id="excellaExportNonAjax" ajax="false">
               <h:outputLabel>ExCella Reports (non-Ajax)</h:outputLabel>
-              <p:dataExporter type="xls" target="tbl" fileName="tt-merged-hf-non-ajax" exporter="#{ttMergedHfView.treeTableExporter}" />
+              <p:dataExporter type="excella" target="tbl" fileName="tt-merged-hf-non-ajax" options="#{ttMergedHfView.exporterOptions}" />
           </p:commandLink>
           <br />
           <p:commandLink id="excellaExportAjax" ajax="true">
               <h:outputLabel>ExCella Reports (Ajax)</h:outputLabel>
-              <p:dataExporter type="xls" target="tbl" fileName="tt-merged-hf-ajax" exporter="#{ttMergedHfView.treeTableExporter}" />
+              <p:dataExporter type="excella" target="tbl" fileName="tt-merged-hf-ajax" options="#{ttMergedHfView.exporterOptions}" />
           </p:commandLink>
 
           <p:treeTable id="tbl" var="row" value="#{ttMergedHfView.root}">
@@ -81,12 +81,12 @@
 
           <p:commandLink id="excellaExportNonAjaxSingleRow" ajax="false">
               <h:outputLabel>ExCella Reports (non-Ajax) - Single Row</h:outputLabel>
-              <p:dataExporter type="xls" target="tbl-sr" fileName="tt-merged-hf-non-ajax-sr" exporter="#{ttMergedHfView.treeTableExporter}" />
+              <p:dataExporter type="excella" target="tbl-sr" fileName="tt-merged-hf-non-ajax-sr" options="#{ttMergedHfView.exporterOptions}" />
           </p:commandLink>
           <br />
           <p:commandLink id="excellaExportAjaxSingleRow" ajax="true">
               <h:outputLabel>ExCella Reports (Ajax) - Single Row</h:outputLabel>
-              <p:dataExporter type="xls" target="tbl-sr" fileName="tt-merged-hf-ajax-sr" exporter="#{ttMergedHfView.treeTableExporter}" />
+              <p:dataExporter type="excella" target="tbl-sr" fileName="tt-merged-hf-ajax-sr" options="#{ttMergedHfView.exporterOptions}" />
           </p:commandLink>
 
           <p:treeTable id="tbl-sr" var="row" value="#{ttMergedHfView.root}">

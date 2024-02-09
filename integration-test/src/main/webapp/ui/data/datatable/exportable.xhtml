@@ -29,24 +29,24 @@
       <h:form id="form">
           <p:commandLink id="excellaExportNonAjax" ajax="false">
               <h:outputLabel>ExCella Reports (non-Ajax)</h:outputLabel>
-              <p:dataExporter type="xls" target="tbl2" fileName="exportable-cars-non-ajax" exporter="#{excellaExporter.dataTableExporter}" />
+              <p:dataExporter type="excella" target="tbl2" fileName="exportable-cars-non-ajax" />
           </p:commandLink>
           <br />
           <p:commandLink id="excellaExportAjax" ajax="true">
               <h:outputLabel>ExCella Reports (Ajax)</h:outputLabel>
-              <p:dataExporter type="xls" target="tbl2" fileName="exportable-cars-ajax" exporter="#{excellaExporter.dataTableExporter}" />
+              <p:dataExporter type="excella" target="tbl2" fileName="exportable-cars-ajax" />
           </p:commandLink>
 
           <br />
           <p:commandLink id="excellaExportNonAjaxVisibleOnly" ajax="false">
               <h:outputLabel>ExCella Reports (non-Ajax) / Visible Only</h:outputLabel>
-              <p:dataExporter type="xls" target="tbl2" fileName="exportable-cars-non-ajax-visible" exporter="#{excellaExporter.dataTableExporter}"
+              <p:dataExporter type="excella" target="tbl2" fileName="exportable-cars-non-ajax-visible"
                 visibleOnly="true" />
           </p:commandLink>
           <br />
           <p:commandLink id="excellaExportAjaxVisibleOnly" ajax="true">
               <h:outputLabel>ExCella Reports (Ajax) / Visible Only</h:outputLabel>
-              <p:dataExporter type="xls" target="tbl2" fileName="exportable-cars-ajax-visible" exporter="#{excellaExporter.dataTableExporter}"
+              <p:dataExporter type="excella" target="tbl2" fileName="exportable-cars-ajax-visible"
                 visibleOnly="true" />
           </p:commandLink>
 

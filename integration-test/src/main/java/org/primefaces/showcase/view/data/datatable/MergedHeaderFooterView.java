@@ -18,22 +18,17 @@ package org.primefaces.showcase.view.data.datatable;
 import javax.faces.view.ViewScoped;
 import javax.inject.Named;
 
-import org.primefaces.component.datatable.DataTable;
-import org.primefaces.component.export.Exporter;
-
-import net.bis5.excella.primefaces.exporter.DataTableExcellaExporter;
+import net.bis5.excella.primefaces.exporter.ExCellaExporterOptions;
 
 
 @Named("dtMergedHfView")
 @ViewScoped
 public class MergedHeaderFooterView extends BasicView {
 
-    public Exporter<DataTable> getDataTableExporter() {
-        var exporter = new DataTableExcellaExporter();
-
-        exporter.setTemplateUrl(MergedHeaderFooterView.class.getResource("/PositionChangedTemplate.xlsx"));
-
-        return exporter;
+    public ExCellaExporterOptions getExporterOptions() {
+        var options = new ExCellaExporterOptions();
+        options.setTemplateUrl(MergedHeaderFooterView.class.getResource("/PositionChangedTemplate.xlsx"));
+        return options;
     }
 
 }
