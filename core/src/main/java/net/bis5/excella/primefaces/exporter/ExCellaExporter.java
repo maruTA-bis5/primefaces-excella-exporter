@@ -69,29 +69,17 @@ interface ExCellaExporter<T extends UITable<?>> {
     String DEFAULT_TEMPLATE_SHEET_NAME = "DATA";
     String DATA_CONTAINER_KEY = "DATA_CONTAINER_KEY";
 
-    /**
-     * @deprecated use each exporter's builder(). This method will be removed in 5.0.0.
-     */
-    @Deprecated(forRemoval = true)
-    void setTemplatePath(Path templatePath);
+    private Path getTemplatePath() {
+        return getExporterOptions().getTemplatePath();
+    }
 
-    /**
-     * @deprecated Use {@link ExCellaExporterOptions}. This method will be removed in 5.0.0.
-     * @implNote Make this getter private in 5.0.0.
-     */
-    @Deprecated(forRemoval = true)
-    Path getTemplatePath();
-    /**
-     * @deprecated use each exporter's builder(). This method will be removed in 5.0.0.
-     */
-    @Deprecated(forRemoval = true)
-    void setTemplateUrl(URL templateUrl);
-    /**
-     * @deprecated Use {@link ExCellaExporterOptions}. This method will be removed in 5.0.0.
-     * @implNote Make this getter private in 5.0.0.
-     */
-    @Deprecated(forRemoval = true)
-    URL getTemplateUrl();
+    private URL getTemplateUrl() {
+        return getExporterOptions().getTemplateUrl();
+    }
+
+    private String getTemplateSheetName() {
+        return getExporterOptions().getTemplateSheetName();
+    }
 
     private URL getTemplateFileUrl() throws MalformedURLException {
         if (getTemplatePath() != null) {
@@ -102,11 +90,6 @@ interface ExCellaExporter<T extends UITable<?>> {
         return DEFAULT_TEMPLATE_URL;
     }
 
-    /**
-     * @deprecated use each exporter's builder(). This method will be removed in 5.0.0.
-     */
-    @Deprecated(forRemoval = true)
-    void setTemplateSheetName(String templateSheetName);
     void setTemplateType(TemplateType templateType);
     TemplateType getTemplateType();
     void addListener(ReportProcessListener listener);
@@ -167,13 +150,6 @@ interface ExCellaExporter<T extends UITable<?>> {
     OutputStream os();
 
     void reset();
-
-    /**
-     * @deprecated Use {@link ExCellaExporterOptions}. This method will be removed in 5.0.0.
-     * @implNote Make this getter private in 5.0.0.
-     */
-    @Deprecated(forRemoval = true)
-    String getTemplateSheetName();
 
     default void exportTable(FacesContext facesContext, T table, int index) throws IOException {
         // 一度の出力で複数のテーブルが対象となった場合、このメソッドは引数のtable, indexを変えて複数回呼ばれる。

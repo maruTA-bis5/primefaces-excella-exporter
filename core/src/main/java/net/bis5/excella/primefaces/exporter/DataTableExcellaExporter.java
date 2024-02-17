@@ -2,8 +2,6 @@ package net.bis5.excella.primefaces.exporter;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.URL;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -46,115 +44,6 @@ public class DataTableExcellaExporter extends DataTableExporter<ReportBook, ExCe
         super(new ExCellaExporterOptions(), ALL_FACETS, true);
     }
 
-    private DataTableExcellaExporter(Builder builder) {
-        super(builder.options, ALL_FACETS, true);
-        setTemplatePath(builder.templatePath);
-        setTemplateUrl(builder.templateUrl);
-        setTemplateSheetName(builder.templateSheetName);
-        setDataColumnsTag(builder.dataColumnsTag);
-        setHeadersTag(builder.headersTag);
-        setFootersTag(builder.footersTag);
-    }
-
-    /**
-     * @deprecated Use {@link ExCellaExporterOptions}. This method will be removed in 5.0.0.
-     */
-    @Deprecated(forRemoval = true)
-    public static Builder builder() {
-        return new Builder();
-    }
-
-    /**
-     * @deprecated Use {@link ExCellaExporterOptions}. This class will be removed in 5.0.0.
-     */
-    @Deprecated(forRemoval = true)
-    public static class Builder {
-        private Path templatePath;
-        private URL templateUrl;
-        private String templateSheetName;
-        private String dataColumnsTag;
-        private String headersTag;
-        private String footersTag;
-        private ExCellaExporterOptions options = new ExCellaExporterOptions();
-
-        public Builder templatePath(Path templatePath) {
-            this.templatePath = templatePath;
-            return this;
-        }
-
-        public Builder templateUrl(URL templateUrl) {
-            this.templateUrl = templateUrl;
-            return this;
-        }
-
-        public Builder templateSheetName(String templateSheetName) {
-            this.templateSheetName = templateSheetName;
-            return this;
-        }
-
-        public Builder dataColumnsTag(String dataColumnsTag) {
-            this.dataColumnsTag = dataColumnsTag;
-            return this;
-        }
-
-        public Builder headersTag(String headersTag) {
-            this.headersTag = headersTag;
-            return this;
-        }
-
-        public Builder footersTag(String footersTag) {
-            this.footersTag = footersTag;
-            return this;
-        }
-
-        public Builder options(ExCellaExporterOptions options) {
-            this.options = options;
-            return this;
-        }
-
-        public DataTableExcellaExporter build() {
-            return new DataTableExcellaExporter(this);
-        }
-    }
-
-    /**
-     * @deprecated Use {@link ExCellaExporterOptions}. This method will be removed in 5.0.0.
-     */
-    @Deprecated(forRemoval = true)
-    @Override
-    public void setTemplatePath(Path templatePath) {
-        getExporterOptions().setTemplatePath(templatePath);
-    }
-
-    /**
-     * @deprecated Use {@link ExCellaExporterOptions}. This method will be removed in 5.0.0.
-     * @implNote Make this getter private in 5.0.0.
-     */
-    @Deprecated(forRemoval = true)
-    @Override
-    public Path getTemplatePath() {
-        return getExporterOptions().getTemplatePath();
-    }
-
-    /**
-     * @deprecated Use {@link ExCellaExporterOptions}. This method will be removed in 5.0.0.
-     */
-    @Deprecated(forRemoval = true)
-    @Override
-    public void setTemplateUrl(URL templateUrl) {
-        getExporterOptions().setTemplateUrl(templateUrl);
-    }
-
-    /**
-     * @deprecated Use {@link ExCellaExporterOptions}. This method will be removed in 5.0.0.
-     * @implNote Make this getter private in 5.0.0.
-     */
-    @Deprecated(forRemoval = true)
-    @Override
-    public URL getTemplateUrl() {
-        return getExporterOptions().getTemplateUrl();
-    }
-
     @Override
     public void setTemplateType(TemplateType templateType) {
         this.templateType = templateType;
@@ -163,25 +52,6 @@ public class DataTableExcellaExporter extends DataTableExporter<ReportBook, ExCe
     @Override
     public TemplateType getTemplateType() {
         return templateType;
-    }
-
-    /**
-     * @deprecated Use {@link #builder()}. This method will be removed in 5.0.0.
-     */
-    @Deprecated(forRemoval = true)
-    @Override
-    public void setTemplateSheetName(String templateSheetName) {
-        getExporterOptions().setTemplateSheetName(templateSheetName);
-    }
-
-    /**
-     * @deprecated Use {@link ExCellaExporterOptions}. This method will be removed in 5.0.0.
-     * @implNote Make this getter private in 5.0.0.
-     */
-    @Deprecated(forRemoval = true)
-    @Override
-    public String getTemplateSheetName() {
-        return getExporterOptions().getTemplateSheetName();
     }
 
     @Override
@@ -227,36 +97,12 @@ public class DataTableExcellaExporter extends DataTableExporter<ReportBook, ExCe
         addCellValue(context, dataContainer, table, index, col);
     }
 
-    /**
-     * @deprecated Use {@link #builder()}. This method will be removed in 5.0.0.
-     */
-    @Deprecated(forRemoval = true)
-    public void setDataColumnsTag(String dataColumnsTag) {
-        getExporterOptions().setDataColumnsTag(dataColumnsTag);
-    }
-
     private String getDataColumnsTag() {
         return getExporterOptions().getDataColumnsTag();
     }
 
-    /**
-     * @deprecated Use {@link #builder()}. This method will be removed in 5.0.0.
-     */
-    @Deprecated(forRemoval = true)
-    public void setHeadersTag(String headersTag) {
-        getExporterOptions().setHeadersTag(headersTag);
-    }
-
     private String getHeadersTag() {
         return getExporterOptions().getHeadersTag();
-    }
-
-    /**
-     * @deprecated Use {@link #builder()}. This method will be removed in 5.0.0.
-     */
-    @Deprecated(forRemoval = true)
-    public void setFootersTag(String footersTag) {
-        getExporterOptions().setFootersTag(footersTag);
     }
 
     private String getFootersTag() {
