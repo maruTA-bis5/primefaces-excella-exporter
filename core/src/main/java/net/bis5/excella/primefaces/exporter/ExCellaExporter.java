@@ -56,6 +56,7 @@ import org.primefaces.component.export.ExporterUtils;
 import org.primefaces.component.link.Link;
 import org.primefaces.util.ComponentUtils;
 import org.primefaces.util.Constants;
+import org.primefaces.util.FacetUtils;
 import org.primefaces.util.LangUtils;
 
 import net.bis5.excella.primefaces.exporter.component.ExportableComponent;
@@ -460,7 +461,7 @@ interface ExCellaExporter<T extends UITable<?>> {
 
         if (value != null) {
             return (value);
-        } else if (ComponentUtils.shouldRenderFacet(facet)) {
+        } else if (FacetUtils.shouldRenderFacet(facet)) {
             return exportValue(context, facet);
         } else {
             return "";
