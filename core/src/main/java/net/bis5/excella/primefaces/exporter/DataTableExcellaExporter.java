@@ -22,6 +22,7 @@ import org.primefaces.component.api.UIColumn;
 import org.primefaces.component.columngroup.ColumnGroup;
 import org.primefaces.component.datatable.DataTable;
 import org.primefaces.component.datatable.export.DataTableExporter;
+import org.primefaces.component.export.ColumnValue;
 import org.primefaces.component.export.ExportConfiguration;
 import org.primefaces.component.export.Exporter;
 
@@ -222,7 +223,7 @@ public class DataTableExcellaExporter extends DataTableExporter<ReportBook, ExCe
     }
 
     @Override
-    protected void exportCellValue(FacesContext context, DataTable table, UIColumn col, String text, int index) {
+    protected void exportCellValue(FacesContext context, DataTable table, UIColumn col, ColumnValue value, int index) {
         Map<String, List<Object>> dataContainer = getDataContainer(currentSheet);
         addCellValue(context, dataContainer, table, index, col);
     }
@@ -303,7 +304,7 @@ public class DataTableExcellaExporter extends DataTableExporter<ReportBook, ExCe
     }
 
     @Override
-    public void setExportParameters(ReportSheet reportSheet, List<String> columnHeader, List<String> columnFooter, Map<String, List<Object>> dataContainer) {
+    public void setExportParameters(ReportSheet reportSheet, List<Object> columnHeader, List<Object> columnFooter, Map<String, List<Object>> dataContainer) {
         Object[] columnDataParams = dataContainer.keySet().stream().map(k -> "$R[]{" + k + "}").toArray();
         reportSheet.addParam(ColRepeatParamParser.DEFAULT_TAG, dataTag(), columnDataParams);
 
@@ -326,7 +327,7 @@ public class DataTableExcellaExporter extends DataTableExporter<ReportBook, ExCe
     }
 
     @Override
-    public void exportFacet(FacesContext context, DataTable table, ExCellaExporter.ColumnType columnType, ReportSheet reportSheet, List<String> facetColumns) {
+    public void exportFacet(FacesContext context, DataTable table, ExCellaExporter.ColumnType columnType, ReportSheet reportSheet, List<Object> facetColumns) {
 
         ColumnGroup group = table.getColumnGroup(columnType.facet());
         if (group != null && group.isRendered()) {
@@ -349,11 +350,11 @@ public class DataTableExcellaExporter extends DataTableExporter<ReportBook, ExCe
             if (!isExportable(context, column)) {
                 continue;
             }
-            facetColumns.add(getFacetColumnText(context, column, columnType));
+            facetColumns.add(getFacetColumnValue(context, column, columnType));
         }
         boolean allEmpty = facetColumns.stream() //
             .filter(c -> !Objects.isNull(c)) //
-            .allMatch(String::isEmpty);
+            .allMatch(c -> !(c instanceof String) || ((String)c).isEmpty());
         if (allEmpty) {
             facetColumns.clear();
         }
@@ -361,7 +362,7 @@ public class DataTableExcellaExporter extends DataTableExporter<ReportBook, ExCe
 
 
     private void exportFrozenScrollableGroup(FacesContext context, ExCellaExporter.ColumnType columnType,
-            ColumnGroup frozenGroup, ColumnGroup scrollableGroup, ReportSheet reportSheet, List<String> facetColumns) {
+            ColumnGroup frozenGroup, ColumnGroup scrollableGroup, ReportSheet reportSheet, List<Object> facetColumns) {
 
         for (UIComponent child : frozenGroup.getChildren()) {
             if (child instanceof org.primefaces.component.row.Row) {

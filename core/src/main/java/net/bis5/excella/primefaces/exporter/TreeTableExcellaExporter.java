@@ -32,6 +32,7 @@ import org.bbreak.excella.reports.tag.RowRepeatParamParser;
 import org.primefaces.component.api.DynamicColumn;
 import org.primefaces.component.api.UIColumn;
 import org.primefaces.component.columngroup.ColumnGroup;
+import org.primefaces.component.export.ColumnValue;
 import org.primefaces.component.export.ExportConfiguration;
 import org.primefaces.component.treetable.TreeTable;
 import org.primefaces.component.treetable.export.TreeTableExporter;
@@ -374,7 +375,7 @@ public class TreeTableExcellaExporter extends TreeTableExporter<ReportBook, ExCe
     }
 
     @Override
-    public void setExportParameters(ReportSheet reportSheet, List<String> columnHeader, List<String> columnFooter,
+    public void setExportParameters(ReportSheet reportSheet, List<Object> columnHeader, List<Object> columnFooter,
             Map<String, List<Object>> dataContainer) {
 
         List<Integer> levels = nonNull(dataContainer.remove(TREE_LEVEL_KEY), Collections.<Object>emptyList())
@@ -426,7 +427,7 @@ public class TreeTableExcellaExporter extends TreeTableExporter<ReportBook, ExCe
     }
 
     @Override
-    public void exportFacet(FacesContext context, TreeTable table, ExCellaExporter.ColumnType columnType, ReportSheet reportSheet, List<String> facetColumns) {
+    public void exportFacet(FacesContext context, TreeTable table, ExCellaExporter.ColumnType columnType, ReportSheet reportSheet, List<Object> facetColumns) {
         ColumnGroup group = table.getColumnGroup(columnType.facet());
         if (group != null && group.isRendered()) {
             exportColumnGroup(context, group, columnType, reportSheet, facetColumns);
@@ -440,11 +441,11 @@ public class TreeTableExcellaExporter extends TreeTableExporter<ReportBook, ExCe
             if (!isExportable(context, column)) {
                 continue;
             }
-            facetColumns.add(getFacetColumnText(context, column, columnType));
+            facetColumns.add(getFacetColumnValue(context, column, columnType));
         }
         boolean allEmpty = facetColumns.stream() //
             .filter(c -> !Objects.isNull(c)) //
-            .allMatch(String::isEmpty);
+            .allMatch(c -> !(c instanceof String) || StringUtil.isEmpty((String)c));
         if (allEmpty) {
             facetColumns.clear();
         }
@@ -598,7 +599,7 @@ public class TreeTableExcellaExporter extends TreeTableExporter<ReportBook, ExCe
     }
 
     @Override
-    protected void exportCellValue(FacesContext context, TreeTable table, UIColumn col, String text, int index) {
+    protected void exportCellValue(FacesContext context, TreeTable table, UIColumn col, ColumnValue value, int index) {
         Map<String, List<Object>> dataContainer = getDataContainer(currentSheet);
         addCellValue(context, dataContainer, table, index, col);
     }
