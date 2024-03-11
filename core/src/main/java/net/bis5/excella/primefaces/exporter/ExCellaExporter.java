@@ -50,11 +50,12 @@ import org.primefaces.component.api.UIColumn;
 import org.primefaces.component.api.UITable;
 import org.primefaces.component.celleditor.CellEditor;
 import org.primefaces.component.columngroup.ColumnGroup;
+import org.primefaces.component.export.ColumnValue;
 import org.primefaces.component.export.ExportConfiguration;
 import org.primefaces.component.export.ExporterUtils;
 import org.primefaces.component.link.Link;
-import org.primefaces.util.ComponentUtils;
 import org.primefaces.util.Constants;
+import org.primefaces.util.FacetUtils;
 import org.primefaces.util.LangUtils;
 
 import net.bis5.excella.primefaces.exporter.component.ExportableComponent;
@@ -160,7 +161,7 @@ interface ExCellaExporter<T extends UITable<?>> {
         Map<String, List<Object>> dataContainer = new LinkedHashMap<>();
         reportSheet.addParam(null, DATA_CONTAINER_KEY, dataContainer);
 
-        List<String> columnHeader = new ArrayList<>();
+        List<Object> columnHeader = new ArrayList<>();
         exportFacet(facesContext, table, ColumnType.HEADER, reportSheet, columnHeader);
 
         if (getExportConfiguration().isPageOnly()) {
@@ -171,7 +172,7 @@ interface ExCellaExporter<T extends UITable<?>> {
             exportAll(facesContext, table, getExportConfiguration());
         }
 
-        List<String> columnFooter = new ArrayList<>();
+        List<Object> columnFooter = new ArrayList<>();
         exportFacet(facesContext, table, ColumnType.FOOTER, reportSheet, columnFooter);
 
         reportSheet.removeParam(null, DATA_CONTAINER_KEY);
@@ -242,9 +243,9 @@ interface ExCellaExporter<T extends UITable<?>> {
         }
     }
 
-    void exportFacet(FacesContext context, T table, ColumnType columnType, ReportSheet reportSheet, List<String> cellValues);
+    void exportFacet(FacesContext context, T table, ColumnType columnType, ReportSheet reportSheet, List<Object> cellValues);
 
-    void setExportParameters(ReportSheet reportSheet, List<String> columnHeader, List<String> columnFooter, Map<String, List<Object>> dataContainer);
+    void setExportParameters(ReportSheet reportSheet, List<Object> columnHeader, List<Object> columnFooter, Map<String, List<Object>> dataContainer);
 
     default String exportValue(FacesContext context, UIComponent component) {
         String value = ExporterUtils.getComponentValue(context, component);
@@ -279,7 +280,7 @@ interface ExCellaExporter<T extends UITable<?>> {
         if (column.getChildren().size() == 1) {
             exportValue = exportObjectValue(context, column.getChildren().get(0));
         } else {
-            exportValue = getColumnValue(context, table, column, true);
+            exportValue = getColumnValue(context, table, column, true).getValue();
         }
 
         List<Object> values = dataContainer.computeIfAbsent(columnKey, ignore -> new ArrayList<>());
@@ -287,26 +288,26 @@ interface ExCellaExporter<T extends UITable<?>> {
     }
 
     // clone of ExporterUtils#getColumnValue
-    default String getColumnValue(FacesContext context, T table, UIColumn column, boolean joinComponents) {
+    default ColumnValue getColumnValue(FacesContext context, T table, UIColumn column, boolean joinComponents) {
         if (column.getExportValue() != null) {
-            return column.getExportValue();
+            return ColumnValue.of(column.getExportValue());
         }
         else if (column.getExportFunction() != null) {
             MethodExpression exportFunction = column.getExportFunction();
-            return (String) exportFunction.invoke(context.getELContext(), new Object[]{column});
+            return ColumnValue.of(exportFunction.invoke(context.getELContext(), new Object[]{column}));
         }
         else if (LangUtils.isNotBlank(column.getField())) {
             String value = table.getConvertedFieldValue(context, column);
-            return Objects.toString(value, Constants.EMPTY_STRING);
+            return ColumnValue.of(value);
         }
         else {
-            return column.getChildren()
+            return ColumnValue.of(column.getChildren()
                     .stream()
                     .filter(UIComponent::isRendered)
                     .map(c -> exportValue(context, c)) // modified: use exportValue instead of ExporterUtils.getColumnValue
                     .filter(LangUtils::isNotBlank)
                     .limit(!joinComponents ? 1 : column.getChildren().size())
-                    .collect(Collectors.joining(Constants.SPACE));
+                    .collect(Collectors.joining(Constants.SPACE)));
         }
     }
 
@@ -422,20 +423,20 @@ interface ExCellaExporter<T extends UITable<?>> {
         return Objects.requireNonNullElse((ExCellaExporterOptions)getExportConfiguration().getOptions(), new ExCellaExporterOptions());
     }
 
-    default String getFacetColumnText(FacesContext context, UIColumn column, ExCellaExporter.ColumnType columnType) {
+    default Object getFacetColumnValue(FacesContext context, UIColumn column, ExCellaExporter.ColumnType columnType) {
         UIComponent facet = column.getFacet(columnType.facet());
-        String text;
+        Object value;
         if (columnType == ExCellaExporter.ColumnType.HEADER) {
-            text = column.getExportHeaderValue() != null ? column.getExportHeaderValue() : column.getHeaderText();
+            value = column.getExportHeaderValue() != null ? column.getExportHeaderValue() : column.getHeaderText();
         } else if (columnType == ExCellaExporter.ColumnType.FOOTER) {
-            text = column.getExportFooterValue() != null ? column.getExportFooterValue() : column.getFooterText();
+            value = column.getExportFooterValue() != null ? column.getExportFooterValue() : column.getFooterText();
         } else {
-            text = null;
+            value = null;
         }
 
-        if (text != null) {
-            return (text);
-        } else if (ComponentUtils.shouldRenderFacet(facet)) {
+        if (value != null) {
+            return (value);
+        } else if (FacetUtils.shouldRenderFacet(facet)) {
             return exportValue(context, facet);
         } else {
             return "";
@@ -451,7 +452,7 @@ interface ExCellaExporter<T extends UITable<?>> {
         return ".xlsx";
     }
 
-    default void exportColumnGroup(FacesContext context, ColumnGroup columnGroup, ExCellaExporter.ColumnType columnType, ReportSheet reportSheet, List<String> facetColumns) {
+    default void exportColumnGroup(FacesContext context, ColumnGroup columnGroup, ExCellaExporter.ColumnType columnType, ReportSheet reportSheet, List<Object> facetColumns) {
         context.getAttributes().put(Constants.HELPER_RENDERER, "columnGroup");
 
         @SuppressWarnings("unchecked")
@@ -479,15 +480,15 @@ interface ExCellaExporter<T extends UITable<?>> {
     }
 
     default void exportColumnGroupMultiRow(FacesContext context, ColumnGroup columnGroup, ExCellaExporter.ColumnType columnType,
-            ReportSheet reportSheet, List<String> facetColumns) {
+            ReportSheet reportSheet, List<Object> facetColumns) {
 
         exportColumnGroupMultiRow(context, columnGroup, columnType, reportSheet, facetColumns, 0);
     }
 
     default void exportColumnGroupMultiRow(FacesContext context, ColumnGroup columnGroup, ExCellaExporter.ColumnType columnType,
-            ReportSheet reportSheet, List<String> facetColumns, int beginColIndex) {
+            ReportSheet reportSheet, List<Object> facetColumns, int beginColIndex) {
 
-        Map</*colindex*/Integer, List<String>> headerContents = new HashMap<>();
+        Map</*colindex*/Integer, List<Object>> headerContents = new HashMap<>();
         int rowIndex = 0;
         Set<CellRangeAddress> mergedAreas = new HashSet<>();
         reportSheet.addParam(null, COLUMN_GROUP_MERGED_AREAS_KEY + columnType, mergedAreas);
@@ -516,8 +517,8 @@ interface ExCellaExporter<T extends UITable<?>> {
                     if (!overlapped) { break; }
                     colIndex++;
                 }
-                List<String> columnContents = headerContents.computeIfAbsent(colIndex, c -> new ArrayList<>());
-                columnContents.add(getFacetColumnText(context, column, columnType));
+                List<Object> columnContents = headerContents.computeIfAbsent(colIndex, c -> new ArrayList<>());
+                columnContents.add(getFacetColumnValue(context, column, columnType));
                 if (column.getRowspan() > 1) {
                     mergedAreas.add(new CellRangeAddress(rowIndex, rowIndex + column.getRowspan() - 1, colIndex, colIndex));
 
@@ -546,7 +547,7 @@ interface ExCellaExporter<T extends UITable<?>> {
             .collect(Collectors.toCollection(() -> facetColumns));
     }
 
-    private void exportFacetColumns(FacesContext context, List<UIComponent> columns, ExCellaExporter.ColumnType columnType, ReportSheet reportSheet, List<String> facetColumns) {
+    private void exportFacetColumns(FacesContext context, List<UIComponent> columns, ExCellaExporter.ColumnType columnType, ReportSheet reportSheet, List<Object> facetColumns) {
         @SuppressWarnings("unchecked")
         Set<CellRangeAddress> mergedAreas = nonNull((Set<CellRangeAddress>) reportSheet.getParam(null, COLUMN_GROUP_MERGED_AREAS_KEY + columnType), new HashSet<>());
         reportSheet.addParam(null, COLUMN_GROUP_MERGED_AREAS_KEY + columnType, mergedAreas);
@@ -558,7 +559,7 @@ interface ExCellaExporter<T extends UITable<?>> {
                 continue;
             }
             colIndex++;
-            facetColumns.add(getFacetColumnText(context, column, columnType));
+            facetColumns.add(getFacetColumnValue(context, column, columnType));
             if (column.getColspan() > 1) {
                 int colsToMerge = column.getColspan() - 1;
                 mergedAreas.add(new CellRangeAddress(0, 0, colIndex, colIndex + colsToMerge));
