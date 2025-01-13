@@ -17,6 +17,7 @@ import org.bbreak.excella.reports.tag.ColRepeatParamParser;
 import org.bbreak.excella.reports.tag.RowRepeatParamParser;
 import org.primefaces.component.api.DynamicColumn;
 import org.primefaces.component.api.UIColumn;
+import org.primefaces.component.api.UITable;
 import org.primefaces.component.columngroup.ColumnGroup;
 import org.primefaces.component.datatable.DataTable;
 import org.primefaces.component.datatable.export.DataTableExporter;
@@ -90,6 +91,11 @@ public class DataTableExcellaExporter extends DataTableExporter<ReportBook, ExCe
     @Override
     public OutputStream os() { // change visivility
         return super.os();
+    }
+
+    @Override
+    public ColumnValue getColumnValue(FacesContext context, @SuppressWarnings("rawtypes") UITable table, UIColumn column, boolean joinComponents) {
+        return getExCellaColumnValue(context, (DataTable)table, column, joinComponents);
     }
 
     @Override
@@ -205,7 +211,6 @@ public class DataTableExcellaExporter extends DataTableExporter<ReportBook, ExCe
             facetColumns.clear();
         }
     }
-
 
     private void exportFrozenScrollableGroup(FacesContext context, ExCellaExporter.ColumnType columnType,
             ColumnGroup frozenGroup, ColumnGroup scrollableGroup, ReportSheet reportSheet, List<Object> facetColumns) {

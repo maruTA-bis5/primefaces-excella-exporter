@@ -29,6 +29,7 @@ import org.bbreak.excella.reports.tag.ColRepeatParamParser;
 import org.bbreak.excella.reports.tag.RowRepeatParamParser;
 import org.primefaces.component.api.DynamicColumn;
 import org.primefaces.component.api.UIColumn;
+import org.primefaces.component.api.UITable;
 import org.primefaces.component.columngroup.ColumnGroup;
 import org.primefaces.component.export.ColumnValue;
 import org.primefaces.component.export.ExportConfiguration;
@@ -443,6 +444,11 @@ public class TreeTableExcellaExporter extends TreeTableExporter<ReportBook, ExCe
     @Override
     public ExportConfiguration getExportConfiguration() {
         return exportConfiguration;
+    }
+
+    @Override
+    public ColumnValue getColumnValue(FacesContext context, @SuppressWarnings("rawtypes") UITable table, UIColumn column, boolean joinComponents) {
+        return getExCellaColumnValue(context, (TreeTable)table, column, joinComponents);
     }
 
     @Override

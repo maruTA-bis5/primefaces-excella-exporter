@@ -287,8 +287,12 @@ interface ExCellaExporter<T extends UITable<?>> {
         values.add(exportValue);
     }
 
+    private ColumnValue getColumnValue(FacesContext context, T table, UIColumn column, boolean joinComponents) {
+        return getExCellaColumnValue(context, table, column, joinComponents);
+    }
+
     // clone of ExporterUtils#getColumnValue
-    default ColumnValue getColumnValue(FacesContext context, T table, UIColumn column, boolean joinComponents) {
+    default ColumnValue getExCellaColumnValue(FacesContext context, T table, UIColumn column, boolean joinComponents) {
         if (column.getExportValue() != null) {
             return ColumnValue.of(column.getExportValue());
         }
