@@ -52,7 +52,6 @@ import org.primefaces.component.celleditor.CellEditor;
 import org.primefaces.component.columngroup.ColumnGroup;
 import org.primefaces.component.export.ColumnValue;
 import org.primefaces.component.export.ExportConfiguration;
-import org.primefaces.component.export.ExporterUtils;
 import org.primefaces.component.link.Link;
 import org.primefaces.util.Constants;
 import org.primefaces.util.FacetUtils;
@@ -248,13 +247,15 @@ interface ExCellaExporter<T extends UITable<?>> {
     void setExportParameters(ReportSheet reportSheet, List<Object> columnHeader, List<Object> columnFooter, Map<String, List<Object>> dataContainer);
 
     default String exportValue(FacesContext context, UIComponent component) {
-        String value = ExporterUtils.getComponentValue(context, component);
+        String value = getComponentValue(context, component);
         if (component.getClass().getSimpleName().equals("UIInstructions")) {
             return exportUIInstructionsValue(context, component, value);
         }
         return value;
     }
 
+    // defined in TableExporter
+    String getComponentValue(FacesContext context, UIComponent component);
 
     default String exportUIInstructionsValue(FacesContext context, UIComponent component, String value) {
         // evaluate el expr
@@ -291,7 +292,7 @@ interface ExCellaExporter<T extends UITable<?>> {
         return getExCellaColumnValue(context, table, column, joinComponents);
     }
 
-    // clone of ExporterUtils#getColumnValue
+    // clone of TableExporter#getColumnValue
     default ColumnValue getExCellaColumnValue(FacesContext context, T table, UIColumn column, boolean joinComponents) {
         if (column.getExportValue() != null) {
             return ColumnValue.of(column.getExportValue());
@@ -308,7 +309,7 @@ interface ExCellaExporter<T extends UITable<?>> {
             return ColumnValue.of(column.getChildren()
                     .stream()
                     .filter(UIComponent::isRendered)
-                    .map(c -> exportValue(context, c)) // modified: use exportValue instead of ExporterUtils.getColumnValue
+                    .map(c -> exportValue(context, c)) // modified: use exportValue instead of TableExporter.getColumnValue
                     .filter(LangUtils::isNotBlank)
                     .limit(!joinComponents ? 1 : column.getChildren().size())
                     .collect(Collectors.joining(Constants.SPACE)));
