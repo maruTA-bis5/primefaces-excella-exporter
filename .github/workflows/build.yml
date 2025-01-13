@@ -41,7 +41,7 @@ jobs:
       run: chmod 777 docker-compose/downloads
       working-directory: ./integration-test
     - name: Start browser container
-      run: HOST_IP=$(ip a | grep docker0 | grep inet | awk '{print $2;}' | sed 's/\/.*$//') docker-compose up -d
+      run: HOST_IP=$(ip a | grep docker0 | grep inet | awk '{print $2;}' | sed 's/\/.*$//') docker compose up -d
       working-directory: ./integration-test
     - name: Build with Maven
       run: mvn -B verify --file pom.xml -P${{ matrix.faces-impl }}
