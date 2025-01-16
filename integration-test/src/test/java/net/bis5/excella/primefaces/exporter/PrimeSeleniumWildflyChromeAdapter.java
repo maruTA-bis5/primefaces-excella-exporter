@@ -32,6 +32,8 @@ public class PrimeSeleniumWildflyChromeAdapter implements WebDriverAdapter, Depl
         options.addArguments("--disable-dev-shm-usage");
         options.addArguments("--no-sandbox");
         options.addArguments("--remote-debugging-port=9222");
+        options.addArguments("--unsafely-treat-insecure-origin-as-secure="+getBaseUrl());
+
         Map<String, Object> prefs = Collections.singletonMap("download.default_directory", "/home/seluser/Downloads");
         options.setExperimentalOption("prefs", prefs);
         LoggingPreferences logPrefs = new LoggingPreferences();
