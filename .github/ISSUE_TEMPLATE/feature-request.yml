@@ -18,7 +18,7 @@ body:
   - type: input
     id: env-exporter
     attributes:
-      label: Target version (default: latest)
+      label: Target version
       description: 機能追加を希望するバージョンを記載してください。記載が無ければ最新のメジャーバージョンのみを対象とします。Please enter the version for which you want to add the feature. If not provided, only the latest major version will be considered.
     validations:
       required: false
