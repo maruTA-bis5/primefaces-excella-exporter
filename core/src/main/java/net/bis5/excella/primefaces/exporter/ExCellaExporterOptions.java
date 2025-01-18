@@ -1,9 +1,13 @@
 package net.bis5.excella.primefaces.exporter;
 
+import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Path;
-
+import java.util.ArrayList;
+import java.util.List;
 import org.primefaces.component.export.ExcelOptions;
+
+import net.bis5.excella.primefaces.exporter.listener.BeforeWriteResponseListener;
 
 /**
  * ExCella exporter options
@@ -84,4 +88,40 @@ public class ExCellaExporterOptions extends ExcelOptions {
         return throwExceptionWhenNoData;
     }
 
+    private final List<BeforeWriteResponseListener> beforeWriteResponseListeners = new ArrayList<>();
+
+    /**
+     * Add {@link BeforeWriteResponseListener} to execute before writing response.
+     * @param listener the listener to add
+     */
+    public void addBeforeWriteResponseListener(BeforeWriteResponseListener listener) {
+        beforeWriteResponseListeners.add(listener);
+    }
+
+    /**
+     * Remove {@link BeforeWriteResponseListener}.
+     * @param listener the listener to remove
+     */
+    public void removeBeforeWriteResponseListener(BeforeWriteResponseListener listener) {
+        beforeWriteResponseListeners.remove(listener);
+    }
+
+    /**
+     * (internal api) Execute all {@link BeforeWriteResponseListener} before writing response.
+     * @param consumer the consumer to accept each listener
+     * @throws IOException if an I/O error occurs
+     */
+    public void forEachBeforeWriteResponseListener(ConsumerThrowsIOException<BeforeWriteResponseListener> consumer) throws IOException {
+        for (BeforeWriteResponseListener listener : beforeWriteResponseListeners) {
+            consumer.accept(listener);
+        }
+    }
+
+    /**
+     * (internal api) Consumer with IOException.
+     * @param <T> the type of the input to the operation
+     */
+    public interface ConsumerThrowsIOException<T> {
+        void accept(T t) throws IOException;
+    }
 }

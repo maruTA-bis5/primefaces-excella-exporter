@@ -115,6 +115,7 @@ interface ExCellaExporter<T extends UITable<?>> {
         Path outputFile = processExport();
 
         try {
+            getExporterOptions().forEachBeforeWriteResponseListener(l -> l.beforeWriteResponse(outputFile));
             writeResponse(outputFile);
         } finally {
             reset();
