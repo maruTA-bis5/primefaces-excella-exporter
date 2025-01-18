@@ -59,6 +59,7 @@ import org.primefaces.util.LangUtils;
 
 import net.bis5.excella.primefaces.exporter.component.ExportableComponent;
 import net.bis5.excella.primefaces.exporter.convert.ExporterConverter;
+import net.bis5.excella.primefaces.exporter.listener.BeforeWriteResponseListener;
 
 // internal
 interface ExCellaExporter<T extends UITable<?>> {
@@ -132,6 +133,7 @@ interface ExCellaExporter<T extends UITable<?>> {
         Path outputFile = processExport();
 
         try {
+            getExporterOptions().forEachBeforeWriteResponseListener(l -> l.beforeWriteResponse(outputFile));
             writeResponse(outputFile);
         } finally {
             reset();
