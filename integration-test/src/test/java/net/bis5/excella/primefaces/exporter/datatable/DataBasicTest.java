@@ -63,69 +63,73 @@ public class DataBasicTest extends AbstractPrimePageTest {
 
     private void assertFileContent(DataTypeCheck record, String outputFileName) throws EncryptedDocumentException, IOException {
         try (Workbook workbook = WorkbookFactory.create(new File(getBaseDir()+"/docker-compose/downloads/" + outputFileName), null, true)) {
-            Sheet sheet = workbook.getSheetAt(0);
-            List<String> headers = Arrays.asList(
-                "String",
-                "YearMonth",
-                "j.u.Date (date)",
-                "j.u.Date (datetime)",
-                "LocalDate",
-                "LocalDateTime",
-                "Integer (int)",
-                "Integer (BigDecimal scale=2)",
-                "Decimal (double)",
-                "Decimal (BigDecimal)",
-                "Link (value specified)",
-                "Link (value not specified)",
-                "header line break",
-                "exportable component",
-                "exportable component(value null)"
-            );
-
-            Row headerRow = sheet.getRow(0);
-            Row dataRow = sheet.getRow(1);
-            Row footerRow = sheet.getRow(2);
-
-            assertAll(
-                () -> {
-                    List<Executable> assertions = new ArrayList<>();
-                    for (int i = 0; i < headers.size(); i++) {
-                        Cell cell = headerRow.getCell(i);
-                        String expectedHeaderValue = headers.get(i);
-                        var index = i;
-                        assertions.add(() -> assertHeaderCell(index, cell, expectedHeaderValue));
-                    }
-                    assertAll("Header row", assertions.toArray(Executable[]::new));
-                },
-                () -> assertAll("Data row",
-                    () -> assertCell("String cell", dataRow.getCell(0), CellType.STRING, ValueType.STRING, record.getStringProperty(), Cell::getStringCellValue),
-                    () -> assertCell("YearMonth cell", dataRow.getCell(1), CellType.NUMERIC, ValueType.YEAR_MONTH, record.getYearMonthProperty().atDay(1).atStartOfDay(), Cell::getLocalDateTimeCellValue),
-                    () -> assertCell("Date cell", dataRow.getCell(2), CellType.NUMERIC, ValueType.DATE, record.getDateProperty(), Cell::getDateCellValue),
-                    () -> assertCell("Date time cell", dataRow.getCell(3), CellType.NUMERIC, ValueType.DATE_TIME, record.getDateTimeProperty(), Cell::getDateCellValue),
-                    () -> assertCell("LocalDate cell", dataRow.getCell(4), CellType.NUMERIC, ValueType.DATE, record.getLocalDateProperty().atStartOfDay(), Cell::getLocalDateTimeCellValue),
-                    () -> assertCell("LocalDateTime cell", dataRow.getCell(5), CellType.NUMERIC, ValueType.DATE_TIME, record.getLocalDateTimeProperty(), Cell::getLocalDateTimeCellValue),
-                    () -> assertCell("integer cell", dataRow.getCell(6), CellType.NUMERIC, ValueType.INTEGER, Double.valueOf(record.getIntProperty()), Cell::getNumericCellValue),
-                    () -> assertCell("BigDecimal as integer cell", dataRow.getCell(7), CellType.NUMERIC, ValueType.INTEGER, record.getBigDecimalIntProperty().doubleValue(), Cell::getNumericCellValue),
-                    () -> assertCell("decimal cell", dataRow.getCell(8), CellType.NUMERIC, ValueType.DECIMAL, record.getDoubleProperty(), Cell::getNumericCellValue),
-                    () -> assertCell("BigDecimal as decimal cell", dataRow.getCell(9), CellType.NUMERIC, ValueType.DECIMAL, record.getBigDecimalDecimalProperty().doubleValue(), Cell::getNumericCellValue),
-                    () -> assertCell("Link value specified", dataRow.getCell(10), CellType.STRING, ValueType.STRING, "Link", Cell::getStringCellValue),
-                    () -> assertCell("Link value not specified", dataRow.getCell(11), CellType.NUMERIC, ValueType.DECIMAL, record.getBigDecimalDecimalProperty().doubleValue(), Cell::getNumericCellValue),
-                    () -> assertCell("remove br tag", dataRow.getCell(12), CellType.STRING, ValueType.STRING, "value row line break", Cell::getStringCellValue),
-                    () -> assertCell("exportable value holder", dataRow.getCell(13), CellType.STRING, ValueType.STRING, "Export text1", Cell::getStringCellValue),
-                    () -> assertCell("exportable value holder(value null)", dataRow.getCell(14), CellType.STRING, ValueType.STRING, "Export text2", Cell::getStringCellValue)
-                ),
-                () -> {
-                    List<Executable> assertions = new ArrayList<>();
-                    for (int i = 0; i < headers.size(); i++) {
-                        Cell cell = footerRow.getCell(i);
-                        String expectedFooterValue = headers.get(i);
-                        var index = i;
-                        assertions.add(() -> assertHeaderCell(index, cell, expectedFooterValue));
-                    }
-                    assertAll("Footer row", assertions.toArray(Executable[]::new));
-                }
-            );
+            assertFileContent(record, workbook);
         }
+    }
+
+    void assertFileContent(DataTypeCheck record, Workbook workbook) {
+        Sheet sheet = workbook.getSheetAt(0);
+        List<String> headers = Arrays.asList(
+            "String",
+            "YearMonth",
+            "j.u.Date (date)",
+            "j.u.Date (datetime)",
+            "LocalDate",
+            "LocalDateTime",
+            "Integer (int)",
+            "Integer (BigDecimal scale=2)",
+            "Decimal (double)",
+            "Decimal (BigDecimal)",
+            "Link (value specified)",
+            "Link (value not specified)",
+            "header line break",
+            "exportable component",
+            "exportable component(value null)"
+        );
+
+        Row headerRow = sheet.getRow(0);
+        Row dataRow = sheet.getRow(1);
+        Row footerRow = sheet.getRow(2);
+
+        assertAll(
+            () -> {
+                List<Executable> assertions = new ArrayList<>();
+                for (int i = 0; i < headers.size(); i++) {
+                    Cell cell = headerRow.getCell(i);
+                    String expectedHeaderValue = headers.get(i);
+                    var index = i;
+                    assertions.add(() -> assertHeaderCell(index, cell, expectedHeaderValue));
+                }
+                assertAll("Header row", assertions.toArray(Executable[]::new));
+            },
+            () -> assertAll("Data row",
+                () -> assertCell("String cell", dataRow.getCell(0), CellType.STRING, ValueType.STRING, record.getStringProperty(), Cell::getStringCellValue),
+                () -> assertCell("YearMonth cell", dataRow.getCell(1), CellType.NUMERIC, ValueType.YEAR_MONTH, record.getYearMonthProperty().atDay(1).atStartOfDay(), Cell::getLocalDateTimeCellValue),
+                () -> assertCell("Date cell", dataRow.getCell(2), CellType.NUMERIC, ValueType.DATE, record.getDateProperty(), Cell::getDateCellValue),
+                () -> assertCell("Date time cell", dataRow.getCell(3), CellType.NUMERIC, ValueType.DATE_TIME, record.getDateTimeProperty(), Cell::getDateCellValue),
+                () -> assertCell("LocalDate cell", dataRow.getCell(4), CellType.NUMERIC, ValueType.DATE, record.getLocalDateProperty().atStartOfDay(), Cell::getLocalDateTimeCellValue),
+                () -> assertCell("LocalDateTime cell", dataRow.getCell(5), CellType.NUMERIC, ValueType.DATE_TIME, record.getLocalDateTimeProperty(), Cell::getLocalDateTimeCellValue),
+                () -> assertCell("integer cell", dataRow.getCell(6), CellType.NUMERIC, ValueType.INTEGER, Double.valueOf(record.getIntProperty()), Cell::getNumericCellValue),
+                () -> assertCell("BigDecimal as integer cell", dataRow.getCell(7), CellType.NUMERIC, ValueType.INTEGER, record.getBigDecimalIntProperty().doubleValue(), Cell::getNumericCellValue),
+                () -> assertCell("decimal cell", dataRow.getCell(8), CellType.NUMERIC, ValueType.DECIMAL, record.getDoubleProperty(), Cell::getNumericCellValue),
+                () -> assertCell("BigDecimal as decimal cell", dataRow.getCell(9), CellType.NUMERIC, ValueType.DECIMAL, record.getBigDecimalDecimalProperty().doubleValue(), Cell::getNumericCellValue),
+                () -> assertCell("Link value specified", dataRow.getCell(10), CellType.STRING, ValueType.STRING, "Link", Cell::getStringCellValue),
+                () -> assertCell("Link value not specified", dataRow.getCell(11), CellType.NUMERIC, ValueType.DECIMAL, record.getBigDecimalDecimalProperty().doubleValue(), Cell::getNumericCellValue),
+                () -> assertCell("remove br tag", dataRow.getCell(12), CellType.STRING, ValueType.STRING, "value row line break", Cell::getStringCellValue),
+                () -> assertCell("exportable value holder", dataRow.getCell(13), CellType.STRING, ValueType.STRING, "Export text1", Cell::getStringCellValue),
+                () -> assertCell("exportable value holder(value null)", dataRow.getCell(14), CellType.STRING, ValueType.STRING, "Export text2", Cell::getStringCellValue)
+            ),
+            () -> {
+                List<Executable> assertions = new ArrayList<>();
+                for (int i = 0; i < headers.size(); i++) {
+                    Cell cell = footerRow.getCell(i);
+                    String expectedFooterValue = headers.get(i);
+                    var index = i;
+                    assertions.add(() -> assertHeaderCell(index, cell, expectedFooterValue));
+                }
+                assertAll("Footer row", assertions.toArray(Executable[]::new));
+            }
+        );
     }
 
     public static class Page extends AbstractPrimePage {

@@ -109,6 +109,9 @@ interface ExCellaExporter<T> {
         Path outputFile = processExport();
 
         try {
+            if (config.getOptions() instanceof ExCellaExporterOptions) {
+                ((ExCellaExporterOptions)config.getOptions()).forEachBeforeWriteResponseListener(l -> l.beforeWriteResponse(outputFile));
+            }
             writeResponse(context, outputFile, config);
         } finally {
             reset();
