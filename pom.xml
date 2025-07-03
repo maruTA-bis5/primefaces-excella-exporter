@@ -34,16 +34,6 @@
     <system>GitHub</system>
     <url>https://github.com/maruTA-bis5/primefaces-excella-exporter/issues</url>
   </issueManagement>
-  <distributionManagement>
-    <repository>
-      <id>ossrh</id>
-      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-    </repository>
-    <snapshotRepository>
-      <id>ossrh</id>
-      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-    </snapshotRepository>
-  </distributionManagement>
 
   <properties>
     <maven.compiler.source>11</maven.compiler.source>
@@ -157,14 +147,14 @@
         </configuration>
       </plugin>
       <plugin>
-        <groupId>org.sonatype.plugins</groupId>
-        <artifactId>nexus-staging-maven-plugin</artifactId>
-        <version>1.6.8</version>
+        <groupId>org.sonatype.central</groupId>
+        <artifactId>central-publishing-maven-plugin</artifactId>
+        <version>0.8.0</version>
         <extensions>true</extensions>
         <configuration>
-          <nexusUrl>https://oss.sonatype.org</nexusUrl>
-          <serverId>ossrh</serverId>
-          <autoReleaseAfterClose>true</autoReleaseAfterClose>
+          <autoPublish>true</autoPublish>
+	  <publishingServerId>central</publishingServerId>
+	  <waitUntil>published</waitUntil>
         </configuration>
       </plugin>
     </plugins>
