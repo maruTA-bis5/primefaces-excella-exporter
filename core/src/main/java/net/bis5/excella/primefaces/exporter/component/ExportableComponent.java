@@ -7,7 +7,7 @@ package net.bis5.excella.primefaces.exporter.component;
 public interface ExportableComponent {
 
     /**
-     * @return An exportable value. It may not be the same as {@link javax.faces.component.ValueHolder#getValue()}.
+     * @return An exportable value. It may not be the same as {@link jakarta.faces.component.ValueHolder#getValue()}.
      */
     Object getExportValue();
 
