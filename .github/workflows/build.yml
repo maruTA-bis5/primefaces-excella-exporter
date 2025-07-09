@@ -37,9 +37,6 @@ jobs:
         path: ~/.sonar/cache
         key: ${{ runner.os }}-sonar
         restore-keys: ${{ runner.os }}-sonar
-    - name: Prepare
-      run: chmod 777 docker-compose/downloads
-      working-directory: ./integration-test
     - name: Start browser container
       run: HOST_IP=$(ip a | grep docker0 | grep inet | awk '{print $2;}' | sed 's/\/.*$//') docker compose up -d
       working-directory: ./integration-test

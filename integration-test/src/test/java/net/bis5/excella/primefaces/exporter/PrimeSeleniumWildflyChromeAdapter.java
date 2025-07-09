@@ -1,8 +1,12 @@
 package net.bis5.excella.primefaces.exporter;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Collections;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Map;
 import java.util.logging.Level;
 
@@ -23,19 +27,12 @@ public class PrimeSeleniumWildflyChromeAdapter implements WebDriverAdapter, Depl
         ChromeOptions options = new ChromeOptions();
         options.setPageLoadStrategy(PageLoadStrategy.NORMAL);
 
-        boolean headless = Boolean.valueOf(System.getProperty("webdriver.headless"));
-        if (headless) {
-            // https://www.selenium.dev/blog/2023/headless-is-going-away/
-            options.addArguments("--headless=new");
-        }
-
+        options.setEnableDownloads(true);
         options.addArguments("--disable-dev-shm-usage");
         options.addArguments("--no-sandbox");
         options.addArguments("--remote-debugging-port=9222");
         options.addArguments("--unsafely-treat-insecure-origin-as-secure="+getBaseUrl());
 
-        Map<String, Object> prefs = Collections.singletonMap("download.default_directory", "/home/seluser/Downloads");
-        options.setExperimentalOption("prefs", prefs);
         LoggingPreferences logPrefs = new LoggingPreferences();
         logPrefs.enable(LogType.BROWSER, Level.ALL);
         options.setCapability("goog::loggingPrefs", logPrefs);
@@ -69,7 +66,25 @@ public class PrimeSeleniumWildflyChromeAdapter implements WebDriverAdapter, Depl
 
     @Override
     public void initialize(ConfigProvider configProvider) {
-        // no op
+        createDownloadLocalDir();
     }
 
+    private void createDownloadLocalDir() {
+        Path localDir = Paths.get(System.getProperty("basedir"), "target", "downloads");
+        if (!localDir.toFile().exists()) {
+            localDir.toFile().mkdirs();
+        }
+        try {
+            Files.walk(localDir).filter(Files::isRegularFile)
+                .forEach(file -> {
+                    try {
+                        Files.delete(file);
+                    } catch (IOException e) {
+                        throw new UncheckedIOException(e);
+                    }
+                });
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
 }
