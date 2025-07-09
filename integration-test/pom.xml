@@ -15,7 +15,7 @@
     <primefaces-selenium.version>${primefaces.version}</primefaces-selenium.version>
     <wildfly-jar-maven-plugin.version>8.1.0.Final</wildfly-jar-maven-plugin.version>
     <maven-failsafe-plugin.version>3.0.0-M5</maven-failsafe-plugin.version>
-    <wildfly.version>27.0.0.Final</wildfly.version>
+    <wildfly.version>27.0.1.Final</wildfly.version>
 
     <sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/../target/site/jacoco-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
   </properties>
@@ -101,12 +101,12 @@
           </jvmArguments>
           <feature-packs>
             <feature-pack>
-              <location>wildfly@maven(org.jboss.universe:community-universe)#${wildfly.version}</location>
+              <location>org.wildfly:wildfly-preview-feature-pack:${wildfly.version}</location>
             </feature-pack>
             <feature-pack>
               <groupId>com.melloware</groupId>
               <artifactId>wildfly-myfaces-galleon-pack</artifactId>
-              <version>8.26.1.Final</version>
+              <version>9.27.0.Final</version>
             </feature-pack>
           </feature-packs>
           <layers>
