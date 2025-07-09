@@ -15,8 +15,8 @@
  */
 package org.primefaces.showcase.view.data.treetable;
 
-import javax.faces.view.ViewScoped;
-import javax.inject.Named;
+import jakarta.faces.view.ViewScoped;
+import jakarta.inject.Named;
 
 import org.primefaces.component.export.Exporter;
 import org.primefaces.component.treetable.TreeTable;

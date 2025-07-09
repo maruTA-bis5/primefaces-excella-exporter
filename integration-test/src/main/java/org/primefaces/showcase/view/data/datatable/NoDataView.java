@@ -19,8 +19,8 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.faces.view.ViewScoped;
-import javax.inject.Named;
+import jakarta.faces.view.ViewScoped;
+import jakarta.inject.Named;
 
 import org.primefaces.component.export.ExporterOptions;
 import org.primefaces.showcase.view.data.ExCellaExporterOptionsImpl;

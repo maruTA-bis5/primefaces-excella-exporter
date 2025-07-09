@@ -17,9 +17,9 @@ package org.primefaces.showcase.view.data.treetable;
 
 import java.io.Serializable;
 
-import javax.annotation.PostConstruct;
-import javax.faces.view.ViewScoped;
-import javax.inject.Named;
+import jakarta.annotation.PostConstruct;
+import jakarta.faces.view.ViewScoped;
+import jakarta.inject.Named;
 
 import org.primefaces.model.DefaultTreeNode;
 import org.primefaces.model.TreeNode;

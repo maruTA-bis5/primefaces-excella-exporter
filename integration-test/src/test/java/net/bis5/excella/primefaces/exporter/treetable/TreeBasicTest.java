@@ -75,7 +75,7 @@ class TreeBasicTest extends AbstractPrimePageTest {
     }
 
     private void assertFileContent(DataTypeCheck parentRecord1, DataTypeCheck childRecord1, DataTypeCheck parentRecord2, DataTypeCheck childRecord2, String fileName) throws EncryptedDocumentException, IOException {
-        Path localFile = Download.downloadFileToLocal(outputFileName);
+        Path localFile = Download.downloadFileToLocal(fileName);
         try (Workbook workbook = WorkbookFactory.create(localFile.toFile(), null, true)) {
             assertFileContent(parentRecord1, childRecord1, parentRecord2, childRecord2, workbook);
         }

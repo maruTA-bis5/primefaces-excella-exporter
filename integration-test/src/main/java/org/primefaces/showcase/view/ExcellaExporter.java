@@ -1,7 +1,7 @@
 package org.primefaces.showcase.view;
 
-import javax.enterprise.context.RequestScoped;
-import javax.inject.Named;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Named;
 
 import org.primefaces.component.datatable.DataTable;
 import org.primefaces.component.export.Exporter;
