@@ -30,10 +30,6 @@ import net.bis5.excella.primefaces.exporter.TakeScreenShotAfterFailure;
 @ExtendWith(TakeScreenShotAfterFailure.class)
 class TreeBeforeWriteResponseTest extends AbstractPrimePageTest {
 
-    private String getBaseDir() {
-        return System.getProperty("basedir");
-    }
-
     @Test
     void exportExcellaAjax(Page page) throws IOException, GeneralSecurityException {
         BasicView backingBean = new BasicView();
