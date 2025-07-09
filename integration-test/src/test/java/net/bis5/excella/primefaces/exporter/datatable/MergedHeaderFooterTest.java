@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -30,15 +31,12 @@ import org.primefaces.selenium.component.CommandLink;
 import org.primefaces.showcase.view.data.datatable.BasicView.DataTypeCheck;
 import org.primefaces.showcase.view.data.datatable.MergedHeaderFooterView;
 
+import net.bis5.excella.primefaces.exporter.Download;
 import net.bis5.excella.primefaces.exporter.TakeScreenShotAfterFailure;
 import net.bis5.excella.primefaces.exporter.ValueType;
 
 @ExtendWith(TakeScreenShotAfterFailure.class)
 class MergedHeaderFooterTest extends AbstractPrimePageTest {
-
-    private String getBaseDir() {
-        return System.getProperty("basedir");
-    }
 
     @Test
     void exportExcellaAjax(Page page) throws EncryptedDocumentException, IOException {
@@ -66,7 +64,8 @@ class MergedHeaderFooterTest extends AbstractPrimePageTest {
     private static final int ROW_OFFSET = 2;
     private static final int COL_OFFSET = 1;
     private void assertFileContent(DataTypeCheck record, String outputFileName) throws EncryptedDocumentException, IOException {
-        try (Workbook workbook = WorkbookFactory.create(new File(getBaseDir()+"/docker-compose/downloads/" + outputFileName), null, true)) {
+        Path localFile = Download.downloadFileToLocal(outputFileName);
+        try (Workbook workbook = WorkbookFactory.create(localFile.toFile(), null, true)) {
             Sheet sheet = workbook.getSheetAt(0);
             List<String> detailHeaders = Arrays.asList("headerText B-1", "headerText B-2");
 
@@ -138,7 +137,8 @@ class MergedHeaderFooterTest extends AbstractPrimePageTest {
     }
 
     private void assertFileContentSingleRow(DataTypeCheck record, String outputFileName) throws EncryptedDocumentException, IOException {
-        try (Workbook workbook = WorkbookFactory.create(new File(getBaseDir()+"/docker-compose/downloads/" + outputFileName), null, true)) {
+        Path localFile = Download.downloadFileToLocal(outputFileName);
+        try (Workbook workbook = WorkbookFactory.create(localFile.toFile(), null, true)) {
             Sheet sheet = workbook.getSheetAt(0);
 
             Row groupedHeaderRow = sheet.getRow(ROW_OFFSET + 0);

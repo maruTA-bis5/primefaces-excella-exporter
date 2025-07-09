@@ -4,7 +4,8 @@ services:
     image: selenium/standalone-chrome
     ports:
       - "4444:4444"
-    volumes:
-      - "./docker-compose/downloads:/home/seluser/Downloads"
+      - "7900:7900" # VNC
     extra_hosts:
       - "docker-host:$HOST_IP"
+    environment:
+      - "SE_OPTS=--enable-managed-downloads true"

@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.security.GeneralSecurityException;
 
@@ -23,14 +23,11 @@ import org.primefaces.selenium.component.CommandLink;
 import org.primefaces.showcase.view.data.datatable.BasicView;
 import org.primefaces.showcase.view.data.datatable.BasicView.DataTypeCheck;
 
+import net.bis5.excella.primefaces.exporter.Download;
 import net.bis5.excella.primefaces.exporter.TakeScreenShotAfterFailure;
 
 @ExtendWith(TakeScreenShotAfterFailure.class)
 class DataBeforeWriteResponseListenerTest extends AbstractPrimePageTest {
-
-    private String getBaseDir() {
-        return System.getProperty("basedir");
-    }
 
     @Test
     void exportExcellaAjax(Page page) throws IOException, GeneralSecurityException {
@@ -56,7 +53,8 @@ class DataBeforeWriteResponseListenerTest extends AbstractPrimePageTest {
     }
 
     private void assertFileContent(DataTypeCheck data, String outputFileName) throws IOException, GeneralSecurityException {
-        try (InputStream is = Files.newInputStream(Paths.get(getBaseDir() + "/docker-compose/downloads/" + outputFileName), StandardOpenOption.READ);
+        Path localFile = Download.downloadFileToLocal(outputFileName);
+        try (InputStream is = Files.newInputStream(localFile, StandardOpenOption.READ);
                 POIFSFileSystem fs = new POIFSFileSystem(is)) {
             EncryptionInfo info = new EncryptionInfo(fs);
             Decryptor dc = Decryptor.getInstance(info);
