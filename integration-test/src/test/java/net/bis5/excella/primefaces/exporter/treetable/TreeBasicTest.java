@@ -5,8 +5,8 @@ import static net.bis5.excella.primefaces.exporter.Assertions.assertHeaderCell;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -30,15 +30,12 @@ import org.primefaces.selenium.component.CommandLink;
 import org.primefaces.showcase.view.data.treetable.BasicView;
 import org.primefaces.showcase.view.data.treetable.BasicView.DataTypeCheck;
 
+import net.bis5.excella.primefaces.exporter.Download;
 import net.bis5.excella.primefaces.exporter.TakeScreenShotAfterFailure;
 import net.bis5.excella.primefaces.exporter.ValueType;
 
 @ExtendWith(TakeScreenShotAfterFailure.class)
 class TreeBasicTest extends AbstractPrimePageTest {
-
-    private String getBaseDir() {
-        return System.getProperty("basedir");
-    }
 
     @Test
     void exportExcellaAjax(Page page) throws EncryptedDocumentException, IOException {
@@ -78,7 +75,8 @@ class TreeBasicTest extends AbstractPrimePageTest {
     }
 
     private void assertFileContent(DataTypeCheck parentRecord1, DataTypeCheck childRecord1, DataTypeCheck parentRecord2, DataTypeCheck childRecord2, String fileName) throws EncryptedDocumentException, IOException {
-        try (Workbook workbook = WorkbookFactory.create(new File(getBaseDir()+"/docker-compose/downloads/" + fileName), null, true)) {
+        Path localFile = Download.downloadFileToLocal(outputFileName);
+        try (Workbook workbook = WorkbookFactory.create(localFile.toFile(), null, true)) {
             assertFileContent(parentRecord1, childRecord1, parentRecord2, childRecord2, workbook);
         }
     }
