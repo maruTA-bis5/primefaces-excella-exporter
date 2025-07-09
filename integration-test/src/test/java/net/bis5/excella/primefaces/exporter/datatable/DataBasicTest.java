@@ -60,7 +60,7 @@ public class DataBasicTest extends AbstractPrimePageTest {
     }
 
     private void assertFileContent(DataTypeCheck record, String outputFileName) throws EncryptedDocumentException, IOException {
-        Path localFile = Download.downloadFileToLocal(outputFileName)
+        Path localFile = Download.downloadFileToLocal(outputFileName);
         try (Workbook workbook = WorkbookFactory.create(localFile.toFile(), null, true)) {
             assertFileContent(record, workbook);
         }

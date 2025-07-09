@@ -15,8 +15,8 @@
  */
 package org.primefaces.showcase.view.data.datatable;
 
-import javax.faces.view.ViewScoped;
-import javax.inject.Named;
+import jakarta.faces.view.ViewScoped;
+import jakarta.inject.Named;
 
 import net.bis5.excella.primefaces.exporter.ExCellaExporterOptions;
 

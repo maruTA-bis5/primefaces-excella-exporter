@@ -1,6 +1,6 @@
 package net.bis5.excella.primefaces.exporter.convert;
 
-import javax.faces.convert.Converter;
+import jakarta.faces.convert.Converter;
 
 /**
  * This is the marker interface indicates used by ExCella Exporters.
