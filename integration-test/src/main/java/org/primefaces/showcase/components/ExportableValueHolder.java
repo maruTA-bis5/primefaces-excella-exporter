@@ -1,7 +1,7 @@
 package org.primefaces.showcase.components;
 
-import javax.faces.component.FacesComponent;
-import javax.faces.component.UIOutput;
+import jakarta.faces.component.FacesComponent;
+import jakarta.faces.component.UIOutput;
 
 import net.bis5.excella.primefaces.exporter.component.ExportableComponent;
 
