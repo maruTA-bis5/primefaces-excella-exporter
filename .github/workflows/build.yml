@@ -2,7 +2,7 @@ name: build
 
 on:
   push:
-    branches: [ 6.x ]
+    branches: [ 6.x, 6.x-jakarta ]
   pull_request:
     types: [opened, synchronize, reopened]
 
