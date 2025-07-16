@@ -1,0 +1,24 @@
+name: Feature Request
+description: 機能要望 / Feature Request
+title: "TreeTable or DataTable: title"
+labels: "enhancement"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        機能要望は日本語又は英語のみ受け付けています。他の言語で作成されたIssueは、無条件でクローズします。
+        Feature requests are only accepted in Japanese or English. Issues written in other languages will close unconditionally.
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the request
+      description: 要望の内容・ユースケースを説明してください。Please describe the feature that you want to add.
+    validations:
+      required: true
+  - type: input
+    id: env-exporter
+    attributes:
+      label: Target version
+      description: 機能追加を希望するバージョンを記載してください。記載が無ければ最新のメジャーバージョンのみを対象とします。Please enter the version for which you want to add the feature. If not provided, only the latest major version will be considered.
+    validations:
+      required: false
