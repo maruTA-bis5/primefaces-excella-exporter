@@ -3,7 +3,7 @@
   <parent>
     <groupId>net.bis5.excella</groupId>
     <artifactId>primefaces-excella-exporter-parent</artifactId>
-    <version>6.1.1-jakarta-SNAPSHOT</version>
+    <version>6.1.1-jakarta</version>
   </parent>
   <artifactId>primefaces-excella-exporter-test</artifactId>
 
@@ -24,7 +24,7 @@
     <dependency>
       <groupId>net.bis5.excella</groupId>
       <artifactId>primefaces-excella-exporter</artifactId>
-      <version>6.1.1-jakarta-SNAPSHOT</version>
+      <version>6.1.1-jakarta</version>
     </dependency>
     <dependency>
       <groupId>org.bbreak.excella</groupId>
