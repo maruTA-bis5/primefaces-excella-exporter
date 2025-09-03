@@ -475,6 +475,7 @@ interface ExCellaExporter<T extends UITable<?>> {
                 } else {
                     exportFacetColumns(context, child.getChildren(), columnType, reportSheet, facetColumns);
                 }
+                return;
             } else if (child instanceof UIColumn) {
                 exportFacetColumns(context, columnGroup.getChildren(), columnType, reportSheet, facetColumns);
             } else {
