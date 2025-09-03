@@ -1,6 +1,7 @@
 package net.bis5.excella.primefaces.exporter.datatable;
 
 import static net.bis5.excella.primefaces.exporter.Assertions.assertCell;
+import static net.bis5.excella.primefaces.exporter.Assertions.assertExportArea;
 import static net.bis5.excella.primefaces.exporter.Assertions.assertHeaderCell;
 import static net.bis5.excella.primefaces.exporter.Assertions.assertMergedRegion;
 import static org.junit.jupiter.api.Assertions.assertAll;
@@ -108,7 +109,8 @@ class MergedHeaderFooterTest extends AbstractPrimePageTest {
                 () -> assertAll("EOS row",
                     () -> assertMergedRegion(sheet, ROW_OFFSET + 4, COL_OFFSET + 0, ROW_OFFSET + 4, COL_OFFSET + 2),
                     () -> assertEquals("EOS", eosRow.getCell(COL_OFFSET + 0).getStringCellValue())
-                )
+                ),
+                () -> assertExportArea(sheet, 0, 6, 0, 5)
             );
         }
     }

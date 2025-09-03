@@ -1,6 +1,7 @@
 package net.bis5.excella.primefaces.exporter.datatable;
 
 import static net.bis5.excella.primefaces.exporter.Assertions.assertCell;
+import static net.bis5.excella.primefaces.exporter.Assertions.assertExportArea;
 import static net.bis5.excella.primefaces.exporter.Assertions.assertHeaderCell;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -125,7 +126,8 @@ class ComplexRowspanTest extends AbstractPrimePageTest {
                     () -> assertCell("YearMonth cell", dataRow.getCell(1), CellType.NUMERIC, ValueType.YEAR_MONTH, record.getYearMonthProperty().atDay(1).atStartOfDay(), Cell::getLocalDateTimeCellValue),
                     () -> assertCell("LocalDate cell", dataRow.getCell(2), CellType.NUMERIC, ValueType.DATE, record.getLocalDateProperty().atStartOfDay(), Cell::getLocalDateTimeCellValue),
                     () -> assertCell("String cell 2", dataRow.getCell(3), CellType.STRING, ValueType.STRING, record.getStringProperty(), Cell::getStringCellValue)
-                )
+                ),
+                () -> assertExportArea(sheet, 0, 3 + /*template footer*/1, 0, 3)
             );
         }
     }
