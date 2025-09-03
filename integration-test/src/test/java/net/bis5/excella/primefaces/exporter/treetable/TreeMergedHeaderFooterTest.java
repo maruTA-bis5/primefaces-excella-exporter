@@ -1,13 +1,14 @@
 package net.bis5.excella.primefaces.exporter.treetable;
 
 import static net.bis5.excella.primefaces.exporter.Assertions.assertCell;
+import static net.bis5.excella.primefaces.exporter.Assertions.assertExportArea;
 import static net.bis5.excella.primefaces.exporter.Assertions.assertHeaderCell;
 import static net.bis5.excella.primefaces.exporter.Assertions.assertMergedRegion;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -31,15 +32,12 @@ import org.primefaces.selenium.component.CommandLink;
 import org.primefaces.showcase.view.data.treetable.BasicView.DataTypeCheck;
 import org.primefaces.showcase.view.data.treetable.MergedHeaderFooterView;
 
+import net.bis5.excella.primefaces.exporter.Download;
 import net.bis5.excella.primefaces.exporter.TakeScreenShotAfterFailure;
 import net.bis5.excella.primefaces.exporter.ValueType;
 
 @ExtendWith(TakeScreenShotAfterFailure.class)
 class TreeMergedHeaderFooterTest extends AbstractPrimePageTest {
-
-    private String getBaseDir() {
-        return System.getProperty("basedir");
-    }
 
     @Test
     void exportExcellaAjax(Page page) throws EncryptedDocumentException, IOException {
@@ -79,7 +77,8 @@ class TreeMergedHeaderFooterTest extends AbstractPrimePageTest {
     private static final int ROW_OFFSET = 2;
     private static final int COL_OFFSET = 1;
     private void assertFileContent(DataTypeCheck parentRecord1, DataTypeCheck childRecord1, DataTypeCheck parentRecord2, DataTypeCheck childRecord2, String outputFileName) throws EncryptedDocumentException, IOException {
-        try (Workbook workbook = WorkbookFactory.create(new File(getBaseDir()+"/docker-compose/downloads/" + outputFileName), null, true)) {
+        Path localFile = Download.downloadFileToLocal(outputFileName);
+        try (Workbook workbook = WorkbookFactory.create(localFile.toFile(), null, true)) {
             Sheet sheet = workbook.getSheetAt(0);
             List<String> detailHeaders = Arrays.asList("headerText B-1", "headerText B-2");
 
@@ -144,7 +143,8 @@ class TreeMergedHeaderFooterTest extends AbstractPrimePageTest {
                 () -> assertAll("EOS row",
                     () -> assertMergedRegion(sheet, ROW_OFFSET + 7, COL_OFFSET + 0, ROW_OFFSET + 7, COL_OFFSET + 2),
                     () -> assertEquals("EOS", eosRow.getCell(COL_OFFSET + 0).getStringCellValue())
-                )
+                ),
+                () -> assertExportArea(sheet, 0, 9, 0, 5)
             );
         }
     }
@@ -185,7 +185,8 @@ class TreeMergedHeaderFooterTest extends AbstractPrimePageTest {
     }
 
     private void assertFileContentSingleRow(DataTypeCheck parentRecord1, DataTypeCheck childRecord1, DataTypeCheck parentRecord2, DataTypeCheck childRecord2, String outputFileName) throws EncryptedDocumentException, IOException {
-        try (Workbook workbook = WorkbookFactory.create(new File(getBaseDir()+"/docker-compose/downloads/" + outputFileName), null, true)) {
+        Path localFile = Download.downloadFileToLocal(outputFileName);
+        try (Workbook workbook = WorkbookFactory.create(localFile.toFile(), null, true)) {
             Sheet sheet = workbook.getSheetAt(0);
 
             Row groupedHeaderRow = sheet.getRow(ROW_OFFSET + 0);
@@ -231,7 +232,8 @@ class TreeMergedHeaderFooterTest extends AbstractPrimePageTest {
                 () -> assertAll("Grouped Footer row",
                     () -> assertMergedRegion(sheet, ROW_OFFSET + 5, COL_OFFSET + 0, ROW_OFFSET + 5, COL_OFFSET + 2),
                     () -> assertEquals("colspan3", groupedFooterRow.getCell(COL_OFFSET + 0).getStringCellValue())
-                )
+                ),
+                () -> assertExportArea(sheet, 0, 7, 0, 5)
             );
         }
     }
