@@ -1,37 +1,32 @@
 package net.bis5.excella.primefaces.exporter.datatable;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
-import java.nio.file.Paths;
 
 import org.apache.poi.EncryptedDocumentException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.openqa.selenium.WebDriverException;
 import org.openqa.selenium.support.FindBy;
 import org.primefaces.selenium.AbstractPrimePage;
 import org.primefaces.selenium.AbstractPrimePageTest;
 import org.primefaces.selenium.PrimeSelenium;
 import org.primefaces.selenium.component.CommandLink;
 
+import net.bis5.excella.primefaces.exporter.Download;
 import net.bis5.excella.primefaces.exporter.TakeScreenShotAfterFailure;
 
 @ExtendWith(TakeScreenShotAfterFailure.class)
 class DataTableNoDataTest extends AbstractPrimePageTest {
 
-    private String getBaseDir() {
-        return System.getProperty("basedir");
-    }
-
     private void assertNoFile(String outputFileName) {
-        var path = Paths.get(getBaseDir(), "/docker-compose/downloads/" + outputFileName);
-        assertFalse(path.toFile().exists(), () -> "File " + path + " was unexpectedly created");
+        assertThrows(WebDriverException.class, () -> Download.downloadFileToLocal(outputFileName));
     }
 
     private void assertFileExists(String outputFileName) {
-        var path = Paths.get(getBaseDir(), "/docker-compose/downloads/" + outputFileName);
-        assertTrue(path.toFile().exists(), () -> "File " + path + " is not found");
+        assertDoesNotThrow(() -> Download.downloadFileToLocal(outputFileName));
     }
 
     @Test

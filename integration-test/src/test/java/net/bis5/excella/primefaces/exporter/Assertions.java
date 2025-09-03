@@ -39,4 +39,33 @@ public class Assertions {
     public static void assertBlankCell(String description, Cell cell) {
         assertEquals(CellType.BLANK, cell.getCellType(), "Cell is not blank");
     }
+
+    public static void assertExportArea(Sheet sheet, int expectedFirstRowIndex, int expectedLastRowIndex, int expectedFirstColIndex, int expectedLastColIndex) {
+        assertEquals(expectedFirstRowIndex, sheet.getFirstRowNum(), "first row index is incorrect");
+        assertEquals(expectedLastRowIndex, sheet.getLastRowNum(), "last row index is incorrect");
+
+        int actualFirstColIndex = Integer.MAX_VALUE;
+        int actualLastColIndex = Integer.MIN_VALUE;
+        for (int i = expectedFirstRowIndex; i <= expectedLastRowIndex; i++) {
+            var row = sheet.getRow(i);
+            if (row == null) {
+                continue;
+            }
+            if (row.getFirstCellNum() >= 0) {
+                actualFirstColIndex = Math.min(actualFirstColIndex, row.getFirstCellNum());
+            }
+            if (row.getLastCellNum() >= 0) {
+                actualLastColIndex = Math.max(actualLastColIndex, row.getLastCellNum() - 1);
+            }
+        }
+        if (actualFirstColIndex == Integer.MAX_VALUE) {
+            actualFirstColIndex = -1;
+        }
+        if (actualLastColIndex == Integer.MIN_VALUE) {
+            actualLastColIndex = -1;
+        }
+
+        assertEquals(expectedFirstColIndex, actualFirstColIndex, "first column index is incorrect");
+        assertEquals(expectedLastColIndex, actualLastColIndex, "last column index is incorrect");
+    }
 }
