@@ -1,12 +1,12 @@
 package net.bis5.excella.primefaces.exporter.treetable;
 
 import static net.bis5.excella.primefaces.exporter.Assertions.assertCell;
+import static net.bis5.excella.primefaces.exporter.Assertions.assertExportArea;
 import static net.bis5.excella.primefaces.exporter.Assertions.assertHeaderCell;
 import static net.bis5.excella.primefaces.exporter.Assertions.assertMergedRegion;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -143,7 +143,8 @@ class TreeMergedHeaderFooterTest extends AbstractPrimePageTest {
                 () -> assertAll("EOS row",
                     () -> assertMergedRegion(sheet, ROW_OFFSET + 7, COL_OFFSET + 0, ROW_OFFSET + 7, COL_OFFSET + 2),
                     () -> assertEquals("EOS", eosRow.getCell(COL_OFFSET + 0).getStringCellValue())
-                )
+                ),
+                () -> assertExportArea(sheet, 0, 9, 0, 5)
             );
         }
     }
@@ -231,7 +232,8 @@ class TreeMergedHeaderFooterTest extends AbstractPrimePageTest {
                 () -> assertAll("Grouped Footer row",
                     () -> assertMergedRegion(sheet, ROW_OFFSET + 5, COL_OFFSET + 0, ROW_OFFSET + 5, COL_OFFSET + 2),
                     () -> assertEquals("colspan3", groupedFooterRow.getCell(COL_OFFSET + 0).getStringCellValue())
-                )
+                ),
+                () -> assertExportArea(sheet, 0, 7, 0, 5)
             );
         }
     }
