@@ -1,6 +1,7 @@
 package net.bis5.excella.primefaces.exporter.treetable;
 
 import static net.bis5.excella.primefaces.exporter.Assertions.assertCell;
+import static net.bis5.excella.primefaces.exporter.Assertions.assertExportArea;
 import static net.bis5.excella.primefaces.exporter.Assertions.assertHeaderCell;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -157,7 +158,8 @@ class TreeExportableColumnTest extends AbstractPrimePageTest {
                         assertions.add(() -> assertHeaderCell(index, cell, expectedFooterValue));
                     }
                     assertAll("Footer row", assertions.toArray(Executable[]::new));
-                }
+                },
+                () -> assertExportArea(sheet, 0, 3, 0, headers.size() - 1)
             );
         }
     }
