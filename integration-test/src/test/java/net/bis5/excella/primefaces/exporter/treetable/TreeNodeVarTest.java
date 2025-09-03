@@ -2,11 +2,11 @@ package net.bis5.excella.primefaces.exporter.treetable;
 
 import static net.bis5.excella.primefaces.exporter.Assertions.assertBlankCell;
 import static net.bis5.excella.primefaces.exporter.Assertions.assertCell;
+import static net.bis5.excella.primefaces.exporter.Assertions.assertExportArea;
 import static net.bis5.excella.primefaces.exporter.Assertions.assertHeaderCell;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -159,7 +159,8 @@ class TreeNodeVarTest extends AbstractPrimePageTest {
                     () -> assertCell("YearMonth cell", childNodeRow4.getCell(1), CellType.NUMERIC, ValueType.YEAR_MONTH, childRecord2.getYearMonthProperty().atDay(1).atStartOfDay(), Cell::getLocalDateTimeCellValue),
                     () -> assertBlankCell("Date cell", childNodeRow4.getCell(2)),
                     () -> assertCell("Date time cell", childNodeRow4.getCell(3), CellType.NUMERIC, ValueType.DATE_TIME, childRecord2.getDateTimeProperty(), Cell::getDateCellValue)
-                )
+                ),
+                () -> assertExportArea(sheet, 0, 4 + /*template footer*/1, 0, headers.size() - 1)
             );
         }
     }
@@ -197,7 +198,8 @@ class TreeNodeVarTest extends AbstractPrimePageTest {
                     () -> assertCell("YearMonth cell", childNodeRow2.getCell(1), CellType.NUMERIC, ValueType.YEAR_MONTH, childRecord.getYearMonthProperty().atDay(1).atStartOfDay(), Cell::getLocalDateTimeCellValue),
                     () -> assertBlankCell("Date cell", childNodeRow2.getCell(2)),
                     () -> assertCell("Date time cell", childNodeRow2.getCell(3), CellType.NUMERIC, ValueType.DATE_TIME, childRecord.getDateTimeProperty(), Cell::getDateCellValue)
-                )
+                ),
+                () -> assertExportArea(sheet, 0, 2 + /*template footer*/1, 0, headers.size() - 1)
             );
         }
     }
