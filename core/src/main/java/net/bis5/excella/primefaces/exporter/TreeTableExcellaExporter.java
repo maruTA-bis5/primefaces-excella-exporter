@@ -278,7 +278,7 @@ public class TreeTableExcellaExporter extends TreeTableExporter<ReportBook, ExCe
     public void exportFacet(FacesContext context, TreeTable table, ExCellaExporter.ColumnType columnType, ReportSheet reportSheet, List<Object> facetColumns) {
         ColumnGroup group = table.getColumnGroup(columnType.facet());
         if (group != null && group.isRendered()) {
-            exportColumnGroup(context, group, columnType, reportSheet, facetColumns);
+            exportColumnGroup(context, table, group, columnType, reportSheet, facetColumns);
             return;
         }
 

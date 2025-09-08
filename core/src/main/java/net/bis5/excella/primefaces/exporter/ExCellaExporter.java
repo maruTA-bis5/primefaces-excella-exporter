@@ -59,6 +59,7 @@ import org.primefaces.util.LangUtils;
 
 import net.bis5.excella.primefaces.exporter.component.ExportableComponent;
 import net.bis5.excella.primefaces.exporter.convert.ExporterConverter;
+import net.bis5.excella.primefaces.exporter.util.Mutable;
 
 // internal
 interface ExCellaExporter<T extends UITable<?>> {
@@ -458,94 +459,79 @@ interface ExCellaExporter<T extends UITable<?>> {
         return ".xlsx";
     }
 
-    default void exportColumnGroup(FacesContext context, ColumnGroup columnGroup, ExCellaExporter.ColumnType columnType, ReportSheet reportSheet, List<Object> facetColumns) {
+    default void exportColumnGroup(FacesContext context, T table, ColumnGroup columnGroup, ExCellaExporter.ColumnType columnType, ReportSheet reportSheet, List<Object> facetColumns) {
         context.getAttributes().put(Constants.HELPER_RENDERER, "columnGroup");
 
         @SuppressWarnings("unchecked")
         Set<CellRangeAddress> mergedAreas = nonNull((Set<CellRangeAddress>) reportSheet.getParam(null, COLUMN_GROUP_MERGED_AREAS_KEY + columnType), new HashSet<>());
         reportSheet.addParam(null, COLUMN_GROUP_MERGED_AREAS_KEY + columnType, mergedAreas);
 
-        for (UIComponent child : columnGroup.getChildren()) {
-            if (!child.isRendered()) {
-                continue;
-            }
-            if (child instanceof org.primefaces.component.row.Row) {
-                if (columnGroup.getChildren().size() > 1) {
-                    exportColumnGroupMultiRow(context, columnGroup, columnType, reportSheet, facetColumns);
-                } else {
-                    exportFacetColumns(context, child.getChildren(), columnType, reportSheet, facetColumns);
-                }
-                return;
-            } else if (child instanceof UIColumn) {
-                exportFacetColumns(context, columnGroup.getChildren(), columnType, reportSheet, facetColumns);
+        table.forEachColumnGroupRow(context, columnGroup, true, child -> {
+            if (columnGroup.getChildren().size() > 1) {
+                exportColumnGroupMultiRow(context, table, columnGroup, columnType, reportSheet, facetColumns);
             } else {
-                // ignore
+                exportFacetColumns(context, table, child, columnType, reportSheet, facetColumns);
             }
-        }
+            return false;
+        });
 
         context.getAttributes().remove(Constants.HELPER_RENDERER);
     }
 
-    default void exportColumnGroupMultiRow(FacesContext context, ColumnGroup columnGroup, ExCellaExporter.ColumnType columnType,
+    default void exportColumnGroupMultiRow(FacesContext context, T table, ColumnGroup columnGroup, ExCellaExporter.ColumnType columnType,
             ReportSheet reportSheet, List<Object> facetColumns) {
 
-        exportColumnGroupMultiRow(context, columnGroup, columnType, reportSheet, facetColumns, 0);
+        exportColumnGroupMultiRow(context, table, columnGroup, columnType, reportSheet, facetColumns, 0);
     }
 
-    default void exportColumnGroupMultiRow(FacesContext context, ColumnGroup columnGroup, ExCellaExporter.ColumnType columnType,
+    default void exportColumnGroupMultiRow(FacesContext context, T table, ColumnGroup columnGroup, ExCellaExporter.ColumnType columnType,
             ReportSheet reportSheet, List<Object> facetColumns, int beginColIndex) {
 
         Map</*colindex*/Integer, List<Object>> headerContents = new HashMap<>();
-        int rowIndex = 0;
+        Mutable<Integer> rowIndex = new Mutable<>(0);
         Set<CellRangeAddress> mergedAreas = new HashSet<>();
         reportSheet.addParam(null, COLUMN_GROUP_MERGED_AREAS_KEY + columnType, mergedAreas);
 
-        for (UIComponent child : columnGroup.getChildren()) {
-            if (!child.isRendered() || !(child instanceof org.primefaces.component.row.Row)) {
-                continue;
-            }
-            org.primefaces.component.row.Row row = (org.primefaces.component.row.Row)child;
-            int colIndex = beginColIndex;
-            boolean foundExportableColumn = false;
-            for (UIComponent rowChild : row.getChildren()) {
-                if (!rowChild.isRendered() || !(rowChild instanceof UIColumn)) {
-                    continue;
-                }
-                UIColumn column = (UIColumn)rowChild;
+        table.forEachColumnGroupRow(context, columnGroup, true, row -> {
+            Mutable<Integer> colIndex = new Mutable<>(beginColIndex);
+            Mutable<Boolean> foundExportableColumn = new Mutable<>(false);
+            table.forEachColumn(context, row, true, true, false, column -> {
                 if (!isExportable(context, column)) {
-                    continue;
+                    return true;
                 }
-                foundExportableColumn = true;
+                foundExportableColumn.setValue(true);
                 while (true) {
-                    var currRowIndex = rowIndex;
-                    var currColIndex = colIndex;
+                    int currRowIndex = rowIndex.getValue();
+                    int currColIndex = colIndex.getValue();
                     boolean overlapped = mergedAreas.stream()
                         .anyMatch(a -> a.isInRange(currRowIndex, currColIndex));
                     if (!overlapped) { break; }
-                    colIndex++;
+                    colIndex.setValue(colIndex.getValue() + 1);
                 }
-                List<Object> columnContents = headerContents.computeIfAbsent(colIndex, c -> new ArrayList<>());
+                List<Object> columnContents = headerContents.computeIfAbsent(colIndex.getValue(), c -> new ArrayList<>());
                 columnContents.add(getFacetColumnValue(context, column, columnType));
                 if (column.getRowspan() > 1) {
-                    mergedAreas.add(new CellRangeAddress(rowIndex, rowIndex + column.getRowspan() - 1, colIndex, colIndex));
+                    mergedAreas.add(new CellRangeAddress(rowIndex.getValue(), rowIndex.getValue() + column.getRowspan() - 1, colIndex.getValue(), colIndex.getValue()));
 
-                    IntStream.range(rowIndex + 1, rowIndex + column.getRowspan())
+                    IntStream.range(rowIndex.getValue() + 1, rowIndex.getValue() + column.getRowspan())
                         .forEach(i -> columnContents.add(null));
                 }
                 if (column.getColspan() > 1) {
-                    mergedAreas.add(new CellRangeAddress(rowIndex, rowIndex, colIndex, colIndex + column.getColspan() -1));
+                    mergedAreas.add(new CellRangeAddress(rowIndex.getValue(), rowIndex.getValue(), colIndex.getValue(), colIndex.getValue() + column.getColspan() -1));
 
-                    IntStream.range(colIndex + 1, colIndex + column.getColspan())
+                    IntStream.range(colIndex.getValue() + 1, colIndex.getValue() + column.getColspan())
                         .mapToObj(i -> headerContents.computeIfAbsent(i, c -> new ArrayList<>()))
                         .forEach(c -> c.add(null));
-                    colIndex += column.getColspan() - 1;
+                    colIndex.setValue(colIndex.getValue() + column.getColspan() - 1);
                 }
-                colIndex++;
+                colIndex.setValue(colIndex.getValue() + 1);
+                return true;
+            });
+            if (foundExportableColumn.getValue().booleanValue()) {
+                rowIndex.setValue(rowIndex.getValue() + 1);
             }
-            if (foundExportableColumn) {
-                rowIndex++;
-            }
-        }
+            return true;
+        });
         String tagPrefix = columnType == ExCellaExporter.ColumnType.HEADER ? "header" : "footer";
         headerContents.entrySet().forEach(e -> reportSheet.addParam(RowRepeatParamParser.DEFAULT_TAG, tagPrefix + e.getKey(), e.getValue().toArray()));
 
@@ -554,26 +540,27 @@ interface ExCellaExporter<T extends UITable<?>> {
             .collect(Collectors.toCollection(() -> facetColumns));
     }
 
-    private void exportFacetColumns(FacesContext context, List<UIComponent> columns, ExCellaExporter.ColumnType columnType, ReportSheet reportSheet, List<Object> facetColumns) {
+    private void exportFacetColumns(FacesContext context, T table, UIComponent row, ExCellaExporter.ColumnType columnType, ReportSheet reportSheet, List<Object> facetColumns) {
         @SuppressWarnings("unchecked")
         Set<CellRangeAddress> mergedAreas = nonNull((Set<CellRangeAddress>) reportSheet.getParam(null, COLUMN_GROUP_MERGED_AREAS_KEY + columnType), new HashSet<>());
         reportSheet.addParam(null, COLUMN_GROUP_MERGED_AREAS_KEY + columnType, mergedAreas);
 
-        int colIndex = -1;
-        for (UIComponent child : columns) {
-            UIColumn column = (UIColumn)child;
+        Mutable<Integer> colIndex = new Mutable<>(-1);
+
+        table.forEachColumn(context, row, true, true, false, column -> {
             if (!isExportable(context, column)) {
-                continue;
+                return true;
             }
-            colIndex++;
+            colIndex.setValue(colIndex.getValue() + 1);
             facetColumns.add(getFacetColumnValue(context, column, columnType));
             if (column.getColspan() > 1) {
                 int colsToMerge = column.getColspan() - 1;
-                mergedAreas.add(new CellRangeAddress(0, 0, colIndex, colIndex + colsToMerge));
-                colIndex += colsToMerge;
+                mergedAreas.add(new CellRangeAddress(0, 0, colIndex.getValue(), colIndex.getValue() + colsToMerge));
+                colIndex.setValue(colIndex.getValue() + colsToMerge);
                 IntStream.range(0, colsToMerge).forEach(i -> facetColumns.add(null));
             }
-        }
+            return true;
+        });
     }
 
     default <V> V nonNull(V obj, V defaultValue) {
