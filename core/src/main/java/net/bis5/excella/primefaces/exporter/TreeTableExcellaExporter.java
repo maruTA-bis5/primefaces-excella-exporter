@@ -321,7 +321,7 @@ public class TreeTableExcellaExporter extends TreeTableExporter implements ExCel
 
         ColumnGroup group = table.getColumnGroup(columnType.facet());
         if (group != null && group.isRendered()) {
-            return exportColumnGroup(context, group, columnType, reportSheet);
+            return exportColumnGroup(context, table, group, columnType, reportSheet);
         }
 
         for (UIColumn column : getExportableColumns(table)) {
