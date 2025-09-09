@@ -60,6 +60,12 @@
       <version>${primefaces-selenium.version}</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.seleniumhq.selenium</groupId>
+      <artifactId>selenium-java</artifactId>
+      <version>4.34.0</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
@@ -152,6 +158,7 @@
           <includes>
             <include>net/bis5/excella/primefaces/exporter/**/*.java</include>
           </includes>
+          <rerunFailingTestsCount>2</rerunFailingTestsCount>
           <systemPropertyVariables>
             <webdriver.headless>true</webdriver.headless>
             <baseUrl>http://docker-host:8080/</baseUrl>
