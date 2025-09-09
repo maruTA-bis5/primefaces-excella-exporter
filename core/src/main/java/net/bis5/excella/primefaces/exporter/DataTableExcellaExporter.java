@@ -316,13 +316,13 @@ public class DataTableExcellaExporter extends DataTableExporter implements ExCel
 
         ColumnGroup group = table.getColumnGroup(columnType.facet());
         if (group != null && group.isRendered()) {
-            return exportColumnGroup(context, group, columnType, reportSheet);
+            return exportColumnGroup(context, table, group, columnType, reportSheet);
         }
         if (table.getFrozenColumns() > 0) {
             ColumnGroup frozenGroup = table.getColumnGroup(columnType == ExCellaExporter.ColumnType.HEADER ? "frozenHeader" : "frozenFooter");
             ColumnGroup scrollableGroup = table.getColumnGroup(columnType == ExCellaExporter.ColumnType.HEADER ? "scrollableHeader" : "scrollableFooter");
             if (frozenGroup != null && scrollableGroup != null && frozenGroup.isRendered() && scrollableGroup.isRendered()) {
-                return exportFrozenScrollableGroup(context, columnType, frozenGroup, scrollableGroup, reportSheet);
+                return exportFrozenScrollableGroup(context, table, columnType, frozenGroup, scrollableGroup, reportSheet);
             }
         }
 
@@ -344,21 +344,20 @@ public class DataTableExcellaExporter extends DataTableExporter implements ExCel
         return facetColumns;
     }
 
-
-    private List<String> exportFrozenScrollableGroup(FacesContext context, ExCellaExporter.ColumnType columnType,
+    private List<String> exportFrozenScrollableGroup(FacesContext context, DataTable table, ExCellaExporter.ColumnType columnType,
             ColumnGroup frozenGroup, ColumnGroup scrollableGroup, ReportSheet reportSheet) {
         List<String> facetColumns = new ArrayList<>();
 
         for (UIComponent child : frozenGroup.getChildren()) {
             if (child instanceof org.primefaces.component.row.Row) {
                 if (frozenGroup.getChildren().size() > 1) {
-                    facetColumns.addAll(exportColumnGroupMultiRow(context, frozenGroup, columnType, reportSheet));
+                    facetColumns.addAll(exportColumnGroupMultiRow(context, table, frozenGroup, columnType, reportSheet));
                     break;
                 } else {
-                    facetColumns.addAll(exportColumnGroup(context, frozenGroup, columnType, reportSheet));
+                    facetColumns.addAll(exportColumnGroup(context, table, frozenGroup, columnType, reportSheet));
                 }
             } else if (child instanceof UIColumn) {
-                facetColumns.addAll(exportColumnGroup(context, frozenGroup, columnType, reportSheet));
+                facetColumns.addAll(exportColumnGroup(context, table, frozenGroup, columnType, reportSheet));
             } else {
                 // ignore
             }
@@ -369,13 +368,13 @@ public class DataTableExcellaExporter extends DataTableExporter implements ExCel
         for (UIComponent child : scrollableGroup.getChildren()) {
             if (child instanceof org.primefaces.component.row.Row) {
                 if (scrollableGroup.getChildren().size() > 1) {
-                    facetColumns.addAll(exportColumnGroupMultiRow(context, scrollableGroup, columnType, reportSheet, frozenColumns));
+                    facetColumns.addAll(exportColumnGroupMultiRow(context, table, scrollableGroup, columnType, reportSheet, frozenColumns));
                     break;
                 } else {
-                    facetColumns.addAll(exportColumnGroup(context, scrollableGroup, columnType, reportSheet));
+                    facetColumns.addAll(exportColumnGroup(context, table, scrollableGroup, columnType, reportSheet));
                 }
             } else if (child instanceof UIColumn) {
-                facetColumns.addAll(exportColumnGroup(context, scrollableGroup, columnType, reportSheet));
+                facetColumns.addAll(exportColumnGroup(context, table, scrollableGroup, columnType, reportSheet));
             } else {
                 // ignore
             }
