@@ -3,9 +3,10 @@
   <parent>
     <groupId>net.bis5.excella</groupId>
     <artifactId>primefaces-excella-exporter-parent</artifactId>
-    <version>5.1.2-jakarta-SNAPSHOT</version>
+    <version>5.2.0-jakarta-SNAPSHOT</version>
   </parent>
   <artifactId>primefaces-excella-exporter-test</artifactId>
+  <version>5.2.0-jakarta.SNAPSHOT</version>
 
   <name>PrimeFaces ExCella Exporter :: Integration Test</name>
   <description>Integration test for primefaces-excella-exporter</description>
@@ -24,7 +25,7 @@
     <dependency>
       <groupId>net.bis5.excella</groupId>
       <artifactId>primefaces-excella-exporter</artifactId>
-      <version>${project.version}</version>
+      <version>5.2.0-jakarta-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>org.bbreak.excella</groupId>
