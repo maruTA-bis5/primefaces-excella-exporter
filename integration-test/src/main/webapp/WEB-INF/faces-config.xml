@@ -24,6 +24,7 @@
 
     <factory>
         <exception-handler-factory>org.primefaces.application.exceptionhandler.PrimeExceptionHandlerFactory</exception-handler-factory>
+        <faces-context-factory>org.primefaces.showcase.ExportersRegisterListener</faces-context-factory>
     </factory>
 
 </faces-config>
