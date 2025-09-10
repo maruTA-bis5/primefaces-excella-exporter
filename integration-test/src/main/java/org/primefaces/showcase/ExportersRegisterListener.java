@@ -1,4 +1,4 @@
-package net.bis5.excella.primefaces.listener;
+package org.primefaces.showcase;
 
 import jakarta.faces.FacesException;
 import jakarta.faces.context.FacesContext;
