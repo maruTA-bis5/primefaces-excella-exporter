@@ -1,4 +1,4 @@
-package net.bis5.excella.primefaces.listener;
+package org.primefaces.showcase;
 
 import javax.faces.FacesException;
 import javax.faces.context.FacesContext;

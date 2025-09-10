@@ -33,6 +33,13 @@ This library provides the implementation of PrimeFaces' Exporter using [ExCella 
       </repository>
     </repositories>
     ```
+1. Register DataExporter using `org.primefaces.component.export.DataExporters#register()`.
+    ```java
+    // for DataTable
+    DataExporters.register(DataTable.class, DataTableExcellaExporter.class, "excella");
+    // for TreeTable
+    DataExporters.register(TreeTable.class, TreeTableExcellaExporter.class, "excella");
+    ```
 1. Set `type="excella"` to `<p:dataExporter>`.
     ```xml
     <p:dataExporter
