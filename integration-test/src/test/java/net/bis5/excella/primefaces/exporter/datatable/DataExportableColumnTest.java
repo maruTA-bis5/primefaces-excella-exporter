@@ -110,7 +110,7 @@ class DataExportableColumnTest extends AbstractPrimePageTest {
                     var idx = new AtomicInteger();
                     assertions.add(() -> assertCell("String cell", dataRow.getCell(idx.getAndIncrement()), CellType.STRING, ValueType.STRING, record.getStringProperty(), Cell::getStringCellValue));
                     if (!visibleOnly) {
-                        assertions.add(() -> assertCell("invisible cell", dataRow.getCell(idx.getAndIncrement()), CellType.STRING, ValueType.STRING, "", Cell::getStringCellValue));
+                        assertions.add(() -> assertCell("invisible cell", dataRow.getCell(idx.getAndIncrement()), CellType.STRING, ValueType.STRING, "invisible cell", Cell::getStringCellValue));
                     }
                     assertions.add(() -> assertCell("Date cell", dataRow.getCell(idx.getAndIncrement()), CellType.NUMERIC, ValueType.DATE, record.getDateProperty(), Cell::getDateCellValue));
                     assertAll("Data row", assertions.toArray(Executable[]::new));
