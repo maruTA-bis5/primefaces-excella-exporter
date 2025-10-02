@@ -37,7 +37,7 @@ public class Assertions {
     }
 
     public static void assertBlankCell(String description, Cell cell) {
-        assertEquals(CellType.BLANK, cell.getCellType(), "Cell is not blank");
+        assertEquals(CellType.BLANK, cell.getCellType(), () -> description + ": Cell[" + cell.getAddress() + "] is not blank");
     }
 
     public static void assertExportArea(Sheet sheet, int expectedFirstRowIndex, int expectedLastRowIndex, int expectedFirstColIndex, int expectedLastColIndex) {
