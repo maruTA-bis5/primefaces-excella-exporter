@@ -219,7 +219,7 @@ public class DataTableExcellaExporter extends DataTableExporter implements ExCel
     @Override
     public String exportValue(FacesContext context, UIComponent component) {
         String value = super.exportValue(context, component);
-        if (component.getClass().getSimpleName().equals("UIInstructions")) {
+        if (isComponentUIInstructions(component)) {
             return exportUIInstructionsValue(context, component, value);
         }
         return value;
