@@ -291,7 +291,7 @@ interface ExCellaExporter<T extends UITable<?>> {
         if (valueHoldingChildren.size() == 1) {
             exportValue = exportObjectValue(context, valueHoldingChildren.get(0));
         } else {
-            exportValue = getColumnValue(context, table, column, true).getValue();
+            exportValue = getExCellaColumnValue(context, table, column, valueHoldingChildren, true).getValue();
         }
 
         List<Object> values = dataContainer.computeIfAbsent(columnKey, ignore -> new ArrayList<>());
@@ -319,12 +319,13 @@ interface ExCellaExporter<T extends UITable<?>> {
         return Stream.empty();
     }
 
-    private ColumnValue getColumnValue(FacesContext context, T table, UIColumn column, boolean joinComponents) {
-        return getExCellaColumnValue(context, table, column, joinComponents);
+    default ColumnValue getExCellaColumnValue(FacesContext context, T table, UIColumn column, boolean joinComponents) {
+        List<UIComponentWithCompositeParent> valueHoldingComponents = extractValueHoldingChildren(column);
+        return getExCellaColumnValue(context, table, column, valueHoldingComponents, joinComponents);
     }
 
     // clone of TableExporter#getColumnValue
-    default ColumnValue getExCellaColumnValue(FacesContext context, T table, UIColumn column, boolean joinComponents) {
+    default ColumnValue getExCellaColumnValue(FacesContext context, T table, UIColumn column, List<UIComponentWithCompositeParent> valueHoldingComponents, boolean joinComponents) {
         if (column.getExportValue() != null) {
             return ColumnValue.of(column.getExportValue());
         }
@@ -338,8 +339,6 @@ interface ExCellaExporter<T extends UITable<?>> {
         }
         else {
             // modified: 1. extract composite component, 2. use exportObjectValue instead of TableExporter.getColumnValue
-            List<UIComponentWithCompositeParent> valueHoldingComponents = extractValueHoldingChildren(column);
-
             List<Object> values = valueHoldingComponents.stream()
                 .filter(UIComponentWithCompositeParent::isRendered)
                 .map(c -> exportObjectValue(context, c))
