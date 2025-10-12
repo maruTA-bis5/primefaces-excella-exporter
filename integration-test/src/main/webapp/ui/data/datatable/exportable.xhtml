@@ -61,8 +61,12 @@
               <p:column headerText="YearMonth(not exportable)" footerText="YearMonth" exportable="false">
                   <h:outputText value="#{row.yearMonthProperty}" />
               </p:column>
-              <p:column headerText="not rendered" footerText="not rendered" rendered="false" />
-              <p:column headerText="invisible" footerText="invisible" visible="false" />
+              <p:column headerText="not rendered" footerText="not rendered" rendered="false">
+                  not rendered cell
+              </p:column>
+              <p:column headerText="invisible" footerText="invisible" visible="false">
+                  invisible cell
+              </p:column>
               <p:column headerText="j.u.Date (date)" footerText="j.u.Date (date)">
                   <h:outputText value="#{row.dateProperty}" />
               </p:column>

@@ -6,6 +6,7 @@
       xmlns:p="http://primefaces.org/ui"
       xmlns:sc="http://primefaces.org/ui/showcase"
       xmlns:comp="primefaces-excella-exporter"
+      xmlns:comp2="http://xmlns.jcp.org/jsf/composite/components"
       lang="en">
 
     <h:head>
@@ -96,6 +97,13 @@
               </p:column>
               <p:column headerText="exportable component(value null)" footerText="exportable component(value null)">
                 <comp:exportableValueHolder exportValue="Export text2" />
+              </p:column>
+              <p:column headerText="Composite Component" footerText="Composite Component">
+                <comp2:compositeOutput labelValue="foo" textValue="bar" />
+              </p:column>
+              <p:column headerText="Composite + Normal Component" footerText="Composite + Normal Component">
+                <comp2:compositeOutput labelValue="foo" textValue="bar" />
+                <h:outputText value="(note)" />
               </p:column>
           </p:dataTable>
       </h:form>

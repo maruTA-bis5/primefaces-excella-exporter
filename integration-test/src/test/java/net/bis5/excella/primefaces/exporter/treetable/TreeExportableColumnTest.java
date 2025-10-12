@@ -132,7 +132,7 @@ class TreeExportableColumnTest extends AbstractPrimePageTest {
                     var idx = new AtomicInteger();
                     assertions.add(() -> assertCell("String cell", parentNodeRow.getCell(idx.getAndIncrement()), CellType.STRING, ValueType.STRING, parentRecord.getStringProperty(), Cell::getStringCellValue));
                     if (!visibleOnly) {
-                        assertions.add(() -> assertCell("invisible cell", parentNodeRow.getCell(idx.getAndIncrement()), CellType.STRING, ValueType.STRING, "", Cell::getStringCellValue));
+                        assertions.add(() -> assertCell("invisible cell", parentNodeRow.getCell(idx.getAndIncrement()), CellType.STRING, ValueType.STRING, "invisible cell", Cell::getStringCellValue));
                     }
                     assertions.add(() -> assertCell("Date cell", parentNodeRow.getCell(idx.getAndIncrement()), CellType.NUMERIC, ValueType.DATE, parentRecord.getDateProperty(), Cell::getDateCellValue));
                     assertAll("Parent node row", assertions.toArray(Executable[]::new));
@@ -143,7 +143,7 @@ class TreeExportableColumnTest extends AbstractPrimePageTest {
                     var idx = new AtomicInteger();
                     assertions.add(() -> assertCell("String cell", childNodeRow.getCell(idx.getAndIncrement()), CellType.STRING, ValueType.STRING, childRecord.getStringProperty(), Cell::getStringCellValue));
                     if (!visibleOnly) {
-                        assertions.add(() -> assertCell("invisible cell", childNodeRow.getCell(idx.getAndIncrement()), CellType.STRING, ValueType.STRING, "", Cell::getStringCellValue));
+                        assertions.add(() -> assertCell("invisible cell", childNodeRow.getCell(idx.getAndIncrement()), CellType.STRING, ValueType.STRING, "invisible cell", Cell::getStringCellValue));
                     }
                     assertions.add(() -> assertCell("Date cell", childNodeRow.getCell(idx.getAndIncrement()), CellType.NUMERIC, ValueType.DATE, childRecord.getDateProperty(), Cell::getDateCellValue));
                     assertAll("Child node row", assertions.toArray(Executable[]::new));

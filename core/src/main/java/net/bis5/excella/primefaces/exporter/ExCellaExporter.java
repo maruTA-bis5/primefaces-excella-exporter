@@ -26,6 +26,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import jakarta.el.ValueExpression;
 import jakarta.faces.component.UIComponent;
@@ -59,6 +60,7 @@ import org.primefaces.util.Constants;
 import net.bis5.excella.primefaces.exporter.component.ExportableComponent;
 import net.bis5.excella.primefaces.exporter.convert.ExporterConverter;
 import net.bis5.excella.primefaces.exporter.util.Mutable;
+import net.bis5.excella.primefaces.exporter.util.UIComponentWithCompositeParent;
 
 // internal
 interface ExCellaExporter<T extends ColumnAware> {
@@ -255,6 +257,11 @@ interface ExCellaExporter<T extends ColumnAware> {
 
     String exportValue(FacesContext context, UIComponent component);
 
+    default boolean isComponentUIInstructions(UIComponent component) {
+        // UIInstructions is not public class, so check by name
+        return component.getClass().getSimpleName().equals("UIInstructions"); // NOSONAR
+    }
+
     default String exportUIInstructionsValue(FacesContext context, UIComponent component, String value) {
         // evaluate el expr
         ValueExpression ve = context.getApplication().getExpressionFactory().createValueExpression(context.getELContext(), value, Object.class);
@@ -276,23 +283,53 @@ interface ExCellaExporter<T extends ColumnAware> {
         String columnKey = "data" + colIndex;
 
         Object exportValue;
+        List<UIComponentWithCompositeParent> valueHoldingChildren = extractValueHoldingChildren(column);
         if (column.getExportFunction() != null) {
             exportValue = exportColumnByFunction(context, column);
-        } else if (column.getChildren().size() == 1) {
-            exportValue = exportObjectValue(context, column.getChildren().get(0));
+        } else if (valueHoldingChildren.size() == 1) {
+            exportValue = exportObjectValue(context, valueHoldingChildren.get(0));
         } else {
-            List<UIComponent> components = column.getChildren();
-            StringBuilder builder = new StringBuilder();
-            components.stream() //
-                    .filter(UIComponent::isRendered) //
-                    .map(c -> exportValue(context, c)) //
-                    .map(v -> v == null ? "" : v) //
-                    .forEach(builder::append);
-            exportValue = builder.toString();
+            List<Object> values = valueHoldingChildren.stream()
+                .filter(UIComponentWithCompositeParent::isRendered)
+                .map(c -> exportObjectValue(context, c))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+            boolean collectAsString = values.size() > 1;
+            if (collectAsString) {
+                String joined = values.stream()
+                        .map(Object::toString)
+                        .collect(Collectors.joining(Constants.SPACE));
+                exportValue = joined.isEmpty() ? null : joined;
+            } else if (values.isEmpty()) {
+                exportValue = null;
+            } else {
+                exportValue = Objects.toString(values.get(0));
+            }
         }
 
         List<Object> values = dataContainer.computeIfAbsent(columnKey, ignore -> new ArrayList<>());
         values.add(exportValue);
+    }
+
+    private List<UIComponentWithCompositeParent> extractValueHoldingChildren(UIColumn column) {
+        return column.getChildren().stream()
+            .filter(UIComponent::isRendered)
+            .flatMap(this::extractValueHoldingChildren)
+            .collect(Collectors.toList());
+    }
+
+    private Stream<UIComponentWithCompositeParent> extractValueHoldingChildren(UIComponent parent) {
+        if (UIComponent.isCompositeComponent(parent)) {
+            return parent.getFacet(UIComponent.COMPOSITE_FACET_NAME).getChildren().stream()
+                .flatMap(this::extractValueHoldingChildren)
+                .map(c -> c.isInCompositeComponent() ? c : new UIComponentWithCompositeParent(c.getComponent(), parent));
+        }
+        if (parent instanceof Link || parent instanceof ValueHolder || isComponentUIInstructions(parent)) {
+            return Stream.of(new UIComponentWithCompositeParent(parent));
+        } else if (parent instanceof CellEditor) {
+            return Stream.of(new UIComponentWithCompositeParent(parent.getFacet("output")));
+        }
+        return Stream.empty();
     }
 
     default Entry<String, List<Object>> normalizeValues(Entry<String, List<Object>> entry) {
@@ -321,6 +358,19 @@ interface ExCellaExporter<T extends ColumnAware> {
     }
 
     String exportColumnByFunction(FacesContext context, UIColumn column);
+
+    default Object exportObjectValue(FacesContext context, UIComponentWithCompositeParent component) {
+        if (component.isInCompositeComponent()) {
+            component.getCompositeParent().pushComponentToEL(context, null);
+            try {
+                return exportObjectValue(context, component.getComponent());
+            } finally {
+                component.getCompositeParent().popComponentFromEL(context);
+            }
+        } else {
+            return exportObjectValue(context, component.getComponent());
+        }
+    }
 
     default Object exportObjectValue(FacesContext context, UIComponent component) {
         if (!component.isRendered()) {
