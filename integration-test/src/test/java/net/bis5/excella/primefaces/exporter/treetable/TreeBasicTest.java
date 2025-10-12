@@ -99,7 +99,9 @@ class TreeBasicTest extends AbstractPrimePageTest {
             "Link (value not specified)",
             "header line break",
             "exportable component",
-            "exportable component(value null)"
+            "exportable component(value null)",
+            "Composite Component",
+            "Composite + Normal Component"
         );
 
         Row headerRow = sheet.getRow(0);
@@ -136,7 +138,9 @@ class TreeBasicTest extends AbstractPrimePageTest {
                 () -> assertCell("Link value not specified", parentNodeRow1.getCell(11), CellType.NUMERIC, ValueType.DECIMAL, parentRecord1.getBigDecimalDecimalProperty().doubleValue(), Cell::getNumericCellValue),
                 () -> assertCell("remove br tag", parentNodeRow1.getCell(12), CellType.STRING, ValueType.STRING, "value row line break", Cell::getStringCellValue),
                 () -> assertCell("exportable value holder", parentNodeRow1.getCell(13), CellType.STRING, ValueType.STRING, "Export text1", Cell::getStringCellValue),
-                () -> assertCell("exportable value holder(value null)", parentNodeRow1.getCell(14), CellType.STRING, ValueType.STRING, "Export text2", Cell::getStringCellValue)
+                () -> assertCell("exportable value holder(value null)", parentNodeRow1.getCell(14), CellType.STRING, ValueType.STRING, "Export text2", Cell::getStringCellValue),
+                () -> assertCell("Composite Component", parentNodeRow1.getCell(15), CellType.STRING, ValueType.STRING, "foo bar", Cell::getStringCellValue),
+                () -> assertCell("Composite + Normal Component", parentNodeRow1.getCell(16), CellType.STRING, ValueType.STRING, "foo bar (note)", Cell::getStringCellValue)
             ),
             () -> assertAll("Child node row 2",
                 () -> assertEquals(1, childNodeRow2.getCell(0).getCellStyle().getIndention(), "indention"),
@@ -154,7 +158,9 @@ class TreeBasicTest extends AbstractPrimePageTest {
                 () -> assertCell("Link value not specified", childNodeRow2.getCell(11), CellType.NUMERIC, ValueType.DECIMAL, childRecord1.getBigDecimalDecimalProperty().doubleValue(), Cell::getNumericCellValue),
                 () -> assertCell("remove br tag", childNodeRow2.getCell(12), CellType.STRING, ValueType.STRING, "value row line break", Cell::getStringCellValue),
                 () -> assertCell("exportable value holder", childNodeRow2.getCell(13), CellType.STRING, ValueType.STRING, "Export text1", Cell::getStringCellValue),
-                () -> assertCell("exportable value holder(value null)", childNodeRow2.getCell(14), CellType.STRING, ValueType.STRING, "Export text2", Cell::getStringCellValue)
+                () -> assertCell("exportable value holder(value null)", childNodeRow2.getCell(14), CellType.STRING, ValueType.STRING, "Export text2", Cell::getStringCellValue),
+                () -> assertCell("Composite Component", childNodeRow2.getCell(15), CellType.STRING, ValueType.STRING, "foo bar", Cell::getStringCellValue),
+                () -> assertCell("Composite + Normal Component", childNodeRow2.getCell(16), CellType.STRING, ValueType.STRING, "foo bar (note)", Cell::getStringCellValue)
             ),
             () -> assertAll("Parent node row 3",
                 () -> assertEquals(0, parentNodeRow3.getCell(0).getCellStyle().getIndention(), "indention"),
@@ -172,7 +178,9 @@ class TreeBasicTest extends AbstractPrimePageTest {
                 () -> assertCell("Link value not specified", parentNodeRow3.getCell(11), CellType.NUMERIC, ValueType.DECIMAL, parentRecord2.getBigDecimalDecimalProperty().doubleValue(), Cell::getNumericCellValue),
                 () -> assertCell("remove br tag", parentNodeRow3.getCell(12), CellType.STRING, ValueType.STRING, "value row line break", Cell::getStringCellValue),
                 () -> assertCell("exportable value holder", parentNodeRow3.getCell(13), CellType.STRING, ValueType.STRING, "Export text1", Cell::getStringCellValue),
-                () -> assertCell("exportable value holder(value null)", parentNodeRow3.getCell(14), CellType.STRING, ValueType.STRING, "Export text2", Cell::getStringCellValue)
+                () -> assertCell("exportable value holder(value null)", parentNodeRow3.getCell(14), CellType.STRING, ValueType.STRING, "Export text2", Cell::getStringCellValue),
+                () -> assertCell("Composite Component", parentNodeRow3.getCell(15), CellType.STRING, ValueType.STRING, "foo bar", Cell::getStringCellValue),
+                () -> assertCell("Composite + Normal Component", parentNodeRow3.getCell(16), CellType.STRING, ValueType.STRING, "foo bar (note)", Cell::getStringCellValue)
             ),
             () -> assertAll("Child node row 4",
                 () -> assertEquals(1, childNodeRow4.getCell(0).getCellStyle().getIndention(), "indention"),
@@ -190,7 +198,9 @@ class TreeBasicTest extends AbstractPrimePageTest {
                 () -> assertCell("Link value not specified", childNodeRow4.getCell(11), CellType.NUMERIC, ValueType.DECIMAL, childRecord2.getBigDecimalDecimalProperty().doubleValue(), Cell::getNumericCellValue),
                 () -> assertCell("remove br tag", childNodeRow4.getCell(12), CellType.STRING, ValueType.STRING, "value row line break", Cell::getStringCellValue),
                 () -> assertCell("exportable value holder", childNodeRow4.getCell(13), CellType.STRING, ValueType.STRING, "Export text1", Cell::getStringCellValue),
-                () -> assertCell("exportable value holder(value null)", childNodeRow4.getCell(14), CellType.STRING, ValueType.STRING, "Export text2", Cell::getStringCellValue)
+                () -> assertCell("exportable value holder(value null)", childNodeRow4.getCell(14), CellType.STRING, ValueType.STRING, "Export text2", Cell::getStringCellValue),
+                () -> assertCell("Composite Component", childNodeRow4.getCell(15), CellType.STRING, ValueType.STRING, "foo bar", Cell::getStringCellValue),
+                () -> assertCell("Composite + Normal Component", childNodeRow4.getCell(16), CellType.STRING, ValueType.STRING, "foo bar (note)", Cell::getStringCellValue)
             ),
             () -> {
                 List<Executable> assertions = new ArrayList<>();

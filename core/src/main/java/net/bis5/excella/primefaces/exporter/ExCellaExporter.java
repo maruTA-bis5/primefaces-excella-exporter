@@ -26,6 +26,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import jakarta.el.MethodExpression;
 import jakarta.el.ValueExpression;
@@ -60,6 +61,7 @@ import org.primefaces.util.LangUtils;
 import net.bis5.excella.primefaces.exporter.component.ExportableComponent;
 import net.bis5.excella.primefaces.exporter.convert.ExporterConverter;
 import net.bis5.excella.primefaces.exporter.util.Mutable;
+import net.bis5.excella.primefaces.exporter.util.UIComponentWithCompositeParent;
 
 // internal
 interface ExCellaExporter<T extends UITable<?>> {
@@ -274,12 +276,16 @@ interface ExCellaExporter<T extends UITable<?>> {
 
     default String exportValue(FacesContext context, UIComponent component) {
         String value = ExporterUtils.getComponentValue(context, component);
-        if (component.getClass().getSimpleName().equals("UIInstructions")) {
+        if (isComponentUIInstructions(component)) {
             return exportUIInstructionsValue(context, component, value);
         }
         return value;
     }
 
+    default boolean isComponentUIInstructions(UIComponent component) {
+        // UIInstructions is not public class, so check by name
+        return component.getClass().getSimpleName().equals("UIInstructions"); // NOSONAR
+    }
 
     default String exportUIInstructionsValue(FacesContext context, UIComponent component, String value) {
         // evaluate el expr
@@ -302,18 +308,40 @@ interface ExCellaExporter<T extends UITable<?>> {
         String columnKey = "data" + colIndex;
 
         Object exportValue;
-        if (column.getChildren().size() == 1) {
-            exportValue = exportObjectValue(context, column.getChildren().get(0));
+        List<UIComponentWithCompositeParent> valueHoldingChildren = extractValueHoldingChildren(column);
+        if (valueHoldingChildren.size() == 1) {
+            exportValue = exportObjectValue(context, valueHoldingChildren.get(0));
         } else {
-            exportValue = getColumnValue(context, table, column, true);
+            exportValue = getColumnValue(context, table, column, valueHoldingChildren, true);
         }
 
         List<Object> values = dataContainer.computeIfAbsent(columnKey, ignore -> new ArrayList<>());
         values.add(exportValue);
     }
 
+    private List<UIComponentWithCompositeParent> extractValueHoldingChildren(UIColumn column) {
+        return column.getChildren().stream()
+            .filter(UIComponent::isRendered)
+            .flatMap(this::extractValueHoldingChildren)
+            .collect(Collectors.toList());
+    }
+
+    private Stream<UIComponentWithCompositeParent> extractValueHoldingChildren(UIComponent parent) {
+        if (UIComponent.isCompositeComponent(parent)) {
+            return parent.getFacet(UIComponent.COMPOSITE_FACET_NAME).getChildren().stream()
+                .flatMap(this::extractValueHoldingChildren)
+                .map(c -> c.isInCompositeComponent() ? c : new UIComponentWithCompositeParent(c.getComponent(), parent));
+        }
+        if (parent instanceof Link || parent instanceof ValueHolder || isComponentUIInstructions(parent)) {
+            return Stream.of(new UIComponentWithCompositeParent(parent));
+        } else if (parent instanceof CellEditor) {
+            return Stream.of(new UIComponentWithCompositeParent(parent.getFacet("output")));
+        }
+        return Stream.empty();
+    }
+
     // clone of ExporterUtils#getColumnValue
-    default String getColumnValue(FacesContext context, T table, UIColumn column, boolean joinComponents) {
+    default String getColumnValue(FacesContext context, T table, UIColumn column, List<UIComponentWithCompositeParent> valueHoldingComponents, boolean joinComponents) {
         if (column.getExportValue() != null) {
             return column.getExportValue();
         }
@@ -326,13 +354,21 @@ interface ExCellaExporter<T extends UITable<?>> {
             return Objects.toString(value, Constants.EMPTY_STRING);
         }
         else {
-            return column.getChildren()
-                    .stream()
-                    .filter(UIComponent::isRendered)
-                    .map(c -> exportValue(context, c)) // modified: use exportValue instead of ExporterUtils.getColumnValue
-                    .filter(LangUtils::isNotBlank)
-                    .limit(!joinComponents ? 1 : column.getChildren().size())
-                    .collect(Collectors.joining(Constants.SPACE));
+            // modified: 1. extract composite component, 2. use exportObjectValue instead of TableExporter.getColumnValue
+            List<Object> values = valueHoldingComponents.stream()
+                .filter(UIComponentWithCompositeParent::isRendered)
+                .map(c -> exportObjectValue(context, c))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+            boolean collectAsString = joinComponents || values.size() > 1;
+            if (collectAsString) {
+                String joined = values.stream()
+                        .limit(!joinComponents ? 1 : values.size())
+                        .map(Object::toString)
+                        .collect(Collectors.joining(Constants.SPACE));
+                return joined.isEmpty() ? null : joined;
+            }
+            return Objects.toString(values.get(0));
         }
     }
 
@@ -364,6 +400,19 @@ interface ExCellaExporter<T extends UITable<?>> {
     default String exportColumnByFunction(FacesContext context, UIColumn column) {
         MethodExpression exportFunction = column.getExportFunction();
         return (String) exportFunction.invoke(context.getELContext(), new Object[]{column});
+    }
+
+    default Object exportObjectValue(FacesContext context, UIComponentWithCompositeParent component) {
+        if (component.isInCompositeComponent()) {
+            component.getCompositeParent().pushComponentToEL(context, null);
+            try {
+                return exportObjectValue(context, component.getComponent());
+            } finally {
+                component.getCompositeParent().popComponentFromEL(context);
+            }
+        } else {
+            return exportObjectValue(context, component.getComponent());
+        }
     }
 
     default Object exportObjectValue(FacesContext context, UIComponent component) {
