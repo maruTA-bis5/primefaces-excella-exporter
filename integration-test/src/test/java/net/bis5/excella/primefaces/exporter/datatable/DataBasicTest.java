@@ -83,7 +83,9 @@ public class DataBasicTest extends AbstractPrimePageTest {
             "Link (value not specified)",
             "header line break",
             "exportable component",
-            "exportable component(value null)"
+            "exportable component(value null)",
+            "Composite Component",
+            "Composite + Normal Component"
         );
 
         Row headerRow = sheet.getRow(0);
@@ -116,7 +118,9 @@ public class DataBasicTest extends AbstractPrimePageTest {
                 () -> assertCell("Link value not specified", dataRow.getCell(11), CellType.NUMERIC, ValueType.DECIMAL, record.getBigDecimalDecimalProperty().doubleValue(), Cell::getNumericCellValue),
                 () -> assertCell("remove br tag", dataRow.getCell(12), CellType.STRING, ValueType.STRING, "value row line break", Cell::getStringCellValue),
                 () -> assertCell("exportable value holder", dataRow.getCell(13), CellType.STRING, ValueType.STRING, "Export text1", Cell::getStringCellValue),
-                () -> assertCell("exportable value holder(value null)", dataRow.getCell(14), CellType.STRING, ValueType.STRING, "Export text2", Cell::getStringCellValue)
+                () -> assertCell("exportable value holder(value null)", dataRow.getCell(14), CellType.STRING, ValueType.STRING, "Export text2", Cell::getStringCellValue),
+                () -> assertCell("Composite Component", dataRow.getCell(15), CellType.STRING, ValueType.STRING, "foo bar", Cell::getStringCellValue),
+                () -> assertCell("Composite + Normal Component", dataRow.getCell(16), CellType.STRING, ValueType.STRING, "foo bar (note)", Cell::getStringCellValue)
             ),
             () -> {
                 List<Executable> assertions = new ArrayList<>();
@@ -128,7 +132,7 @@ public class DataBasicTest extends AbstractPrimePageTest {
                 }
                 assertAll("Footer row", assertions.toArray(Executable[]::new));
             },
-            () -> assertExportArea(sheet, 0, 2, 0, 14)
+            () -> assertExportArea(sheet, 0, 2, 0, 16)
         );
     }
 
