@@ -254,7 +254,7 @@ interface ExCellaExporter<T extends UITable<?>> {
 
     void setExportParameters(ReportSheet reportSheet, List<Object> columnHeader, List<Object> columnFooter, Map<String, List<Object>> dataContainer);
 
-    default String exportValue(FacesContext context, UIComponent component) {
+    default @Nullable String exportValue(FacesContext context, UIComponent component) {
         String value = getComponentValue(context, component);
         if (isComponentUIInstructions(component)) {
             return exportUIInstructionsValue(context, component, value);

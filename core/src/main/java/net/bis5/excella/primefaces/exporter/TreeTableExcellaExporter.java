@@ -382,7 +382,7 @@ public class TreeTableExcellaExporter extends TreeTableExporter<ReportBook, ExCe
         return Objects.requireNonNull(traverseTreeNode(node, new MutableInt(dataRowIndex + 1), 0), () -> "Node for dataRowIndex " + dataRowIndex + " is not found");
     }
 
-    protected static Pair<TreeNode<?>, Integer> traverseTreeNode(TreeNode<?> node, MutableInt rowIndex, int level) {
+    protected static @Nullable Pair<TreeNode<?>, Integer> traverseTreeNode(TreeNode<?> node, MutableInt rowIndex, int level) {
 
         int index = rowIndex.getValue();
         rowIndex.decrement();
@@ -391,7 +391,7 @@ public class TreeTableExcellaExporter extends TreeTableExporter<ReportBook, ExCe
         }
 
         if (node.getChildren() != null) {
-            Pair<TreeNode<?>, Integer> returnNode = null;
+            @Nullable Pair<TreeNode<?>, Integer> returnNode = null;
             for (TreeNode<?> childNode : node.getChildren()) {
                 returnNode = traverseTreeNode(childNode, rowIndex, level + 1);
                 if (returnNode != null) {
