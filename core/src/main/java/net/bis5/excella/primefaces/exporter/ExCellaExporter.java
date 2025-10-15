@@ -96,7 +96,7 @@ interface ExCellaExporter<T extends UITable<?>> {
     }
 
     void setTemplateType(TemplateType templateType);
-    TemplateType getTemplateType();
+    @Nullable TemplateType getTemplateType();
     void addListener(ReportProcessListener listener);
     List<ReportProcessListener> getListeners();
     ReportBook getDocument();
@@ -144,7 +144,9 @@ interface ExCellaExporter<T extends UITable<?>> {
             Files.delete(outputFile);
         }
         // ExCellaが拡張子を付けるので注意
-        return Paths.get(outputFile.toString() + getTemplateType().getSuffix());
+        TemplateType templateType = getTemplateType();
+        String suffix = templateType != null ? templateType.getSuffix() : getFileExtension();
+        return Paths.get(outputFile.toString() + suffix);
     }
 
     private void writeResponse(Path outputFile) throws IOException {

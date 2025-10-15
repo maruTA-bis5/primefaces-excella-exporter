@@ -38,6 +38,8 @@ import org.primefaces.component.treetable.export.TreeTableExporter;
 import org.primefaces.model.TreeNode;
 import org.primefaces.util.LangUtils;
 
+import org.jspecify.annotations.Nullable;
+
 public class TreeTableExcellaExporter extends TreeTableExporter<ReportBook, ExCellaExporterOptions> implements ExCellaExporter<TreeTable> {
 
     private static final String TREE_LEVEL_KEY = "TREE_LEVEL_KEY";
@@ -50,9 +52,9 @@ public class TreeTableExcellaExporter extends TreeTableExporter<ReportBook, ExCe
 
     private final List<ReportProcessListener> listeners = new ArrayList<>();
 
-    private TemplateType templateType;
+    private @Nullable TemplateType templateType;
 
-    private ReportSheet currentSheet;
+    private @Nullable ReportSheet currentSheet;
 
     public TreeTableExcellaExporter() {
         super(new ExCellaExporterOptions(), ALL_FACETS, true);
@@ -76,7 +78,7 @@ public class TreeTableExcellaExporter extends TreeTableExporter<ReportBook, ExCe
     }
 
     @Override
-    public TemplateType getTemplateType() {
+    public @Nullable TemplateType getTemplateType() {
         return templateType;
     }
 

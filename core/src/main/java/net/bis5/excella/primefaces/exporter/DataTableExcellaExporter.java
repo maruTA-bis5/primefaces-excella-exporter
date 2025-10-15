@@ -25,6 +25,8 @@ import org.primefaces.component.export.ColumnValue;
 import org.primefaces.component.export.ExportConfiguration;
 import org.primefaces.component.export.Exporter;
 
+import org.jspecify.annotations.Nullable;
+
 /**
  * ExCella Reportsを用いてDataTableのデータを出力する{@link Exporter}実装
  */
@@ -36,11 +38,11 @@ public class DataTableExcellaExporter extends DataTableExporter<ReportBook, ExCe
 
     private static final String DEFAULT_FOOTERS_TAG = "footers";
 
-    private TemplateType templateType;
+    private @Nullable TemplateType templateType;
 
     private List<ReportProcessListener> listeners = new ArrayList<>();
 
-    private ReportSheet currentSheet;
+    private @Nullable ReportSheet currentSheet;
 
     public DataTableExcellaExporter() {
         super(new ExCellaExporterOptions(), ALL_FACETS, true);
@@ -52,7 +54,7 @@ public class DataTableExcellaExporter extends DataTableExporter<ReportBook, ExCe
     }
 
     @Override
-    public TemplateType getTemplateType() {
+    public @Nullable TemplateType getTemplateType() {
         return templateType;
     }
 
