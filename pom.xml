@@ -44,6 +44,7 @@
     <jakartaee-web-api.version>8.0.0</jakartaee-web-api.version>
     <junit.version>5.6.0</junit.version>
     <hamcrest.version>2.2</hamcrest.version>
+    <jspecify.version>1.0.0</jspecify.version>
     <maven-enforcer-plugin.version>3.0.0-M3</maven-enforcer-plugin.version>
     <maven-surefire-plugin.version>3.0.0-M4</maven-surefire-plugin.version>
     <maven-javadoc-plugin.version>3.0.0</maven-javadoc-plugin.version>
@@ -80,6 +81,11 @@
         <artifactId>jakarta.jakartaee-web-api</artifactId>
         <version>${jakartaee-web-api.version}</version>
         <scope>provided</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.jspecify</groupId>
+        <artifactId>jspecify</artifactId>
+        <version>${jspecify.version}</version>
       </dependency>
       <dependency>
         <groupId>org.junit.jupiter</groupId>

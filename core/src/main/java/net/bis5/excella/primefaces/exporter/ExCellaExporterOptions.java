@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.List;
 import org.primefaces.component.export.ExcelOptions;
 
+import org.jspecify.annotations.Nullable;
+
 import net.bis5.excella.primefaces.exporter.listener.BeforeWriteResponseListener;
 
 /**
@@ -14,63 +16,63 @@ import net.bis5.excella.primefaces.exporter.listener.BeforeWriteResponseListener
  */
 public class ExCellaExporterOptions extends ExcelOptions {
 
-    private Path templatePath;
+    private @Nullable Path templatePath;
 
-    public Path getTemplatePath() {
+    public @Nullable Path getTemplatePath() {
         return templatePath;
     }
 
-    public void setTemplatePath(Path templatePath) {
+    public void setTemplatePath(@Nullable Path templatePath) {
         this.templatePath = templatePath;
     }
 
-    private URL templateUrl;
+    private @Nullable URL templateUrl;
 
-    public URL getTemplateUrl() {
+    public @Nullable URL getTemplateUrl() {
         return templateUrl;
     }
 
-    public void setTemplateUrl(URL templateUrl) {
+    public void setTemplateUrl(@Nullable URL templateUrl) {
         this.templateUrl = templateUrl;
     }
 
-    private String templateSheetName;
+    private @Nullable String templateSheetName;
 
-    public String getTemplateSheetName() {
+    public @Nullable String getTemplateSheetName() {
         return templateSheetName;
     }
 
-    public void setTemplateSheetName(String templateSheetName) {
+    public void setTemplateSheetName(@Nullable String templateSheetName) {
         this.templateSheetName = templateSheetName;
     }
 
-    private String dataColumnsTag;
+    private @Nullable String dataColumnsTag;
 
-    public String getDataColumnsTag() {
+    public @Nullable String getDataColumnsTag() {
         return dataColumnsTag;
     }
 
-    public void setDataColumnsTag(String dataColumnsTag) {
+    public void setDataColumnsTag(@Nullable String dataColumnsTag) {
         this.dataColumnsTag = dataColumnsTag;
     }
 
-    private String headersTag;
+    private @Nullable String headersTag;
 
-    public String getHeadersTag() {
+    public @Nullable String getHeadersTag() {
         return headersTag;
     }
 
-    public void setHeadersTag(String headersTag) {
+    public void setHeadersTag(@Nullable String headersTag) {
         this.headersTag = headersTag;
     }
 
-    private String footersTag;
+    private @Nullable String footersTag;
 
-    public String getFootersTag() {
+    public @Nullable String getFootersTag() {
         return footersTag;
     }
 
-    public void setFootersTag(String footersTag) {
+    public void setFootersTag(@Nullable String footersTag) {
         this.footersTag = footersTag;
     }
 

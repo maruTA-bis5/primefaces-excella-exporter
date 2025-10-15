@@ -58,6 +58,8 @@ import org.primefaces.util.Constants;
 import org.primefaces.util.FacetUtils;
 import org.primefaces.util.LangUtils;
 
+import org.jspecify.annotations.Nullable;
+
 import net.bis5.excella.primefaces.exporter.component.ExportableComponent;
 import net.bis5.excella.primefaces.exporter.convert.ExporterConverter;
 import net.bis5.excella.primefaces.exporter.util.Mutable;
@@ -72,15 +74,15 @@ interface ExCellaExporter<T extends UITable<?>> {
     String DEFAULT_TEMPLATE_SHEET_NAME = "DATA";
     String DATA_CONTAINER_KEY = "DATA_CONTAINER_KEY";
 
-    private Path getTemplatePath() {
+    private @Nullable Path getTemplatePath() {
         return getExporterOptions().getTemplatePath();
     }
 
-    private URL getTemplateUrl() {
+    private @Nullable URL getTemplateUrl() {
         return getExporterOptions().getTemplateUrl();
     }
 
-    private String getTemplateSheetName() {
+    private @Nullable String getTemplateSheetName() {
         return getExporterOptions().getTemplateSheetName();
     }
 
@@ -266,7 +268,7 @@ interface ExCellaExporter<T extends UITable<?>> {
     // defined in TableExporter
     String getComponentValue(FacesContext context, UIComponent component);
 
-    default String exportUIInstructionsValue(FacesContext context, UIComponent component, String value) {
+    default @Nullable String exportUIInstructionsValue(FacesContext context, UIComponent component, @Nullable String value) {
         // evaluate el expr
         ValueExpression ve = context.getApplication().getExpressionFactory().createValueExpression(context.getELContext(), value, Object.class);
         Object objValue = ve.getValue(context.getELContext());
@@ -286,7 +288,7 @@ interface ExCellaExporter<T extends UITable<?>> {
             UIColumn column) {
         String columnKey = "data" + colIndex;
 
-        Object exportValue;
+        @Nullable Object exportValue;
         List<UIComponentWithCompositeParent> valueHoldingChildren = extractValueHoldingChildren(column);
         if (valueHoldingChildren.size() == 1) {
             exportValue = exportObjectValue(context, valueHoldingChildren.get(0));
@@ -386,7 +388,7 @@ interface ExCellaExporter<T extends UITable<?>> {
         return (String) exportFunction.invoke(context.getELContext(), new Object[]{column});
     }
 
-    default Object exportObjectValue(FacesContext context, UIComponentWithCompositeParent component) {
+    default @Nullable Object exportObjectValue(FacesContext context, UIComponentWithCompositeParent component) {
         if (component.isInCompositeComponent()) {
             component.getCompositeParent().pushComponentToEL(context, null);
             try {
@@ -399,7 +401,7 @@ interface ExCellaExporter<T extends UITable<?>> {
         }
     }
 
-    default Object exportObjectValue(FacesContext context, UIComponent component) {
+    default @Nullable Object exportObjectValue(FacesContext context, UIComponent component) {
         if (!component.isRendered()) {
             return null;
         }
@@ -432,7 +434,7 @@ interface ExCellaExporter<T extends UITable<?>> {
     }
 
     @SuppressWarnings("unchecked")
-    private Object getComponentValue(FacesContext context, ValueHolder valueHolder) {
+    private @Nullable Object getComponentValue(FacesContext context, ValueHolder valueHolder) {
         Object value = valueHolder.getValue();
         if (valueHolder instanceof ExportableComponent) {
             value = ((ExportableComponent)valueHolder).getExportValue();
@@ -442,7 +444,7 @@ interface ExCellaExporter<T extends UITable<?>> {
         }
 
         UIComponent component = (UIComponent)valueHolder;
-        Converter<Object> converter = valueHolder.getConverter();
+        @Nullable Converter<Object> converter = valueHolder.getConverter();
         if (converter == null) {
             Class<?> valueClass = value.getClass();
             converter = context.getApplication().createConverter(valueClass);
