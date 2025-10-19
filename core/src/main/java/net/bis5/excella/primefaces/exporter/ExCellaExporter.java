@@ -87,10 +87,13 @@ interface ExCellaExporter<T extends UITable<?>> {
     }
 
     private URL getTemplateFileUrl() throws MalformedURLException {
-        if (getTemplatePath() != null) {
-            return getTemplatePath().toUri().toURL();
-        } else if (getTemplateUrl() != null) {
-            return getTemplateUrl();
+        Path templatePath = getTemplatePath();
+        if (templatePath != null) {
+            return templatePath.toUri().toURL();
+        }
+        URL templateUrl = getTemplateUrl();
+        if (templateUrl != null) {
+            return templateUrl;
         }
         return DEFAULT_TEMPLATE_URL;
     }
@@ -392,11 +395,13 @@ interface ExCellaExporter<T extends UITable<?>> {
 
     default @Nullable Object exportObjectValue(FacesContext context, UIComponentWithCompositeParent component) {
         if (component.isInCompositeComponent()) {
-            component.getCompositeParent().pushComponentToEL(context, null);
+            UIComponent compositeParent = component.getCompositeParent();
+            assert compositeParent != null : "@AssumeAssertion(nullness): checked by isInCompositeComponent()";
+            compositeParent.pushComponentToEL(context, null);
             try {
                 return exportObjectValue(context, component.getComponent());
             } finally {
-                component.getCompositeParent().popComponentFromEL(context);
+                compositeParent.popComponentFromEL(context);
             }
         } else {
             return exportObjectValue(context, component.getComponent());
@@ -499,7 +504,8 @@ interface ExCellaExporter<T extends UITable<?>> {
         if (value != null) {
             return (value);
         } else if (FacetUtils.shouldRenderFacet(facet)) {
-            return exportValue(context, facet);
+            String exportedValue = exportValue(context, facet);
+            return exportedValue != null ? exportedValue : "";
         } else {
             return "";
         }
@@ -618,7 +624,7 @@ interface ExCellaExporter<T extends UITable<?>> {
         });
     }
 
-    default <V> V nonNull(V obj, V defaultValue) {
+    default <V> V nonNull(@Nullable V obj, V defaultValue) {
         return obj != null ? obj : defaultValue;
     }
 

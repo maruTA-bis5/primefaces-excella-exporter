@@ -60,15 +60,15 @@ public class TreeTableExcellaExporter extends TreeTableExporter<ReportBook, ExCe
         super(new ExCellaExporterOptions(), ALL_FACETS, true);
     }
 
-    private String getDataColumnsTag() {
+    private @Nullable String getDataColumnsTag() {
         return getExporterOptions().getDataColumnsTag();
     }
 
-    private String getHeadersTag() {
+    private @Nullable String getHeadersTag() {
         return getExporterOptions().getHeadersTag();
     }
 
-    private String getFootersTag() {
+    private @Nullable String getFootersTag() {
         return getExporterOptions().getFootersTag();
     }
 
@@ -221,14 +221,15 @@ public class TreeTableExcellaExporter extends TreeTableExporter<ReportBook, ExCe
     }
 
     private String dataTag() {
-        return nonNull(getDataColumnsTag(), DEFAULT_DATA_COLUMNS_TAG);
+        return this.<String>nonNull(getDataColumnsTag(), DEFAULT_DATA_COLUMNS_TAG);
     }
 
     @Override
     public void setExportParameters(ReportSheet reportSheet, List<Object> columnHeader, List<Object> columnFooter,
             Map<String, List<Object>> dataContainer) {
 
-        List<Integer> levels = nonNull(dataContainer.remove(TREE_LEVEL_KEY), Collections.<Object>emptyList())
+        @SuppressWarnings("unchecked")
+        List<Integer> levels = this.<List<Integer>>nonNull((List<Integer>)(List<?>)dataContainer.remove(TREE_LEVEL_KEY), Collections.<Integer>emptyList())
             .stream()
             .map(Integer.class::cast)
             .collect(Collectors.toList());
@@ -242,8 +243,8 @@ public class TreeTableExcellaExporter extends TreeTableExporter<ReportBook, ExCe
 
         int columnSize = columnHeader.size();
 
-        String headersTagName = nonNull(getHeadersTag(), DEFAULT_HEADERS_TAG);
-        String footersTagName = nonNull(getFootersTag(), DEFAULT_FOOTERS_TAG);
+        String headersTagName = this.<String>nonNull(getHeadersTag(), DEFAULT_HEADERS_TAG);
+        String footersTagName = this.<String>nonNull(getFootersTag(), DEFAULT_FOOTERS_TAG);
         reportSheet.addParam(ColRepeatParamParser.DEFAULT_TAG, headersTagName, columnHeader.toArray());
         reportSheet.addParam(ColRepeatParamParser.DEFAULT_TAG, footersTagName, columnFooter.toArray());
         listeners.add(new StyleUpdateListener(reportSheet, dataContainer, dataTag(), headersTagName, footersTagName, columnSize, columnDataParams) {
@@ -332,7 +333,9 @@ public class TreeTableExcellaExporter extends TreeTableExporter<ReportBook, ExCe
     }
 
     private void exportRow(FacesContext context, TreeTable table, TreeNode<?> node, int level, int rowIndex) {
-        Map<String, List<Object>> dataContainer = getDataContainer(currentSheet);
+        ReportSheet sheet = currentSheet;
+        assert sheet != null : "@AssumeAssertion(nullness): currentSheet is set by exportTable";
+        Map<String, List<Object>> dataContainer = getDataContainer(sheet);
         dataContainer.computeIfAbsent(TREE_LEVEL_KEY, ignore -> new ArrayList<>()).add(level);
 
         if (rowIndex == -1) {
@@ -455,7 +458,9 @@ public class TreeTableExcellaExporter extends TreeTableExporter<ReportBook, ExCe
 
     @Override
     protected void exportCellValue(FacesContext context, TreeTable table, UIColumn col, ColumnValue value, int index) {
-        Map<String, List<Object>> dataContainer = getDataContainer(currentSheet);
+        ReportSheet sheet = currentSheet;
+        assert sheet != null : "@AssumeAssertion(nullness): currentSheet is set by exportTable";
+        Map<String, List<Object>> dataContainer = getDataContainer(sheet);
         addCellValue(context, dataContainer, table, index, col);
     }
 

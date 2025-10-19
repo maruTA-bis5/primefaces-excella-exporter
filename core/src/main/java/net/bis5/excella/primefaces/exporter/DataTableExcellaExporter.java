@@ -102,19 +102,21 @@ public class DataTableExcellaExporter extends DataTableExporter<ReportBook, ExCe
 
     @Override
     protected void exportCellValue(FacesContext context, DataTable table, UIColumn col, ColumnValue value, int index) {
-        Map<String, List<Object>> dataContainer = getDataContainer(currentSheet);
+        ReportSheet sheet = currentSheet;
+        assert sheet != null : "@AssumeAssertion(nullness): currentSheet is set by exportTable";
+        Map<String, List<Object>> dataContainer = getDataContainer(sheet);
         addCellValue(context, dataContainer, table, index, col);
     }
 
-    private String getDataColumnsTag() {
+    private @Nullable String getDataColumnsTag() {
         return getExporterOptions().getDataColumnsTag();
     }
 
-    private String getHeadersTag() {
+    private @Nullable String getHeadersTag() {
         return getExporterOptions().getHeadersTag();
     }
 
-    private String getFootersTag() {
+    private @Nullable String getFootersTag() {
         return getExporterOptions().getFootersTag();
     }
 
