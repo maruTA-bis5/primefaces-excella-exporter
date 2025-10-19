@@ -45,6 +45,8 @@
     <junit.version>5.6.0</junit.version>
     <hamcrest.version>2.2</hamcrest.version>
     <jspecify.version>1.0.0</jspecify.version>
+    <checker-framework.version>3.49.3-eisop1</checker-framework.version>
+    <maven-compiler-plugin.version>3.14.1</maven-compiler-plugin.version>
     <maven-enforcer-plugin.version>3.0.0-M3</maven-enforcer-plugin.version>
     <maven-surefire-plugin.version>3.0.0-M4</maven-surefire-plugin.version>
     <maven-javadoc-plugin.version>3.0.0</maven-javadoc-plugin.version>
@@ -105,6 +107,18 @@
         <version>${hamcrest.version}</version>
         <scope>test</scope>
       </dependency>
+      <dependency>
+        <groupId>io.github.eisop</groupId>
+        <artifactId>checker</artifactId>
+        <version>${checker-framework.version}</version>
+        <scope>provided</scope>
+      </dependency>
+      <dependency>
+        <groupId>io.github.eisop</groupId>
+        <artifactId>checker-qual</artifactId>
+        <version>${checker-framework.version}</version>
+        <scope>provided</scope>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
@@ -162,6 +176,11 @@
 	  <publishingServerId>central</publishingServerId>
 	  <waitUntil>published</waitUntil>
         </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>${maven-compiler-plugin.version}</version>
       </plugin>
     </plugins>
   </build>
