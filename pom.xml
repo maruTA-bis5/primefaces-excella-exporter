@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>net.bis5.excella</groupId>
   <artifactId>primefaces-excella-exporter-parent</artifactId>
-  <version>4.2.1-jakarta-SNAPSHOT</version>
+  <version>4.3.0-jakarta-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>PrimeFaces ExCella Exporter :: Parent POM</name>
