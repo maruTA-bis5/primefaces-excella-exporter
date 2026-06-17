@@ -58,6 +58,8 @@ import org.primefaces.util.Constants;
 import org.primefaces.util.FacetUtils;
 import org.primefaces.util.LangUtils;
 
+import org.jspecify.annotations.Nullable;
+
 import net.bis5.excella.primefaces.exporter.component.ExportableComponent;
 import net.bis5.excella.primefaces.exporter.convert.ExporterConverter;
 import net.bis5.excella.primefaces.exporter.util.Mutable;
@@ -72,29 +74,32 @@ interface ExCellaExporter<T extends UITable<?>> {
     String DEFAULT_TEMPLATE_SHEET_NAME = "DATA";
     String DATA_CONTAINER_KEY = "DATA_CONTAINER_KEY";
 
-    private Path getTemplatePath() {
+    private @Nullable Path getTemplatePath() {
         return getExporterOptions().getTemplatePath();
     }
 
-    private URL getTemplateUrl() {
+    private @Nullable URL getTemplateUrl() {
         return getExporterOptions().getTemplateUrl();
     }
 
-    private String getTemplateSheetName() {
+    private @Nullable String getTemplateSheetName() {
         return getExporterOptions().getTemplateSheetName();
     }
 
     private URL getTemplateFileUrl() throws MalformedURLException {
-        if (getTemplatePath() != null) {
-            return getTemplatePath().toUri().toURL();
-        } else if (getTemplateUrl() != null) {
-            return getTemplateUrl();
+        Path templatePath = getTemplatePath();
+        if (templatePath != null) {
+            return templatePath.toUri().toURL();
+        }
+        URL templateUrl = getTemplateUrl();
+        if (templateUrl != null) {
+            return templateUrl;
         }
         return DEFAULT_TEMPLATE_URL;
     }
 
     void setTemplateType(TemplateType templateType);
-    TemplateType getTemplateType();
+    @Nullable TemplateType getTemplateType();
     void addListener(ReportProcessListener listener);
     List<ReportProcessListener> getListeners();
     ReportBook getDocument();
@@ -142,7 +147,9 @@ interface ExCellaExporter<T extends UITable<?>> {
             Files.delete(outputFile);
         }
         // ExCellaが拡張子を付けるので注意
-        return Paths.get(outputFile.toString() + getTemplateType().getSuffix());
+        TemplateType templateType = getTemplateType();
+        String suffix = templateType != null ? templateType.getSuffix() : getFileExtension();
+        return Paths.get(outputFile.toString() + suffix);
     }
 
     private void writeResponse(Path outputFile) throws IOException {
@@ -250,7 +257,7 @@ interface ExCellaExporter<T extends UITable<?>> {
 
     void setExportParameters(ReportSheet reportSheet, List<Object> columnHeader, List<Object> columnFooter, Map<String, List<Object>> dataContainer);
 
-    default String exportValue(FacesContext context, UIComponent component) {
+    default @Nullable String exportValue(FacesContext context, UIComponent component) {
         String value = getComponentValue(context, component);
         if (isComponentUIInstructions(component)) {
             return exportUIInstructionsValue(context, component, value);
@@ -266,7 +273,7 @@ interface ExCellaExporter<T extends UITable<?>> {
     // defined in TableExporter
     String getComponentValue(FacesContext context, UIComponent component);
 
-    default String exportUIInstructionsValue(FacesContext context, UIComponent component, String value) {
+    default @Nullable String exportUIInstructionsValue(FacesContext context, UIComponent component, @Nullable String value) {
         // evaluate el expr
         ValueExpression ve = context.getApplication().getExpressionFactory().createValueExpression(context.getELContext(), value, Object.class);
         Object objValue = ve.getValue(context.getELContext());
@@ -286,7 +293,7 @@ interface ExCellaExporter<T extends UITable<?>> {
             UIColumn column) {
         String columnKey = "data" + colIndex;
 
-        Object exportValue;
+        @Nullable Object exportValue;
         List<UIComponentWithCompositeParent> valueHoldingChildren = extractValueHoldingChildren(column);
         if (valueHoldingChildren.size() == 1) {
             exportValue = exportObjectValue(context, valueHoldingChildren.get(0));
@@ -386,20 +393,22 @@ interface ExCellaExporter<T extends UITable<?>> {
         return (String) exportFunction.invoke(context.getELContext(), new Object[]{column});
     }
 
-    default Object exportObjectValue(FacesContext context, UIComponentWithCompositeParent component) {
+    default @Nullable Object exportObjectValue(FacesContext context, UIComponentWithCompositeParent component) {
         if (component.isInCompositeComponent()) {
-            component.getCompositeParent().pushComponentToEL(context, null);
+            UIComponent compositeParent = component.getCompositeParent();
+            assert compositeParent != null : "@AssumeAssertion(nullness): checked by isInCompositeComponent()";
+            compositeParent.pushComponentToEL(context, null);
             try {
                 return exportObjectValue(context, component.getComponent());
             } finally {
-                component.getCompositeParent().popComponentFromEL(context);
+                compositeParent.popComponentFromEL(context);
             }
         } else {
             return exportObjectValue(context, component.getComponent());
         }
     }
 
-    default Object exportObjectValue(FacesContext context, UIComponent component) {
+    default @Nullable Object exportObjectValue(FacesContext context, UIComponent component) {
         if (!component.isRendered()) {
             return null;
         }
@@ -432,7 +441,7 @@ interface ExCellaExporter<T extends UITable<?>> {
     }
 
     @SuppressWarnings("unchecked")
-    private Object getComponentValue(FacesContext context, ValueHolder valueHolder) {
+    private @Nullable Object getComponentValue(FacesContext context, ValueHolder valueHolder) {
         Object value = valueHolder.getValue();
         if (valueHolder instanceof ExportableComponent) {
             value = ((ExportableComponent)valueHolder).getExportValue();
@@ -442,7 +451,7 @@ interface ExCellaExporter<T extends UITable<?>> {
         }
 
         UIComponent component = (UIComponent)valueHolder;
-        Converter<Object> converter = valueHolder.getConverter();
+        @Nullable Converter<Object> converter = valueHolder.getConverter();
         if (converter == null) {
             Class<?> valueClass = value.getClass();
             converter = context.getApplication().createConverter(valueClass);
@@ -495,7 +504,8 @@ interface ExCellaExporter<T extends UITable<?>> {
         if (value != null) {
             return (value);
         } else if (FacetUtils.shouldRenderFacet(facet)) {
-            return exportValue(context, facet);
+            String exportedValue = exportValue(context, facet);
+            return exportedValue != null ? exportedValue : "";
         } else {
             return "";
         }
@@ -614,7 +624,7 @@ interface ExCellaExporter<T extends UITable<?>> {
         });
     }
 
-    default <V> V nonNull(V obj, V defaultValue) {
+    default <V> V nonNull(@Nullable V obj, V defaultValue) {
         return obj != null ? obj : defaultValue;
     }
 

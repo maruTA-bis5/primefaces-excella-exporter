@@ -37,17 +37,19 @@ import org.bbreak.excella.reports.model.ReportSheet;
 import org.bbreak.excella.reports.tag.ColRepeatParamParser;
 import org.bbreak.excella.reports.tag.RowRepeatParamParser;
 
+import org.jspecify.annotations.Nullable;
+
 class StyleUpdateListener extends ReportProcessAdaptor {
 
-    private CellAddress headerPosition;
+    private @Nullable CellAddress headerPosition;
 
-    private CellAddress dataPosition;
+    private @Nullable CellAddress dataPosition;
 
-    private CellAddress footerPosition;
+    private @Nullable CellAddress footerPosition;
 
     private int headerSize;
 
-    private Map<ValueType, CellStyle> styles;
+    private @Nullable Map<ValueType, CellStyle> styles;
 
     private final ReportSheet reportSheet;
 
@@ -106,7 +108,7 @@ class StyleUpdateListener extends ReportProcessAdaptor {
 
     private Pattern timePattern = Pattern.compile("^\\d+:\\d\\d$");
 
-    private ValueType detectValueType(List<Object> values) {
+    private @Nullable ValueType detectValueType(List<Object> values) {
         Set<ValueType> types = values.stream()
             .map(this::detectValueType)
             .filter(Objects::nonNull)
@@ -124,7 +126,7 @@ class StyleUpdateListener extends ReportProcessAdaptor {
         return types.iterator().next();
     }
 
-    private ValueType detectValueType(Object value) {
+    private @Nullable ValueType detectValueType(Object value) {
         if (value instanceof LocalDateTime || (value instanceof Date && hasTime((Date)value)) || (value instanceof Calendar && hasTime((Calendar)value))) {
             return ValueType.DATE_TIME;
         }
@@ -220,16 +222,26 @@ class StyleUpdateListener extends ReportProcessAdaptor {
             .map(t -> reportSheet.getParam(RowRepeatParamParser.DEFAULT_TAG, t))
             .filter(Objects::nonNull)
             .map(Object[].class::cast)
-            .mapToInt(a -> a.length)
+            .mapToInt(a -> {
+                assert a != null : "@AssumeAssertion(nullness): filtered non-null";
+                return a.length;
+            })
             .max()
             .ifPresentOrElse(s -> headerSize = s, () -> headerSize = 1);
+        Map<ValueType, CellStyle> styleMap = styles;
+        if (styleMap == null) {
+            return; // styles not initialized yet
+        }
         for (Entry<String, ValueType> entry : valueTypes.entrySet()) {
             String columnTag = getColumnTag(entry.getKey());
-            ValueType valueType = entry.getValue();
+            @Nullable ValueType valueType = entry.getValue();
             if (valueType == null) {
                 continue;
             }
-            CellStyle style = styles.get(valueType);
+            CellStyle style = styleMap.get(valueType);
+            if (style == null) {
+                continue;
+            }
             int colIndex = Arrays.asList(columnDataParams).indexOf(columnTag);
             IntStream.range(dataRowOffset(0), dataRowOffset(repeatRows))
                 .mapToObj(sheet::getRow)
@@ -258,11 +270,15 @@ class StyleUpdateListener extends ReportProcessAdaptor {
         int headerOffset = headerPosition == null ? 0 : headerPosition.getRow();
         headerMergedAreas.forEach(a -> mergeCell(sheet, headerPosition, headerOffset, a));
 
-        int footerOffset = footerPosition == null ? 0 : dataRowOffset(repeatRows) + footerPosition.getRow() - dataPosition.getRow() - 1;
-        footerMergedAreas.forEach(a -> mergeCell(sheet, footerPosition, footerOffset, a));
+        CellAddress footer = footerPosition;
+        CellAddress data = dataPosition;
+        if (footer != null && data != null) {
+            int footerOffset = dataRowOffset(repeatRows) + footer.getRow() - data.getRow() - 1;
+            footerMergedAreas.forEach(a -> mergeCell(sheet, footer, footerOffset, a));
+        }
     }
 
-    private void mergeCell(Sheet sheet, CellAddress beginPosition, int rowOffset, CellRangeAddress area) {
+    private void mergeCell(Sheet sheet, @Nullable CellAddress beginPosition, int rowOffset, CellRangeAddress area) {
         if (beginPosition == null) {
             return;
         }
