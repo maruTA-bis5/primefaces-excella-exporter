@@ -46,3 +46,12 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    - name: Upload test results
+      uses: actions/upload-artifact@v7.0.1
+      if: always()
+      with:
+        path: |
+          integration-test/docker-compose/downloads/*
+          integration-test/target/*.png
+        retention-days: 7
+

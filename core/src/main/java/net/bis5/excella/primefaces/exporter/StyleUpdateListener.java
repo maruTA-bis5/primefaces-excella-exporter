@@ -236,7 +236,19 @@ class StyleUpdateListener extends ReportProcessAdaptor {
                 .filter(Objects::nonNull)
                 .map(r -> r.getCell(dataColOffset(colIndex)))
                 .filter(Objects::nonNull)
-                .forEach(c -> setCellStyle(c, style));
+                .forEach(c -> {
+                    if (valueType == ValueType.TIME && c.getCellType() == CellType.STRING) {
+                        String timeValue = c.getStringCellValue();
+                        if (timePattern.matcher(timeValue).matches()) {
+                            String[] timeParts = timeValue.split(":");
+                            int hours = Integer.parseInt(timeParts[0]);
+                            int minutes = Integer.parseInt(timeParts[1]);
+                            double dayFraction = (hours * 60 + minutes) / 1440.0;
+                            c.setCellValue(dayFraction);
+                        }
+                    }
+                    setCellStyle(c, style);
+                });
         }
     }
 
