@@ -12,7 +12,7 @@ public enum ValueType {
     YEAR_MONTH(w -> w.createDataFormat().getFormat("yyyy/m")),
     DATE(w -> 0xe),
     DATE_TIME(w -> 0x16),
-    TIME(w -> 0x14),
+    TIME(w -> w.createDataFormat().getFormat("[h]:mm")),
     DECIMAL(w -> 0x4),
     INTEGER(w -> 0x3);
 

@@ -76,6 +76,8 @@ public class DataBasicTest extends AbstractPrimePageTest {
             "j.u.Date (datetime)",
             "LocalDate",
             "LocalDateTime",
+            "LocalTime",
+            "ElapsedTime",
             "Integer (int)",
             "Integer (BigDecimal scale=2)",
             "Decimal (double)",
@@ -111,17 +113,19 @@ public class DataBasicTest extends AbstractPrimePageTest {
                 () -> assertCell("Date time cell", dataRow.getCell(3), CellType.NUMERIC, ValueType.DATE_TIME, record.getDateTimeProperty(), Cell::getDateCellValue),
                 () -> assertCell("LocalDate cell", dataRow.getCell(4), CellType.NUMERIC, ValueType.DATE, record.getLocalDateProperty().atStartOfDay(), Cell::getLocalDateTimeCellValue),
                 () -> assertCell("LocalDateTime cell", dataRow.getCell(5), CellType.NUMERIC, ValueType.DATE_TIME, record.getLocalDateTimeProperty(), Cell::getLocalDateTimeCellValue),
-                () -> assertCell("integer cell", dataRow.getCell(6), CellType.NUMERIC, ValueType.INTEGER, Double.valueOf(record.getIntProperty()), Cell::getNumericCellValue),
-                () -> assertCell("BigDecimal as integer cell", dataRow.getCell(7), CellType.NUMERIC, ValueType.INTEGER, record.getBigDecimalIntProperty().doubleValue(), Cell::getNumericCellValue),
-                () -> assertCell("decimal cell", dataRow.getCell(8), CellType.NUMERIC, ValueType.DECIMAL, record.getDoubleProperty(), Cell::getNumericCellValue),
-                () -> assertCell("BigDecimal as decimal cell", dataRow.getCell(9), CellType.NUMERIC, ValueType.DECIMAL, record.getBigDecimalDecimalProperty().doubleValue(), Cell::getNumericCellValue),
-                () -> assertCell("Link value specified", dataRow.getCell(10), CellType.STRING, ValueType.STRING, "Link", Cell::getStringCellValue),
-                () -> assertCell("Link value not specified", dataRow.getCell(11), CellType.NUMERIC, ValueType.DECIMAL, record.getBigDecimalDecimalProperty().doubleValue(), Cell::getNumericCellValue),
-                () -> assertCell("remove br tag", dataRow.getCell(12), CellType.STRING, ValueType.STRING, "value row line break", Cell::getStringCellValue),
-                () -> assertCell("exportable value holder", dataRow.getCell(13), CellType.STRING, ValueType.STRING, "Export text1", Cell::getStringCellValue),
-                () -> assertCell("exportable value holder(value null)", dataRow.getCell(14), CellType.STRING, ValueType.STRING, "Export text2", Cell::getStringCellValue),
-                () -> assertCell("Composite Component", dataRow.getCell(15), CellType.STRING, ValueType.STRING, "foo bar", Cell::getStringCellValue),
-                () -> assertCell("Composite + Normal Component", dataRow.getCell(16), CellType.STRING, ValueType.STRING, "foo bar (note)", Cell::getStringCellValue)
+                () -> assertCell("LocalTime cell", dataRow.getCell(6), CellType.NUMERIC, ValueType.TIME, (13 * 60 + 40) / 1440.0, Cell::getNumericCellValue),
+                () -> assertCell("ElapsedTime cell", dataRow.getCell(7), CellType.NUMERIC, ValueType.TIME, (25 * 60 + 30) / 1440.0, Cell::getNumericCellValue),
+                () -> assertCell("integer cell", dataRow.getCell(8), CellType.NUMERIC, ValueType.INTEGER, Double.valueOf(record.getIntProperty()), Cell::getNumericCellValue),
+                () -> assertCell("BigDecimal as integer cell", dataRow.getCell(9), CellType.NUMERIC, ValueType.INTEGER, record.getBigDecimalIntProperty().doubleValue(), Cell::getNumericCellValue),
+                () -> assertCell("decimal cell", dataRow.getCell(10), CellType.NUMERIC, ValueType.DECIMAL, record.getDoubleProperty(), Cell::getNumericCellValue),
+                () -> assertCell("BigDecimal as decimal cell", dataRow.getCell(11), CellType.NUMERIC, ValueType.DECIMAL, record.getBigDecimalDecimalProperty().doubleValue(), Cell::getNumericCellValue),
+                () -> assertCell("Link value specified", dataRow.getCell(12), CellType.STRING, ValueType.STRING, "Link", Cell::getStringCellValue),
+                () -> assertCell("Link value not specified", dataRow.getCell(13), CellType.NUMERIC, ValueType.DECIMAL, record.getBigDecimalDecimalProperty().doubleValue(), Cell::getNumericCellValue),
+                () -> assertCell("remove br tag", dataRow.getCell(14), CellType.STRING, ValueType.STRING, "value row line break", Cell::getStringCellValue),
+                () -> assertCell("exportable value holder", dataRow.getCell(15), CellType.STRING, ValueType.STRING, "Export text1", Cell::getStringCellValue),
+                () -> assertCell("exportable value holder(value null)", dataRow.getCell(16), CellType.STRING, ValueType.STRING, "Export text2", Cell::getStringCellValue),
+                () -> assertCell("Composite Component", dataRow.getCell(17), CellType.STRING, ValueType.STRING, "foo bar", Cell::getStringCellValue),
+                () -> assertCell("Composite + Normal Component", dataRow.getCell(18), CellType.STRING, ValueType.STRING, "foo bar (note)", Cell::getStringCellValue)
             ),
             () -> {
                 List<Executable> assertions = new ArrayList<>();
@@ -133,7 +137,7 @@ public class DataBasicTest extends AbstractPrimePageTest {
                 }
                 assertAll("Footer row", assertions.toArray(Executable[]::new));
             },
-            () -> assertExportArea(sheet, 0, 2, 0, 16)
+            () -> assertExportArea(sheet, 0, 2, 0, 18)
         );
     }
 

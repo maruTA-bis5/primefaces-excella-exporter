@@ -19,6 +19,7 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.YearMonth;
 import java.time.ZoneId;
 import java.util.Calendar;
@@ -100,6 +101,8 @@ public class BasicView implements Serializable {
         private final Date dateTimeProperty = newDateTime();
         private final LocalDate localDateProperty = LocalDate.of(2021, 3 ,23);
         private final LocalDateTime localDateTimeProperty = LocalDateTime.of(2021, 3,23, 21, 49, 0);
+        private final LocalTime localTimeProperty = LocalTime.of(13, 40);
+        private final String elapsedTimeProperty = "25:30";
         private final int intProperty = 123;
         private final BigDecimal bigDecimalIntProperty = new BigDecimal("321.00");
         private final double doubleProperty = 102.4;
@@ -125,6 +128,12 @@ public class BasicView implements Serializable {
         }
         public LocalDateTime getLocalDateTimeProperty() {
             return localDateTimeProperty;
+        }
+        public LocalTime getLocalTimeProperty() {
+            return localTimeProperty;
+        }
+        public String getElapsedTimeProperty() {
+            return elapsedTimeProperty;
         }
         public int getIntProperty() {
             return intProperty;
