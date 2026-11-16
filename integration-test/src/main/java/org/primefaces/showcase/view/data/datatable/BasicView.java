@@ -30,10 +30,18 @@ import java.util.List;
 import javax.faces.view.ViewScoped;
 import javax.inject.Named;
 
+import net.bis5.excella.primefaces.exporter.ExCellaExporterOptions;
 
 @Named("dtBasicView")
 @ViewScoped
 public class BasicView implements Serializable {
+
+    public ExCellaExporterOptions getPasswordOptions() {
+        ExCellaExporterOptions options = new ExCellaExporterOptions();
+        options.setExportPassword(false);
+        options.setPasswordReplacement("MASKED");
+        return options;
+    }
 
     public List<DataTypeCheck> getDataTypes() {
         return dataTypes;

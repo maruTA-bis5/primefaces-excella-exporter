@@ -32,9 +32,18 @@ import javax.inject.Named;
 import org.primefaces.model.DefaultTreeNode;
 import org.primefaces.model.TreeNode;
 
+import net.bis5.excella.primefaces.exporter.ExCellaExporterOptions;
+
 @Named("ttBasicView")
 @ViewScoped
 public class BasicView implements Serializable {
+
+    public ExCellaExporterOptions getPasswordOptions() {
+        ExCellaExporterOptions options = new ExCellaExporterOptions();
+        options.setExportPassword(false);
+        options.setPasswordReplacement("MASKED");
+        return options;
+    }
 
     private List<TreeNode<DataTypeCheck>> selection;
 

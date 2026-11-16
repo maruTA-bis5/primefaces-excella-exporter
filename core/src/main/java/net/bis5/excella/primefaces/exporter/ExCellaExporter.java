@@ -54,6 +54,7 @@ import org.primefaces.component.columngroup.ColumnGroup;
 import org.primefaces.component.export.ColumnValue;
 import org.primefaces.component.export.ExportConfiguration;
 import org.primefaces.component.link.Link;
+import org.primefaces.component.password.Password;
 import org.primefaces.util.Constants;
 import org.primefaces.util.FacetUtils;
 import org.primefaces.util.LangUtils;
@@ -422,6 +423,8 @@ interface ExCellaExporter<T extends UITable<?>> {
             return values.stream()
                 .map(Object::toString)
                 .collect(Collectors.joining());
+        } else if (component instanceof Password && !getExporterOptions().isExportPassword()) {
+            return getExporterOptions().getPasswordReplacement();
         } else if (component instanceof ValueHolder) {
             ValueHolder valueHolder = (ValueHolder)component;
             return getComponentValue(context, valueHolder);
