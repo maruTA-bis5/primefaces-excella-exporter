@@ -338,6 +338,11 @@ interface ExCellaExporter<T extends UITable<?>> {
             return ColumnValue.of(exportFunction.invoke(context.getELContext(), new Object[]{column}));
         }
         else if (LangUtils.isNotBlank(column.getField())) {
+            boolean hasRenderedPassword = valueHoldingComponents.stream()
+                .anyMatch(c -> c.isRendered() && c.getComponent() instanceof Password);
+            if (hasRenderedPassword && !getExporterOptions().isExportPassword()) {
+                return ColumnValue.of(getExporterOptions().getPasswordReplacement());
+            }
             String value = table.getConvertedFieldValue(context, column);
             return ColumnValue.of(value);
         }

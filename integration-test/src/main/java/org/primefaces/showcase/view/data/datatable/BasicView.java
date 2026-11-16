@@ -43,6 +43,12 @@ public class BasicView implements Serializable {
         return options;
     }
 
+    public ExCellaExporterOptions getPasswordDefaultOptions() {
+        ExCellaExporterOptions options = new ExCellaExporterOptions();
+        options.setExportPassword(false);
+        return options;
+    }
+
     public List<DataTypeCheck> getDataTypes() {
         return dataTypes;
     }
@@ -63,6 +69,8 @@ public class BasicView implements Serializable {
         private final BigDecimal bigDecimalIntProperty = new BigDecimal("321.00");
         private final double doubleProperty = 102.4;
         private final BigDecimal bigDecimalDecimalProperty = new BigDecimal("204.89");
+        private final String passwordNullProperty = null;
+        private final String passwordEmptyProperty = "";
 
         private static Date newDate() {
             return Date.from(LocalDate.of(2021, 10, 24).atStartOfDay(ZoneId.systemDefault()).toInstant());
@@ -96,6 +104,12 @@ public class BasicView implements Serializable {
         }
         public BigDecimal getBigDecimalDecimalProperty() {
             return bigDecimalDecimalProperty;
+        }
+        public String getPasswordNullProperty() {
+            return passwordNullProperty;
+        }
+        public String getPasswordEmptyProperty() {
+            return passwordEmptyProperty;
         }
         private static Date newDateTime() {
             Calendar cal = Calendar.getInstance();
