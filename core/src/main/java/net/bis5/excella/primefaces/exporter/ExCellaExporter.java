@@ -18,6 +18,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -338,8 +339,7 @@ interface ExCellaExporter<T extends UITable<?>> {
             return ColumnValue.of(exportFunction.invoke(context.getELContext(), new Object[]{column}));
         }
         else if (LangUtils.isNotBlank(column.getField())) {
-            boolean hasRenderedPassword = valueHoldingComponents.stream()
-                .anyMatch(c -> c.isRendered() && c.getComponent() instanceof Password);
+            boolean hasRenderedPassword = column.getChildren().stream().anyMatch(this::hasRenderedPassword);
             if (hasRenderedPassword && !getExporterOptions().isExportPassword()) {
                 return ColumnValue.of(getExporterOptions().getPasswordReplacement());
             }
@@ -363,6 +363,22 @@ interface ExCellaExporter<T extends UITable<?>> {
             }
             return ColumnValue.of(values.get(0));
         }
+    }
+
+    private boolean hasRenderedPassword(UIComponent component) {
+        if (!component.isRendered()) {
+            return false;
+        }
+        if (component instanceof Password) {
+            return true;
+        }
+        Iterator<UIComponent> descendants = component.getFacetsAndChildren();
+        while (descendants.hasNext()) {
+            if (hasRenderedPassword(descendants.next())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     default Entry<String, List<Object>> normalizeValues(Entry<String, List<Object>> entry) {

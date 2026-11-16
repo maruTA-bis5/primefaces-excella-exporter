@@ -72,6 +72,7 @@ public class DataBasicTest extends AbstractPrimePageTest {
                 () -> assertEquals("MASKED", dataRow.getCell(18).getStringCellValue()),
                 () -> assertEquals("MASKED", dataRow.getCell(19).getStringCellValue()),
                 () -> assertEquals("MASKED", dataRow.getCell(20).getStringCellValue()),
+                () -> assertEquals("MASKED", dataRow.getCell(21).getStringCellValue()),
                 () -> assertEquals("STRING value", dataRow.getCell(0).getStringCellValue())
             );
         }
@@ -128,7 +129,8 @@ public class DataBasicTest extends AbstractPrimePageTest {
             "Password",
             "Password (null)",
             "Password (empty)",
-            "Password field"
+            "Password field",
+            "Password field (panelGroup)"
         );
 
         Row headerRow = sheet.getRow(0);
@@ -167,7 +169,8 @@ public class DataBasicTest extends AbstractPrimePageTest {
                 () -> assertCell("Password", dataRow.getCell(17), CellType.STRING, ValueType.STRING, record.getStringProperty(), Cell::getStringCellValue),
                 () -> assertEmptyCell(dataRow.getCell(18)),
                 () -> assertEmptyCell(dataRow.getCell(19)),
-                () -> assertCell("Password field", dataRow.getCell(20), CellType.STRING, ValueType.STRING, record.getStringProperty(), Cell::getStringCellValue)
+                () -> assertCell("Password field", dataRow.getCell(20), CellType.STRING, ValueType.STRING, record.getStringProperty(), Cell::getStringCellValue),
+                () -> assertCell("Password field (panelGroup)", dataRow.getCell(21), CellType.STRING, ValueType.STRING, record.getStringProperty(), Cell::getStringCellValue)
             ),
             () -> {
                 List<Executable> assertions = new ArrayList<>();
@@ -179,7 +182,7 @@ public class DataBasicTest extends AbstractPrimePageTest {
                 }
                 assertAll("Footer row", assertions.toArray(Executable[]::new));
             },
-            () -> assertExportArea(sheet, 0, 2, 0, 20)
+            () -> assertExportArea(sheet, 0, 2, 0, 21)
         );
     }
 

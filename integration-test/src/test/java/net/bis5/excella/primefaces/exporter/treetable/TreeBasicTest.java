@@ -84,6 +84,8 @@ class TreeBasicTest extends AbstractPrimePageTest {
             assertAll(
                 () -> assertEquals("MASKED", sheet.getRow(1).getCell(17).getStringCellValue()),
                 () -> assertEquals("MASKED", sheet.getRow(2).getCell(17).getStringCellValue()),
+                () -> assertEquals("MASKED", sheet.getRow(1).getCell(18).getStringCellValue()),
+                () -> assertEquals("MASKED", sheet.getRow(2).getCell(18).getStringCellValue()),
                 () -> assertEquals("P1-STRING value", sheet.getRow(1).getCell(0).getStringCellValue())
             );
         }
@@ -116,7 +118,8 @@ class TreeBasicTest extends AbstractPrimePageTest {
             "exportable component(value null)",
             "Composite Component",
             "Composite + Normal Component",
-            "Password"
+            "Password",
+            "Password field (link)"
         );
 
         Row headerRow = sheet.getRow(0);
@@ -156,7 +159,8 @@ class TreeBasicTest extends AbstractPrimePageTest {
                 () -> assertCell("exportable value holder(value null)", parentNodeRow1.getCell(14), CellType.STRING, ValueType.STRING, "Export text2", Cell::getStringCellValue),
                 () -> assertCell("Composite Component", parentNodeRow1.getCell(15), CellType.STRING, ValueType.STRING, "foo bar", Cell::getStringCellValue),
                 () -> assertCell("Composite + Normal Component", parentNodeRow1.getCell(16), CellType.STRING, ValueType.STRING, "foo bar (note)", Cell::getStringCellValue),
-                () -> assertCell("Password", parentNodeRow1.getCell(17), CellType.STRING, ValueType.STRING, parentRecord1.getStringProperty(), Cell::getStringCellValue)
+                () -> assertCell("Password", parentNodeRow1.getCell(17), CellType.STRING, ValueType.STRING, parentRecord1.getStringProperty(), Cell::getStringCellValue),
+                () -> assertCell("Password field (link)", parentNodeRow1.getCell(18), CellType.STRING, ValueType.STRING, parentRecord1.getStringProperty(), Cell::getStringCellValue)
             ),
             () -> assertAll("Child node row 2",
                 () -> assertEquals(1, childNodeRow2.getCell(0).getCellStyle().getIndention(), "indention"),
@@ -177,7 +181,8 @@ class TreeBasicTest extends AbstractPrimePageTest {
                 () -> assertCell("exportable value holder(value null)", childNodeRow2.getCell(14), CellType.STRING, ValueType.STRING, "Export text2", Cell::getStringCellValue),
                 () -> assertCell("Composite Component", childNodeRow2.getCell(15), CellType.STRING, ValueType.STRING, "foo bar", Cell::getStringCellValue),
                 () -> assertCell("Composite + Normal Component", childNodeRow2.getCell(16), CellType.STRING, ValueType.STRING, "foo bar (note)", Cell::getStringCellValue),
-                () -> assertCell("Password", childNodeRow2.getCell(17), CellType.STRING, ValueType.STRING, childRecord1.getStringProperty(), Cell::getStringCellValue)
+                () -> assertCell("Password", childNodeRow2.getCell(17), CellType.STRING, ValueType.STRING, childRecord1.getStringProperty(), Cell::getStringCellValue),
+                () -> assertCell("Password field (link)", childNodeRow2.getCell(18), CellType.STRING, ValueType.STRING, childRecord1.getStringProperty(), Cell::getStringCellValue)
             ),
             () -> assertAll("Parent node row 3",
                 () -> assertEquals(0, parentNodeRow3.getCell(0).getCellStyle().getIndention(), "indention"),
@@ -198,7 +203,8 @@ class TreeBasicTest extends AbstractPrimePageTest {
                 () -> assertCell("exportable value holder(value null)", parentNodeRow3.getCell(14), CellType.STRING, ValueType.STRING, "Export text2", Cell::getStringCellValue),
                 () -> assertCell("Composite Component", parentNodeRow3.getCell(15), CellType.STRING, ValueType.STRING, "foo bar", Cell::getStringCellValue),
                 () -> assertCell("Composite + Normal Component", parentNodeRow3.getCell(16), CellType.STRING, ValueType.STRING, "foo bar (note)", Cell::getStringCellValue),
-                () -> assertCell("Password", parentNodeRow3.getCell(17), CellType.STRING, ValueType.STRING, parentRecord2.getStringProperty(), Cell::getStringCellValue)
+                () -> assertCell("Password", parentNodeRow3.getCell(17), CellType.STRING, ValueType.STRING, parentRecord2.getStringProperty(), Cell::getStringCellValue),
+                () -> assertCell("Password field (link)", parentNodeRow3.getCell(18), CellType.STRING, ValueType.STRING, parentRecord2.getStringProperty(), Cell::getStringCellValue)
             ),
             () -> assertAll("Child node row 4",
                 () -> assertEquals(1, childNodeRow4.getCell(0).getCellStyle().getIndention(), "indention"),
@@ -219,7 +225,8 @@ class TreeBasicTest extends AbstractPrimePageTest {
                 () -> assertCell("exportable value holder(value null)", childNodeRow4.getCell(14), CellType.STRING, ValueType.STRING, "Export text2", Cell::getStringCellValue),
                 () -> assertCell("Composite Component", childNodeRow4.getCell(15), CellType.STRING, ValueType.STRING, "foo bar", Cell::getStringCellValue),
                 () -> assertCell("Composite + Normal Component", childNodeRow4.getCell(16), CellType.STRING, ValueType.STRING, "foo bar (note)", Cell::getStringCellValue),
-                () -> assertCell("Password", childNodeRow4.getCell(17), CellType.STRING, ValueType.STRING, childRecord2.getStringProperty(), Cell::getStringCellValue)
+                () -> assertCell("Password", childNodeRow4.getCell(17), CellType.STRING, ValueType.STRING, childRecord2.getStringProperty(), Cell::getStringCellValue),
+                () -> assertCell("Password field (link)", childNodeRow4.getCell(18), CellType.STRING, ValueType.STRING, childRecord2.getStringProperty(), Cell::getStringCellValue)
             ),
             () -> {
                 List<Executable> assertions = new ArrayList<>();
