@@ -259,9 +259,17 @@ class StyleUpdateListener extends ReportProcessAdaptor {
 
     private void updateCellStyle(Cell cell, short format, short indentation) {
         CellStyle original = cell.getCellStyle();
+        Workbook workbook = cell.getSheet().getWorkbook();
+        boolean formatChanged = original.getDataFormat() != format;
+        boolean indentationChanged = original.getIndention() != indentation;
+        boolean fillNeedsNormalization = workbook instanceof XSSFWorkbook
+                && hasUnspecifiedFillPattern((XSSFWorkbook) workbook, (XSSFCellStyle) original);
+        if (!formatChanged && !indentationChanged && !fillNeedsNormalization) {
+            return;
+        }
+
         StyleKey key = new StyleKey(original.getIndex(), format, indentation);
         CellStyle updated = updatedStyles.computeIfAbsent(key, k -> {
-            Workbook workbook = cell.getSheet().getWorkbook();
             CellStyle copy = workbook.createCellStyle();
             if (copy instanceof XSSFCellStyle) {
                 // XSSFCellStyle.cloneStyleFrom also overwrites a shared base style.
@@ -315,6 +323,13 @@ class StyleUpdateListener extends ReportProcessAdaptor {
         public int hashCode() {
             return Objects.hash(originalStyleIndex, dataFormat, indentation);
         }
+    }
+
+    private boolean hasUnspecifiedFillPattern(XSSFWorkbook workbook, XSSFCellStyle style) {
+            StylesTable stylesTable = workbook.getStylesSource();
+            CTFill fill = stylesTable.getFillAt((int) style.getCoreXf().getFillId()).getCTFill();
+            CTPatternFill pattern = fill.getPatternFill();
+            return pattern != null && !pattern.isSetPatternType();
     }
 
     private void normalizeFill(XSSFWorkbook workbook, XSSFCellStyle style) {
