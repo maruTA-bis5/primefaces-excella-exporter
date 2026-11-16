@@ -3,6 +3,7 @@ package net.bis5.excella.primefaces.exporter;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayInputStream;
@@ -352,7 +353,7 @@ class StyleUpdateListenerTest {
             assertEquals(first.getIndex(), second.getIndex());
             assertEquals(BorderStyle.THIN, first.getBorderTop());
             assertEquals(BorderStyle.THICK, last.getBorderTop());
-            assertTrue(first.getIndex() != last.getIndex());
+            assertNotEquals(first.getIndex(), last.getIndex());
             assertEquals(ValueType.INTEGER.getFormat(workbook), first.getDataFormat());
             assertEquals(ValueType.INTEGER.getFormat(workbook), last.getDataFormat());
             assertTrue(workbook.getNumCellStyles() <= styleCountBeforeUpdate + ValueType.values().length + 2);
