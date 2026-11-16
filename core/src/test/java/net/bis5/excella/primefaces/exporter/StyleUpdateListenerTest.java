@@ -11,6 +11,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.YearMonth;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -231,6 +232,27 @@ class StyleUpdateListenerTest {
     }
 
     @Test
+    void unchangedXssfStyleIsNotCopiedWhenItsFillIsValid() throws Exception {
+        try (XSSFWorkbook workbook = new XSSFWorkbook()) {
+            XSSFCellStyle source = workbook.createCellStyle();
+            source.setDataFormat(ValueType.DATE.getFormat(workbook));
+            source.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            source.setFillForegroundColor(IndexedColors.BLUE.getIndex());
+            Sheet sheet = workbook.createSheet("Sheet");
+            Cell cell = sheet.createRow(0).createCell(0);
+            cell.setCellStyle(source);
+            short sourceStyleIndex = cell.getCellStyle().getIndex();
+            int styleCountBeforeUpdate = workbook.getNumCellStyles();
+
+            update(workbook, sheet, List.of(LocalDate.of(2026, 1, 1)));
+
+            assertEquals(sourceStyleIndex, cell.getCellStyle().getIndex());
+            assertEquals(styleCountBeforeUpdate + ValueType.values().length, workbook.getNumCellStyles());
+            assertEquals(FillPatternType.SOLID_FOREGROUND, cell.getCellStyle().getFillPattern());
+        }
+    }
+
+    @Test
     void indentationUpdateKeepsTheFillSafeAndReusesStyles() throws Exception {
         try (XSSFWorkbook workbook = new XSSFWorkbook()) {
             XSSFCellStyle source = workbook.createCellStyle();
@@ -284,6 +306,28 @@ class StyleUpdateListenerTest {
                 assertEquals(IndexedColors.RED.getIndex(), result.getFillForegroundColor());
                 assertEquals(BorderStyle.THIN, result.getBorderTop());
             }
+        }
+    }
+
+    @Test
+    void unchangedHssfStylesDoNotConsumeTheStyleLimit() throws Exception {
+        try (Workbook workbook = new HSSFWorkbook()) {
+            Sheet sheet = workbook.createSheet("Sheet");
+            List<Object> values = new ArrayList<>();
+            int sourceStyleCount = 3900;
+            for (int i = 0; i < sourceStyleCount; i++) {
+                CellStyle source = workbook.createCellStyle();
+                source.setDataFormat(ValueType.INTEGER.getFormat(workbook));
+                sheet.createRow(i).createCell(0).setCellStyle(source);
+                values.add(i);
+            }
+            short firstStyleIndex = sheet.getRow(0).getCell(0).getCellStyle().getIndex();
+            int styleCountBeforeUpdate = workbook.getNumCellStyles();
+
+            update(workbook, sheet, values);
+
+            assertEquals(styleCountBeforeUpdate + ValueType.values().length, workbook.getNumCellStyles());
+            assertEquals(firstStyleIndex, sheet.getRow(0).getCell(0).getCellStyle().getIndex());
         }
     }
 
