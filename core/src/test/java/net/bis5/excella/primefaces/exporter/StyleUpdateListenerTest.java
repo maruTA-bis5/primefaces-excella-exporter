@@ -331,6 +331,58 @@ class StyleUpdateListenerTest {
         }
     }
 
+    @Test
+    void changedHssfStylesReuseEquivalentStylesNearTheStyleLimit() throws Exception {
+        try (Workbook workbook = new HSSFWorkbook()) {
+            Sheet sheet = workbook.createSheet("Sheet");
+            List<Object> values = new ArrayList<>();
+            for (int i = 0; i < 3900; i++) {
+                CellStyle source = workbook.createCellStyle();
+                source.setBorderTop(i == 3899 ? BorderStyle.THICK : BorderStyle.THIN);
+                sheet.createRow(i).createCell(0).setCellStyle(source);
+                values.add(i);
+            }
+            int styleCountBeforeUpdate = workbook.getNumCellStyles();
+
+            update(workbook, sheet, values);
+
+            CellStyle first = sheet.getRow(0).getCell(0).getCellStyle();
+            CellStyle second = sheet.getRow(1).getCell(0).getCellStyle();
+            CellStyle last = sheet.getRow(3899).getCell(0).getCellStyle();
+            assertEquals(first.getIndex(), second.getIndex());
+            assertEquals(BorderStyle.THIN, first.getBorderTop());
+            assertEquals(BorderStyle.THICK, last.getBorderTop());
+            assertTrue(first.getIndex() != last.getIndex());
+            assertEquals(ValueType.INTEGER.getFormat(workbook), first.getDataFormat());
+            assertEquals(ValueType.INTEGER.getFormat(workbook), last.getDataFormat());
+            assertTrue(workbook.getNumCellStyles() <= styleCountBeforeUpdate + ValueType.values().length + 2);
+        }
+    }
+
+    @Test
+    void hssfIndentationReusesAnExistingEquivalentStyle() throws Exception {
+        try (Workbook workbook = new HSSFWorkbook()) {
+            CellStyle source = workbook.createCellStyle();
+            source.setBorderTop(BorderStyle.THIN);
+            CellStyle existing = workbook.createCellStyle();
+            existing.cloneStyleFrom(source);
+            existing.setIndention((short) 2);
+            Sheet sheet = workbook.createSheet("Sheet");
+            Cell cell = sheet.createRow(0).createCell(0);
+            cell.setCellStyle(source);
+            StyleUpdateListener listener = new StyleUpdateListener(new ReportSheet("Sheet"), Map.of(),
+                    "data", "headers", "footers", 1, new Object[0]);
+            listener.preBookParse(workbook, null);
+            int styleCountBeforeUpdate = workbook.getNumCellStyles();
+
+            listener.setCellIndentation(cell, (short) 2);
+
+            assertEquals(existing.getIndex(), cell.getCellStyle().getIndex());
+            assertEquals(styleCountBeforeUpdate, workbook.getNumCellStyles());
+            assertEquals(BorderStyle.THIN, cell.getCellStyle().getBorderTop());
+        }
+    }
+
     private static void update(Workbook workbook, Sheet sheet, List<Object> values) {
         ReportSheet reportSheet = new ReportSheet("Sheet");
         StyleUpdateListener listener = new StyleUpdateListener(reportSheet, Map.of("value", values),
