@@ -293,7 +293,7 @@ interface ExCellaExporter<T extends UITable<?>> {
 
         Object exportValue;
         List<UIComponentWithCompositeParent> valueHoldingChildren = extractValueHoldingChildren(column);
-        if (valueHoldingChildren.size() == 1) {
+        if (valueHoldingChildren.size() == 1 && !isMaskedPasswordField(column)) {
             exportValue = exportObjectValue(context, valueHoldingChildren.get(0));
         } else {
             exportValue = getExCellaColumnValue(context, table, column, valueHoldingChildren, true).getValue();
@@ -339,8 +339,7 @@ interface ExCellaExporter<T extends UITable<?>> {
             return ColumnValue.of(exportFunction.invoke(context.getELContext(), new Object[]{column}));
         }
         else if (LangUtils.isNotBlank(column.getField())) {
-            boolean hasRenderedPassword = column.getChildren().stream().anyMatch(this::hasRenderedPassword);
-            if (hasRenderedPassword && !getExporterOptions().isExportPassword()) {
+            if (isMaskedPasswordField(column)) {
                 return ColumnValue.of(getExporterOptions().getPasswordReplacement());
             }
             String value = table.getConvertedFieldValue(context, column);
@@ -363,6 +362,12 @@ interface ExCellaExporter<T extends UITable<?>> {
             }
             return ColumnValue.of(values.get(0));
         }
+    }
+
+    private boolean isMaskedPasswordField(UIColumn column) {
+        return !getExporterOptions().isExportPassword()
+            && LangUtils.isNotBlank(column.getField())
+            && column.getChildren().stream().anyMatch(this::hasRenderedPassword);
     }
 
     private boolean hasRenderedPassword(UIComponent component) {

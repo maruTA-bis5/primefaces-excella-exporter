@@ -58,8 +58,32 @@ public class BasicView implements Serializable {
     }
 
     private List<DataTypeCheck> dataTypes = new ArrayList<>(Arrays.asList(new DataTypeCheck()));
+    private final List<DataTypeCheck> passwordRows = Arrays.asList(
+        new DataTypeCheck("1-"), new DataTypeCheck("2-"), new DataTypeCheck("3-"));
+    private List<DataTypeCheck> selection;
+
+    public List<DataTypeCheck> getPasswordRows() {
+        return passwordRows;
+    }
+
+    public List<DataTypeCheck> getSelection() {
+        return selection;
+    }
+
+    public void setSelection(List<DataTypeCheck> selection) {
+        this.selection = selection;
+    }
+
     public static class DataTypeCheck implements Serializable {
-        private final String stringProperty = "STRING value";
+        public DataTypeCheck() {
+            this("");
+        }
+
+        public DataTypeCheck(String prefix) {
+            stringProperty = prefix + "STRING value";
+        }
+
+        private final String stringProperty;
         private final YearMonth yearMonthProperty = YearMonth.of(2021, 4);
         private final Date dateProperty = newDate();
         private final Date dateTimeProperty = newDateTime();
