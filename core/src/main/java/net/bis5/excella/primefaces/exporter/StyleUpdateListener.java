@@ -28,6 +28,7 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellAddress;
 import org.apache.poi.ss.util.CellRangeAddress;
+import org.apache.poi.ss.util.CellUtil;
 import org.apache.poi.xssf.model.StylesTable;
 import org.apache.poi.xssf.usermodel.XSSFCellStyle;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -270,6 +271,11 @@ class StyleUpdateListener extends ReportProcessAdaptor {
 
         StyleKey key = new StyleKey(original.getIndex(), format, indentation);
         CellStyle updated = updatedStyles.computeIfAbsent(key, k -> {
+            if (!(workbook instanceof XSSFWorkbook)) {
+                CellUtil.setCellStyleProperties(cell, Map.of(
+                        CellUtil.DATA_FORMAT, format, CellUtil.INDENTION, indentation));
+                return cell.getCellStyle();
+            }
             CellStyle copy = workbook.createCellStyle();
             if (copy instanceof XSSFCellStyle) {
                 // XSSFCellStyle.cloneStyleFrom also overwrites a shared base style.
