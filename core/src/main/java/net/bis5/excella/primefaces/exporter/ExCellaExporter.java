@@ -293,7 +293,7 @@ interface ExCellaExporter<T extends UITable<?>> {
 
         Object exportValue;
         List<UIComponentWithCompositeParent> valueHoldingChildren = extractValueHoldingChildren(column);
-        if (valueHoldingChildren.size() == 1 && !isMaskedPasswordField(column)) {
+        if (valueHoldingChildren.size() == 1 && !isMaskedPasswordField(context, column)) {
             exportValue = exportObjectValue(context, valueHoldingChildren.get(0));
         } else {
             exportValue = getExCellaColumnValue(context, table, column, valueHoldingChildren, true).getValue();
@@ -339,7 +339,7 @@ interface ExCellaExporter<T extends UITable<?>> {
             return ColumnValue.of(exportFunction.invoke(context.getELContext(), new Object[]{column}));
         }
         else if (LangUtils.isNotBlank(column.getField())) {
-            if (isMaskedPasswordField(column)) {
+            if (isMaskedPasswordField(context, column)) {
                 return ColumnValue.of(getExporterOptions().getPasswordReplacement());
             }
             String value = table.getConvertedFieldValue(context, column);
@@ -364,26 +364,36 @@ interface ExCellaExporter<T extends UITable<?>> {
         }
     }
 
-    private boolean isMaskedPasswordField(UIColumn column) {
+    private boolean isMaskedPasswordField(FacesContext context, UIColumn column) {
         return !getExporterOptions().isExportPassword()
             && LangUtils.isNotBlank(column.getField())
-            && column.getChildren().stream().anyMatch(this::hasRenderedPassword);
+            && column.getChildren().stream().anyMatch(c -> hasRenderedPassword(context, c));
     }
 
-    private boolean hasRenderedPassword(UIComponent component) {
+    private boolean hasRenderedPassword(FacesContext context, UIComponent component) {
         if (!component.isRendered()) {
             return false;
         }
         if (component instanceof Password) {
             return true;
         }
-        Iterator<UIComponent> descendants = component.getFacetsAndChildren();
-        while (descendants.hasNext()) {
-            if (hasRenderedPassword(descendants.next())) {
-                return true;
+        boolean composite = UIComponent.isCompositeComponent(component);
+        if (composite) {
+            component.pushComponentToEL(context, null);
+        }
+        try {
+            Iterator<UIComponent> descendants = component.getFacetsAndChildren();
+            while (descendants.hasNext()) {
+                if (hasRenderedPassword(context, descendants.next())) {
+                    return true;
+                }
+            }
+            return false;
+        } finally {
+            if (composite) {
+                component.popComponentFromEL(context);
             }
         }
-        return false;
     }
 
     default Entry<String, List<Object>> normalizeValues(Entry<String, List<Object>> entry) {
