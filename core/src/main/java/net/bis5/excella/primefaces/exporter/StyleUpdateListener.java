@@ -58,6 +58,10 @@ class StyleUpdateListener extends ReportProcessAdaptor {
 
     private final Map<StyleKey, CellStyle> updatedStyles = new HashMap<>();
 
+    private final Map<String, XSSFCellStyle> xssfStyles = new HashMap<>();
+
+    private int indexedXssfStyleCount;
+
     private final ReportSheet reportSheet;
 
     private final Map<String, List<Object>> dataContainer;
@@ -178,6 +182,8 @@ class StyleUpdateListener extends ReportProcessAdaptor {
     public void preBookParse(Workbook workbook, ReportBook reportBook) {
         styles = ValueType.initStyles(workbook);
         updatedStyles.clear();
+        xssfStyles.clear();
+        indexedXssfStyleCount = 0;
     }
 
     private void setHeaderPosition(CellAddress address) {
@@ -276,25 +282,33 @@ class StyleUpdateListener extends ReportProcessAdaptor {
                         CellUtil.DATA_FORMAT, format, CellUtil.INDENTION, indentation));
                 return cell.getCellStyle();
             }
-            CellStyle copy = workbook.createCellStyle();
-            if (copy instanceof XSSFCellStyle) {
-                // XSSFCellStyle.cloneStyleFrom also overwrites a shared base style.
-                ((XSSFCellStyle) copy).getCoreXf().set(((XSSFCellStyle) original).getCoreXf());
-            } else {
-                copy.cloneStyleFrom(original);
-            }
+            XSSFWorkbook xssfWorkbook = (XSSFWorkbook) workbook;
+            XSSFCellStyle copy = new XSSFCellStyle(xssfWorkbook.getStylesSource());
+            // Build the complete target without allocating a workbook style or modifying shared base styles.
+            copy.getCoreXf().set(((XSSFCellStyle) original).getCoreXf());
             if (copy.getDataFormat() != format) {
                 copy.setDataFormat(format);
             }
             if (copy.getIndention() != indentation) {
                 copy.setIndention(indentation);
             }
-            if (workbook instanceof XSSFWorkbook) {
-                normalizeFill((XSSFWorkbook) workbook, (XSSFCellStyle) copy);
-            }
-            return copy;
+            normalizeFill(xssfWorkbook, copy);
+            return reuseXssfStyle(xssfWorkbook, copy);
         });
         cell.setCellStyle(updated);
+    }
+
+    private XSSFCellStyle reuseXssfStyle(XSSFWorkbook workbook, XSSFCellStyle target) {
+        while (indexedXssfStyleCount < workbook.getNumCellStyles()) {
+            XSSFCellStyle existing = workbook.getCellStyleAt(indexedXssfStyleCount++);
+            xssfStyles.putIfAbsent(existing.getCoreXf().xmlText(), existing);
+        }
+        String key = target.getCoreXf().xmlText();
+        return xssfStyles.computeIfAbsent(key, k -> {
+            XSSFCellStyle style = workbook.createCellStyle();
+            style.getCoreXf().set(target.getCoreXf());
+            return style;
+        });
     }
 
     private static final class StyleKey {

@@ -384,6 +384,62 @@ class StyleUpdateListenerTest {
         }
     }
 
+    @Test
+    void equivalentXssfSourcesShareOneNormalizedTargetStyle() throws Exception {
+        try (XSSFWorkbook workbook = new XSSFWorkbook()) {
+            Sheet sheet = workbook.createSheet("Sheet");
+            List<Object> values = new ArrayList<>();
+            for (int i = 0; i < 200; i++) {
+                XSSFCellStyle source = workbook.createCellStyle();
+                source.setWrapText(true);
+                source.setQuotePrefixed(i == 199);
+                sheet.createRow(i).createCell(0).setCellStyle(source);
+                values.add(i);
+            }
+            int before = workbook.getNumCellStyles();
+
+            update(workbook, sheet, values);
+
+            assertEquals(before + ValueType.values().length + 2, workbook.getNumCellStyles());
+            try (XSSFWorkbook saved = roundTrip(workbook)) {
+                XSSFCellStyle first = saved.getSheetAt(0).getRow(0).getCell(0).getCellStyle();
+                XSSFCellStyle second = saved.getSheetAt(0).getRow(1).getCell(0).getCellStyle();
+                XSSFCellStyle last = saved.getSheetAt(0).getRow(199).getCell(0).getCellStyle();
+                assertEquals(first.getIndex(), second.getIndex());
+                assertNotEquals(first.getIndex(), last.getIndex());
+                assertFalse(first.getQuotePrefixed());
+                assertTrue(last.getQuotePrefixed());
+                assertTrue(first.getWrapText());
+                assertEquals(ValueType.INTEGER.getFormat(saved), first.getDataFormat());
+                assertEquals(STPatternType.NONE, patternFill(saved, first).getPatternType());
+            }
+        }
+    }
+
+    @Test
+    void xssfUpdateReusesAnExistingNormalizedTargetStyle() throws Exception {
+        try (XSSFWorkbook workbook = new XSSFWorkbook()) {
+            XSSFCellStyle source = workbook.createCellStyle();
+            source.setWrapText(true);
+            XSSFCellStyle target = workbook.createCellStyle();
+            target.getCoreXf().set(source.getCoreXf());
+            target.setDataFormat(ValueType.INTEGER.getFormat(workbook));
+            CTFill fill = CTFill.Factory.newInstance();
+            fill.addNewPatternFill().setPatternType(STPatternType.NONE);
+            target.getCoreXf().setFillId(workbook.getStylesSource().putFill(
+                    new XSSFCellFill(fill, workbook.getStylesSource().getIndexedColors())));
+            Sheet sheet = workbook.createSheet("Sheet");
+            Cell cell = sheet.createRow(0).createCell(0);
+            cell.setCellStyle(source);
+            int before = workbook.getNumCellStyles();
+
+            update(workbook, sheet, List.of(42));
+
+            assertEquals(target.getIndex(), cell.getCellStyle().getIndex());
+            assertEquals(before + ValueType.values().length, workbook.getNumCellStyles());
+        }
+    }
+
     private static void update(Workbook workbook, Sheet sheet, List<Object> values) {
         ReportSheet reportSheet = new ReportSheet("Sheet");
         StyleUpdateListener listener = new StyleUpdateListener(reportSheet, Map.of("value", values),
