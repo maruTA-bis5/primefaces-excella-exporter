@@ -18,7 +18,6 @@ import org.apache.commons.math3.util.Pair;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.util.CellUtil;
 import org.bbreak.excella.core.SheetData;
 import org.bbreak.excella.core.SheetParser;
 import org.bbreak.excella.core.util.StringUtil;
@@ -265,7 +264,7 @@ public class TreeTableExcellaExporter extends TreeTableExporter<ReportBook, ExCe
                     }
                     Cell indexCell = row.getCell(dataColOffset(0));
                     if (indexCell != null) {
-                        CellUtil.setCellStyleProperty(indexCell, CellUtil.INDENTION, (short)level - 1);
+                        setCellIndentation(indexCell, (short) (level - 1));
                     }
                 }
             }

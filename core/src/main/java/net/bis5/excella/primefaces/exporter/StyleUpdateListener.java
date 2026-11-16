@@ -28,7 +28,10 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellAddress;
 import org.apache.poi.ss.util.CellRangeAddress;
-import org.apache.poi.ss.util.CellUtil;
+import org.apache.poi.xssf.model.StylesTable;
+import org.apache.poi.xssf.usermodel.XSSFCellStyle;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.poi.xssf.usermodel.extensions.XSSFCellFill;
 import org.bbreak.excella.core.SheetData;
 import org.bbreak.excella.core.SheetParser;
 import org.bbreak.excella.reports.listener.ReportProcessAdaptor;
@@ -36,6 +39,9 @@ import org.bbreak.excella.reports.model.ReportBook;
 import org.bbreak.excella.reports.model.ReportSheet;
 import org.bbreak.excella.reports.tag.ColRepeatParamParser;
 import org.bbreak.excella.reports.tag.RowRepeatParamParser;
+import org.openxmlformats.schemas.spreadsheetml.x2006.main.CTFill;
+import org.openxmlformats.schemas.spreadsheetml.x2006.main.CTPatternFill;
+import org.openxmlformats.schemas.spreadsheetml.x2006.main.STPatternType;
 
 class StyleUpdateListener extends ReportProcessAdaptor {
 
@@ -48,6 +54,8 @@ class StyleUpdateListener extends ReportProcessAdaptor {
     private int headerSize;
 
     private Map<ValueType, CellStyle> styles;
+
+    private final Map<StyleKey, CellStyle> updatedStyles = new HashMap<>();
 
     private final ReportSheet reportSheet;
 
@@ -168,6 +176,7 @@ class StyleUpdateListener extends ReportProcessAdaptor {
     @Override
     public void preBookParse(Workbook workbook, ReportBook reportBook) {
         styles = ValueType.initStyles(workbook);
+        updatedStyles.clear();
     }
 
     private void setHeaderPosition(CellAddress address) {
@@ -241,8 +250,86 @@ class StyleUpdateListener extends ReportProcessAdaptor {
     }
 
     private void setCellStyle(Cell cell, CellStyle style) {
-        CellUtil.setCellStyleProperty(cell, CellUtil.DATA_FORMAT, style.getDataFormat());
+        updateCellStyle(cell, style.getDataFormat(), cell.getCellStyle().getIndention());
     }
+
+    protected void setCellIndentation(Cell cell, short indentation) {
+        updateCellStyle(cell, cell.getCellStyle().getDataFormat(), indentation);
+    }
+
+    private void updateCellStyle(Cell cell, short format, short indentation) {
+        CellStyle original = cell.getCellStyle();
+        StyleKey key = new StyleKey(original.getIndex(), format, indentation);
+        CellStyle updated = updatedStyles.computeIfAbsent(key, k -> {
+            Workbook workbook = cell.getSheet().getWorkbook();
+            CellStyle copy = workbook.createCellStyle();
+            if (copy instanceof XSSFCellStyle) {
+                // XSSFCellStyle.cloneStyleFrom also overwrites a shared base style.
+                ((XSSFCellStyle) copy).getCoreXf().set(((XSSFCellStyle) original).getCoreXf());
+            } else {
+                copy.cloneStyleFrom(original);
+            }
+            if (copy.getDataFormat() != format) {
+                copy.setDataFormat(format);
+            }
+            if (copy.getIndention() != indentation) {
+                copy.setIndention(indentation);
+            }
+            if (workbook instanceof XSSFWorkbook) {
+                normalizeFill((XSSFWorkbook) workbook, (XSSFCellStyle) copy);
+            }
+            return copy;
+        });
+        cell.setCellStyle(updated);
+    }
+
+    private static final class StyleKey {
+
+        private final short originalStyleIndex;
+
+        private final short dataFormat;
+
+        private final short indentation;
+
+        private StyleKey(short originalStyleIndex, short dataFormat, short indentation) {
+            this.originalStyleIndex = originalStyleIndex;
+            this.dataFormat = dataFormat;
+            this.indentation = indentation;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (!(obj instanceof StyleKey)) {
+                return false;
+            }
+            StyleKey other = (StyleKey) obj;
+            return originalStyleIndex == other.originalStyleIndex
+                    && dataFormat == other.dataFormat
+                    && indentation == other.indentation;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(originalStyleIndex, dataFormat, indentation);
+        }
+    }
+
+    private void normalizeFill(XSSFWorkbook workbook, XSSFCellStyle style) {
+        StylesTable stylesTable = workbook.getStylesSource();
+        CTFill fill = stylesTable.getFillAt((int) style.getCoreXf().getFillId()).getCTFill();
+        CTPatternFill pattern = fill.getPatternFill();
+        if (pattern != null && !pattern.isSetPatternType()) {
+            // Fills are shared by styles, so register a copy rather than changing the template.
+            CTFill copy = (CTFill) fill.copy();
+            copy.getPatternFill().setPatternType(STPatternType.NONE);
+            int fillId = stylesTable.putFill(new XSSFCellFill(copy, stylesTable.getIndexedColors()));
+            style.getCoreXf().setFillId(fillId);
+        }
+    }
+
     private String getColumnTag(String key) {
         return "$R[]{" + key + "}";
     }
