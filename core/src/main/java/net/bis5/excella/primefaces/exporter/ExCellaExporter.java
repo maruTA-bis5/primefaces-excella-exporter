@@ -86,10 +86,13 @@ interface ExCellaExporter<T extends UITable<?>> {
     }
 
     private URL getTemplateFileUrl() throws MalformedURLException {
-        if (getTemplatePath() != null) {
-            return getTemplatePath().toUri().toURL();
-        } else if (getTemplateUrl() != null) {
-            return getTemplateUrl();
+        Path templatePath = getTemplatePath();
+        if (templatePath != null) {
+            return templatePath.toUri().toURL();
+        }
+        URL templateUrl = getTemplateUrl();
+        if (templateUrl != null) {
+            return templateUrl;
         }
         return DEFAULT_TEMPLATE_URL;
     }
