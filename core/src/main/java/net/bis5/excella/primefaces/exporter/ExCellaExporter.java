@@ -16,7 +16,6 @@ import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -31,12 +30,10 @@ import java.util.stream.Stream;
 
 import jakarta.el.MethodExpression;
 import jakarta.el.ValueExpression;
+import jakarta.faces.component.UICommand;
 import jakarta.faces.component.UIComponent;
 import jakarta.faces.component.UIParameter;
 import jakarta.faces.component.ValueHolder;
-import jakarta.faces.component.visit.VisitContext;
-import jakarta.faces.component.visit.VisitHint;
-import jakarta.faces.component.visit.VisitResult;
 import jakarta.faces.context.FacesContext;
 import jakarta.faces.convert.Converter;
 
@@ -259,6 +256,16 @@ interface ExCellaExporter<T extends UITable<?>> {
         if (isMaskedPassword(component)) {
             return getExporterOptions().getPasswordReplacement();
         }
+        if (component instanceof UICommand) {
+            return Objects.toString(exportLinkValue(context, component, ((UICommand)component).getValue()), null);
+        }
+        if (component instanceof Link) {
+            return Objects.toString(exportLinkValue(context, component, ((Link)component).getValue()), null);
+        }
+        if (component instanceof CellEditor) {
+            UIComponent output = component.getFacet("output");
+            return output != null ? exportValue(context, output) : null;
+        }
         String value = getComponentValue(context, component);
         if (isComponentUIInstructions(component)) {
             return exportUIInstructionsValue(context, component, value);
@@ -296,7 +303,7 @@ interface ExCellaExporter<T extends UITable<?>> {
 
         Object exportValue;
         List<UIComponentWithCompositeParent> valueHoldingChildren = extractValueHoldingChildren(column);
-        if (valueHoldingChildren.size() == 1 && !isMaskedPasswordField(context, column)) {
+        if (valueHoldingChildren.size() == 1 && !isMaskedPasswordField(column)) {
             exportValue = exportObjectValue(context, valueHoldingChildren.get(0));
         } else {
             exportValue = getExCellaColumnValue(context, table, column, valueHoldingChildren, true).getValue();
@@ -342,7 +349,7 @@ interface ExCellaExporter<T extends UITable<?>> {
             return ColumnValue.of(exportFunction.invoke(context.getELContext(), new Object[]{column}));
         }
         else if (LangUtils.isNotBlank(column.getField())) {
-            if (isMaskedPasswordField(context, column)) {
+            if (isMaskedPasswordField(column)) {
                 return ColumnValue.of(getExporterOptions().getPasswordReplacement());
             }
             String value = table.getConvertedFieldValue(context, column);
@@ -371,12 +378,24 @@ interface ExCellaExporter<T extends UITable<?>> {
         return component instanceof Password && !getExporterOptions().isExportPassword();
     }
 
-    private boolean isMaskedPasswordField(FacesContext context, UIColumn column) {
+    private boolean isMaskedPasswordField(UIColumn column) {
         return !getExporterOptions().isExportPassword()
             && LangUtils.isNotBlank(column.getField())
-            && column.getChildren().stream().anyMatch(c -> c.visitTree(
-                VisitContext.createVisitContext(context, null, EnumSet.of(VisitHint.SKIP_UNRENDERED)),
-                (visitContext, component) -> component instanceof Password ? VisitResult.COMPLETE : VisitResult.ACCEPT));
+            && column.getChildren().stream().anyMatch(this::containsExportedPassword);
+    }
+
+    private boolean containsExportedPassword(UIComponent component) {
+        if (component == null || !component.isRendered()) {
+            return false;
+        }
+        if (component instanceof Password) {
+            return true;
+        }
+        if (component instanceof CellEditor) {
+            return containsExportedPassword(component.getFacet("output"));
+        }
+        return component.getFacets().values().stream().anyMatch(this::containsExportedPassword)
+            || component.getChildren().stream().anyMatch(this::containsExportedPassword);
     }
 
     default Entry<String, List<Object>> normalizeValues(Entry<String, List<Object>> entry) {
@@ -428,23 +447,7 @@ interface ExCellaExporter<T extends UITable<?>> {
         }
         if (component instanceof Link) {
             Link link = (Link)component;
-            if (link.getValue() != null) {
-                return link.getValue();
-            }
-            List<Object> values = link.getChildren().stream()
-                .filter(c -> !UIParameter.class.isAssignableFrom(c.getClass()))
-                .map(c -> exportObjectValue(context, c))
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
-            if (values.isEmpty()) {
-                return null;
-            }
-            if (values.size() == 1) {
-                return values.get(0);
-            }
-            return values.stream()
-                .map(Object::toString)
-                .collect(Collectors.joining());
+            return exportLinkValue(context, component, link.getValue());
         } else if (isMaskedPassword(component)) {
             return getExporterOptions().getPasswordReplacement();
         } else if (component instanceof ValueHolder) {
@@ -454,6 +457,26 @@ interface ExCellaExporter<T extends UITable<?>> {
             return exportObjectValue(context, component.getFacet("output"));
         }
         return exportValue(context, component);
+    }
+
+    private Object exportLinkValue(FacesContext context, UIComponent component, Object value) {
+        if (value != null) {
+            return value;
+        }
+        List<Object> values = component.getChildren().stream()
+            .filter(c -> !UIParameter.class.isAssignableFrom(c.getClass()))
+            .map(c -> exportObjectValue(context, c))
+            .filter(Objects::nonNull)
+            .collect(Collectors.toList());
+        if (values.isEmpty()) {
+            return null;
+        }
+        if (values.size() == 1) {
+            return values.get(0);
+        }
+        return values.stream()
+            .map(Object::toString)
+            .collect(Collectors.joining());
     }
 
     @SuppressWarnings("unchecked")

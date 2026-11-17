@@ -42,8 +42,14 @@ class DataPasswordModesTest extends AbstractPrimePageTest {
         try (Workbook workbook = WorkbookFactory.create(localFile.toFile(), null, true)) {
             Sheet sheet = workbook.getSheetAt(0);
             assertEquals(expectedRows + 2, sheet.getPhysicalNumberOfRows());
-            assertEquals("MASKED", sheet.getRow(0).getCell(0).getStringCellValue());
-            assertEquals("MASKED", sheet.getRow(expectedRows + 1).getCell(0).getStringCellValue());
+            assertAll(
+                () -> assertEquals("MASKED", sheet.getRow(0).getCell(0).getStringCellValue()),
+                () -> assertEquals("MASKED", sheet.getRow(0).getCell(1).getStringCellValue()),
+                () -> assertEquals("Wrapped Password", sheet.getRow(0).getCell(2).getStringCellValue()),
+                () -> assertEquals("MASKED", sheet.getRow(expectedRows + 1).getCell(0).getStringCellValue()),
+                () -> assertEquals("MASKED", sheet.getRow(expectedRows + 1).getCell(1).getStringCellValue()),
+                () -> assertEquals("Wrapped Password", sheet.getRow(expectedRows + 1).getCell(2).getStringCellValue())
+            );
             for (int i = 1; i <= expectedRows; i++) {
                 Row row = sheet.getRow(i);
                 String expectedValue = i + "-STRING value";
@@ -54,7 +60,8 @@ class DataPasswordModesTest extends AbstractPrimePageTest {
                     () -> assertEquals("MASKED", row.getCell(3).getStringCellValue()),
                     () -> assertEquals(expectedValue, row.getCell(4).getStringCellValue()),
                     () -> assertEquals("MASKED", row.getCell(5).getStringCellValue()),
-                    () -> assertEquals(expectedValue, row.getCell(6).getStringCellValue())
+                    () -> assertEquals(expectedValue, row.getCell(6).getStringCellValue()),
+                    () -> assertEquals(expectedValue, row.getCell(7).getStringCellValue())
                 );
             }
         }
