@@ -16,6 +16,7 @@ import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -33,6 +34,9 @@ import jakarta.el.ValueExpression;
 import jakarta.faces.component.UIComponent;
 import jakarta.faces.component.UIParameter;
 import jakarta.faces.component.ValueHolder;
+import jakarta.faces.component.visit.VisitContext;
+import jakarta.faces.component.visit.VisitHint;
+import jakarta.faces.component.visit.VisitResult;
 import jakarta.faces.context.FacesContext;
 import jakarta.faces.convert.Converter;
 
@@ -54,6 +58,7 @@ import org.primefaces.component.columngroup.ColumnGroup;
 import org.primefaces.component.export.ColumnValue;
 import org.primefaces.component.export.ExportConfiguration;
 import org.primefaces.component.link.Link;
+import org.primefaces.component.password.Password;
 import org.primefaces.util.Constants;
 import org.primefaces.util.FacetUtils;
 import org.primefaces.util.LangUtils;
@@ -288,7 +293,7 @@ interface ExCellaExporter<T extends UITable<?>> {
 
         Object exportValue;
         List<UIComponentWithCompositeParent> valueHoldingChildren = extractValueHoldingChildren(column);
-        if (valueHoldingChildren.size() == 1) {
+        if (valueHoldingChildren.size() == 1 && !isMaskedPasswordField(context, column)) {
             exportValue = exportObjectValue(context, valueHoldingChildren.get(0));
         } else {
             exportValue = getExCellaColumnValue(context, table, column, valueHoldingChildren, true).getValue();
@@ -334,6 +339,9 @@ interface ExCellaExporter<T extends UITable<?>> {
             return ColumnValue.of(exportFunction.invoke(context.getELContext(), new Object[]{column}));
         }
         else if (LangUtils.isNotBlank(column.getField())) {
+            if (isMaskedPasswordField(context, column)) {
+                return ColumnValue.of(getExporterOptions().getPasswordReplacement());
+            }
             String value = table.getConvertedFieldValue(context, column);
             return ColumnValue.of(value);
         }
@@ -354,6 +362,14 @@ interface ExCellaExporter<T extends UITable<?>> {
             }
             return ColumnValue.of(values.get(0));
         }
+    }
+
+    private boolean isMaskedPasswordField(FacesContext context, UIColumn column) {
+        return !getExporterOptions().isExportPassword()
+            && LangUtils.isNotBlank(column.getField())
+            && column.getChildren().stream().anyMatch(c -> c.visitTree(
+                VisitContext.createVisitContext(context, null, EnumSet.of(VisitHint.SKIP_UNRENDERED)),
+                (visitContext, component) -> component instanceof Password ? VisitResult.COMPLETE : VisitResult.ACCEPT));
     }
 
     default Entry<String, List<Object>> normalizeValues(Entry<String, List<Object>> entry) {
@@ -422,6 +438,8 @@ interface ExCellaExporter<T extends UITable<?>> {
             return values.stream()
                 .map(Object::toString)
                 .collect(Collectors.joining());
+        } else if (component instanceof Password && !getExporterOptions().isExportPassword()) {
+            return getExporterOptions().getPasswordReplacement();
         } else if (component instanceof ValueHolder) {
             ValueHolder valueHolder = (ValueHolder)component;
             return getComponentValue(context, valueHolder);

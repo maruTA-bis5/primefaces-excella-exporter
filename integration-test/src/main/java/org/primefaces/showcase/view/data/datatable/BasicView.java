@@ -30,10 +30,24 @@ import java.util.List;
 import jakarta.faces.view.ViewScoped;
 import jakarta.inject.Named;
 
+import net.bis5.excella.primefaces.exporter.ExCellaExporterOptions;
 
 @Named("dtBasicView")
 @ViewScoped
 public class BasicView implements Serializable {
+
+    public ExCellaExporterOptions getPasswordOptions() {
+        ExCellaExporterOptions options = new ExCellaExporterOptions();
+        options.setExportPassword(false);
+        options.setPasswordReplacement("MASKED");
+        return options;
+    }
+
+    public ExCellaExporterOptions getPasswordDefaultOptions() {
+        ExCellaExporterOptions options = new ExCellaExporterOptions();
+        options.setExportPassword(false);
+        return options;
+    }
 
     public List<DataTypeCheck> getDataTypes() {
         return dataTypes;
@@ -44,8 +58,32 @@ public class BasicView implements Serializable {
     }
 
     private List<DataTypeCheck> dataTypes = new ArrayList<>(Arrays.asList(new DataTypeCheck()));
+    private final List<DataTypeCheck> passwordRows = Arrays.asList(
+        new DataTypeCheck("1-"), new DataTypeCheck("2-"), new DataTypeCheck("3-"));
+    private List<DataTypeCheck> selection;
+
+    public List<DataTypeCheck> getPasswordRows() {
+        return passwordRows;
+    }
+
+    public List<DataTypeCheck> getSelection() {
+        return selection;
+    }
+
+    public void setSelection(List<DataTypeCheck> selection) {
+        this.selection = selection;
+    }
+
     public static class DataTypeCheck implements Serializable {
-        private final String stringProperty = "STRING value";
+        public DataTypeCheck() {
+            this("");
+        }
+
+        public DataTypeCheck(String prefix) {
+            stringProperty = prefix + "STRING value";
+        }
+
+        private final String stringProperty;
         private final YearMonth yearMonthProperty = YearMonth.of(2021, 4);
         private final Date dateProperty = newDate();
         private final Date dateTimeProperty = newDateTime();
@@ -55,6 +93,8 @@ public class BasicView implements Serializable {
         private final BigDecimal bigDecimalIntProperty = new BigDecimal("321.00");
         private final double doubleProperty = 102.4;
         private final BigDecimal bigDecimalDecimalProperty = new BigDecimal("204.89");
+        private final String passwordNullProperty = null;
+        private final String passwordEmptyProperty = "";
 
         private static Date newDate() {
             return Date.from(LocalDate.of(2021, 10, 24).atStartOfDay(ZoneId.systemDefault()).toInstant());
@@ -88,6 +128,12 @@ public class BasicView implements Serializable {
         }
         public BigDecimal getBigDecimalDecimalProperty() {
             return bigDecimalDecimalProperty;
+        }
+        public String getPasswordNullProperty() {
+            return passwordNullProperty;
+        }
+        public String getPasswordEmptyProperty() {
+            return passwordEmptyProperty;
         }
         private static Date newDateTime() {
             Calendar cal = Calendar.getInstance();

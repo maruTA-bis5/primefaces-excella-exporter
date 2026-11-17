@@ -38,6 +38,16 @@
               <h:outputLabel>ExCella Reports (Ajax)</h:outputLabel>
               <p:dataExporter type="excella" target="tbl2" fileName="cars-ajax" />
           </p:commandLink>
+          <br />
+          <p:commandLink id="excellaExportPasswordMasked" ajax="false">
+              <h:outputLabel>ExCella Reports (Password masked)</h:outputLabel>
+              <p:dataExporter type="excella" target="tbl2" fileName="cars-password-masked" options="#{dtBasicView.passwordOptions}" />
+          </p:commandLink>
+          <br />
+          <p:commandLink id="excellaExportPasswordDefaultReplacement" ajax="false">
+              <h:outputLabel>ExCella Reports (Password default replacement)</h:outputLabel>
+              <p:dataExporter type="excella" target="tbl2" fileName="cars-password-default-replacement" options="#{dtBasicView.passwordDefaultOptions}" />
+          </p:commandLink>
 
           <p:dataTable id="tbl2" var="row" value="#{dtBasicView.dataTypes}">
               <p:column headerText="String" footerText="String">
@@ -102,6 +112,26 @@
               <p:column headerText="Composite + Normal Component" footerText="Composite + Normal Component">
                 <comp2:compositeOutput labelValue="foo" textValue="bar" />
                 <h:outputText value="(note)" />
+              </p:column>
+              <p:column headerText="Password" footerText="Password">
+                  <p:password value="#{row.stringProperty}" disabled="true" />
+              </p:column>
+              <p:column headerText="Password (null)" footerText="Password (null)">
+                  <p:password value="#{row.passwordNullProperty}" disabled="true" />
+              </p:column>
+              <p:column headerText="Password (empty)" footerText="Password (empty)">
+                  <p:password value="#{row.passwordEmptyProperty}" disabled="true" />
+              </p:column>
+              <p:column field="stringProperty" headerText="Password field" footerText="Password field">
+                  <p:password value="#{row.stringProperty}" disabled="true" />
+                  <h:outputText value="additional child" />
+              </p:column>
+              <p:column field="stringProperty" headerText="Password field (panelGroup)" footerText="Password field (panelGroup)">
+                  <h:panelGroup>
+                      <p:password value="#{row.stringProperty}" disabled="true" />
+                  </h:panelGroup>
+                  <h:outputText value="additional child 1" />
+                  <h:outputText value="additional child 2" />
               </p:column>
           </p:dataTable>
       </h:form>
