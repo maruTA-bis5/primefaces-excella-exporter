@@ -46,9 +46,15 @@ class TreePasswordModesTest extends AbstractPrimePageTest {
                 () -> assertEquals("MASKED", sheet.getRow(0).getCell(0).getStringCellValue()),
                 () -> assertEquals("MASKED", sheet.getRow(0).getCell(1).getStringCellValue()),
                 () -> assertEquals("Wrapped Password", sheet.getRow(0).getCell(2).getStringCellValue()),
+                () -> assertEquals("Public Link Label", sheet.getRow(0).getCell(7).getStringCellValue()),
+                () -> assertEquals("Public Command Link Label", sheet.getRow(0).getCell(8).getStringCellValue()),
+                () -> assertEquals("Masked Link With Sibling", sheet.getRow(0).getCell(9).getStringCellValue()),
                 () -> assertEquals("MASKED", sheet.getRow(expectedRows + 1).getCell(0).getStringCellValue()),
                 () -> assertEquals("MASKED", sheet.getRow(expectedRows + 1).getCell(1).getStringCellValue()),
-                () -> assertEquals("Wrapped Password", sheet.getRow(expectedRows + 1).getCell(2).getStringCellValue())
+                () -> assertEquals("Wrapped Password", sheet.getRow(expectedRows + 1).getCell(2).getStringCellValue()),
+                () -> assertEquals("Public Link Label", sheet.getRow(expectedRows + 1).getCell(7).getStringCellValue()),
+                () -> assertEquals("Public Command Link Label", sheet.getRow(expectedRows + 1).getCell(8).getStringCellValue()),
+                () -> assertEquals("Masked Link With Sibling", sheet.getRow(expectedRows + 1).getCell(9).getStringCellValue())
             );
             for (int i = 1; i <= expectedRows; i++) {
                 Row row = sheet.getRow(i);
@@ -60,7 +66,10 @@ class TreePasswordModesTest extends AbstractPrimePageTest {
                     () -> assertEquals("MASKED", row.getCell(3).getStringCellValue()),
                     () -> assertEquals(expectedValue, row.getCell(4).getStringCellValue()),
                     () -> assertEquals("MASKED", row.getCell(5).getStringCellValue()),
-                    () -> assertEquals(expectedValue, row.getCell(6).getStringCellValue())
+                    () -> assertEquals(expectedValue, row.getCell(6).getStringCellValue()),
+                    () -> assertEquals("Public tree link label", row.getCell(7).getStringCellValue()),
+                    () -> assertEquals("MASKED", row.getCell(8).getStringCellValue()),
+                    () -> assertEquals("MASKED", row.getCell(9).getStringCellValue())
                 );
             }
         }

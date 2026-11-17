@@ -307,7 +307,9 @@ interface ExCellaExporter<T extends UITable<?>> {
 
         Object exportValue;
         List<UIComponentWithCompositeParent> valueHoldingChildren = extractValueHoldingChildren(column);
-        if (valueHoldingChildren.size() == 1 && !isMaskedPasswordField(context, column)) {
+        if (valueHoldingChildren.size() == 1
+                && (hasExplicitValueThatOverridesChildren(context, valueHoldingChildren.get(0))
+                    || !isMaskedPasswordField(context, column))) {
             exportValue = exportObjectValue(context, valueHoldingChildren.get(0));
         } else {
             exportValue = getExCellaColumnValue(context, table, column, valueHoldingChildren, true).getValue();
@@ -315,6 +317,31 @@ interface ExCellaExporter<T extends UITable<?>> {
 
         List<Object> values = dataContainer.computeIfAbsent(columnKey, ignore -> new ArrayList<>());
         values.add(exportValue);
+    }
+
+    private boolean hasExplicitValueThatOverridesChildren(FacesContext context, UIComponentWithCompositeParent component) {
+        if (component.isInCompositeComponent()) {
+            component.getCompositeParent().pushComponentToEL(context, null);
+            try {
+                return hasExplicitValueThatOverridesChildren(component.getComponent());
+            } finally {
+                component.getCompositeParent().popComponentFromEL(context);
+            }
+        }
+        return hasExplicitValueThatOverridesChildren(component.getComponent());
+    }
+
+    private boolean hasExplicitValueThatOverridesChildren(UIComponent component) {
+        if (component instanceof UICommand) {
+            return ((UICommand)component).getValue() != null;
+        }
+        if (component instanceof Link) {
+            return ((Link)component).getValue() != null;
+        }
+        if (component instanceof CellEditor) {
+            return hasExplicitValueThatOverridesChildren(component.getFacet("output"));
+        }
+        return false;
     }
 
     private List<UIComponentWithCompositeParent> extractValueHoldingChildren(UIColumn column) {
@@ -407,12 +434,6 @@ interface ExCellaExporter<T extends UITable<?>> {
                     } finally {
                         visitedComponent.popComponentFromEL(context);
                     }
-                    return VisitResult.REJECT;
-                }
-                if (visitedComponent instanceof UICommand && ((UICommand)visitedComponent).getValue() != null) {
-                    return VisitResult.REJECT;
-                }
-                if (visitedComponent instanceof Link && ((Link)visitedComponent).getValue() != null) {
                     return VisitResult.REJECT;
                 }
                 if (visitedComponent instanceof CellEditor) {
