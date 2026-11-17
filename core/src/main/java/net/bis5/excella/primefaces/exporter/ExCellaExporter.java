@@ -16,6 +16,7 @@ import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -34,6 +35,9 @@ import jakarta.faces.component.UICommand;
 import jakarta.faces.component.UIComponent;
 import jakarta.faces.component.UIParameter;
 import jakarta.faces.component.ValueHolder;
+import jakarta.faces.component.visit.VisitContext;
+import jakarta.faces.component.visit.VisitHint;
+import jakarta.faces.component.visit.VisitResult;
 import jakarta.faces.context.FacesContext;
 import jakarta.faces.convert.Converter;
 
@@ -303,7 +307,7 @@ interface ExCellaExporter<T extends UITable<?>> {
 
         Object exportValue;
         List<UIComponentWithCompositeParent> valueHoldingChildren = extractValueHoldingChildren(column);
-        if (valueHoldingChildren.size() == 1 && !isMaskedPasswordField(column)) {
+        if (valueHoldingChildren.size() == 1 && !isMaskedPasswordField(context, column)) {
             exportValue = exportObjectValue(context, valueHoldingChildren.get(0));
         } else {
             exportValue = getExCellaColumnValue(context, table, column, valueHoldingChildren, true).getValue();
@@ -349,7 +353,7 @@ interface ExCellaExporter<T extends UITable<?>> {
             return ColumnValue.of(exportFunction.invoke(context.getELContext(), new Object[]{column}));
         }
         else if (LangUtils.isNotBlank(column.getField())) {
-            if (isMaskedPasswordField(column)) {
+            if (isMaskedPasswordField(context, column)) {
                 return ColumnValue.of(getExporterOptions().getPasswordReplacement());
             }
             String value = table.getConvertedFieldValue(context, column);
@@ -378,24 +382,34 @@ interface ExCellaExporter<T extends UITable<?>> {
         return component instanceof Password && !getExporterOptions().isExportPassword();
     }
 
-    private boolean isMaskedPasswordField(UIColumn column) {
+    private boolean isMaskedPasswordField(FacesContext context, UIColumn column) {
         return !getExporterOptions().isExportPassword()
             && LangUtils.isNotBlank(column.getField())
-            && column.getChildren().stream().anyMatch(this::containsExportedPassword);
+            && column.getChildren().stream().anyMatch(c -> containsExportedPassword(context, c));
     }
 
-    private boolean containsExportedPassword(UIComponent component) {
+    private boolean containsExportedPassword(FacesContext context, UIComponent component) {
         if (component == null || !component.isRendered()) {
             return false;
         }
-        if (component instanceof Password) {
-            return true;
-        }
-        if (component instanceof CellEditor) {
-            return containsExportedPassword(component.getFacet("output"));
-        }
-        return component.getFacets().values().stream().anyMatch(this::containsExportedPassword)
-            || component.getChildren().stream().anyMatch(this::containsExportedPassword);
+        boolean[] found = {false};
+        component.visitTree(
+            VisitContext.createVisitContext(context, null, EnumSet.of(VisitHint.SKIP_UNRENDERED)),
+            (visitContext, visitedComponent) -> {
+                if (visitedComponent instanceof CellEditor) {
+                    if (containsExportedPassword(context, visitedComponent.getFacet("output"))) {
+                        found[0] = true;
+                        return VisitResult.COMPLETE;
+                    }
+                    return VisitResult.REJECT;
+                }
+                if (visitedComponent instanceof Password) {
+                    found[0] = true;
+                    return VisitResult.COMPLETE;
+                }
+                return VisitResult.ACCEPT;
+            });
+        return found[0];
     }
 
     default Entry<String, List<Object>> normalizeValues(Entry<String, List<Object>> entry) {
