@@ -2,10 +2,12 @@ package net.bis5.excella.primefaces.exporter.datatable;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.nio.file.Path;
 
+import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -46,8 +48,10 @@ class DataPasswordModesTest extends AbstractPrimePageTest {
             assertAll(
                 () -> assertEquals("MASKED", sheet.getRow(0).getCell(0).getStringCellValue()),
                 () -> assertEquals("MASKED", sheet.getRow(0).getCell(1).getStringCellValue()),
+                () -> assertTrue(sheet.getRow(0).getCell(2).getStringCellValue().contains("$")),
                 () -> assertEquals("MASKED", sheet.getRow(sheet.getLastRowNum()).getCell(0).getStringCellValue()),
-                () -> assertEquals("MASKED", sheet.getRow(sheet.getLastRowNum()).getCell(1).getStringCellValue())
+                () -> assertEquals("MASKED", sheet.getRow(sheet.getLastRowNum()).getCell(1).getStringCellValue()),
+                () -> assertTrue(sheet.getRow(sheet.getLastRowNum()).getCell(2).getStringCellValue().contains("$"))
             );
         }
     }
@@ -74,7 +78,12 @@ class DataPasswordModesTest extends AbstractPrimePageTest {
                     () -> assertEquals("MASKED", row.getCell(3).getStringCellValue()),
                     () -> assertEquals(expectedValue, row.getCell(4).getStringCellValue()),
                     () -> assertEquals("MASKED", row.getCell(5).getStringCellValue()),
-                    () -> assertEquals(expectedValue, row.getCell(6).getStringCellValue())
+                    () -> assertEquals(expectedValue, row.getCell(6).getStringCellValue()),
+                    () -> assertEquals(CellType.NUMERIC, row.getCell(9).getCellType()),
+                    () -> assertEquals(204.89, row.getCell(9).getNumericCellValue(), 0.001),
+                    () -> assertEquals("Public link label", row.getCell(10).getStringCellValue()),
+                    () -> assertEquals(expectedValue, row.getCell(11).getStringCellValue()),
+                    () -> assertEquals(expectedValue, row.getCell(12).getStringCellValue())
                 );
             }
         }
