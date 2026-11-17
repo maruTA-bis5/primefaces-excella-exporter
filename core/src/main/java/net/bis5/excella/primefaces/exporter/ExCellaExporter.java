@@ -409,6 +409,9 @@ interface ExCellaExporter<T extends UITable<?>> {
                     }
                     return VisitResult.REJECT;
                 }
+                if (visitedComponent instanceof Link && ((Link)visitedComponent).getValue() != null) {
+                    return VisitResult.REJECT;
+                }
                 if (visitedComponent instanceof CellEditor) {
                     if (containsExportedPassword(context, visitedComponent.getFacet("output"))) {
                         found[0] = true;
