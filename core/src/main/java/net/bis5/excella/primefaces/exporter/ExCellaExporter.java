@@ -488,7 +488,7 @@ interface ExCellaExporter<T extends UITable<?>> {
 
     private Object exportLinkValue(FacesContext context, UIComponent component, Object value) {
         if (value != null) {
-            return value;
+            return getComponentValue(context, component);
         }
         List<Object> values = component.getChildren().stream()
             .filter(c -> !UIParameter.class.isAssignableFrom(c.getClass()))
