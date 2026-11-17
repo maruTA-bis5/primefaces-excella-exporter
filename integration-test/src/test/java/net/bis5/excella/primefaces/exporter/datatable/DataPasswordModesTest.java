@@ -51,6 +51,7 @@ class DataPasswordModesTest extends AbstractPrimePageTest {
                 () -> assertEquals("MASKED", sheet.getRow(expectedRows + 1).getCell(0).getStringCellValue()),
                 () -> assertEquals("MASKED", sheet.getRow(expectedRows + 1).getCell(1).getStringCellValue()),
                 () -> assertEquals("Wrapped Password", sheet.getRow(expectedRows + 1).getCell(2).getStringCellValue()),
+                () -> assertTrue(sheet.getRow(expectedRows + 1).getCell(3).getStringCellValue().contains("$")),
                 () -> assertTrue(sheet.getRow(0).getCell(3).getStringCellValue().contains("$"))
             );
             for (int i = 1; i <= expectedRows; i++) {

@@ -492,7 +492,8 @@ interface ExCellaExporter<T extends UITable<?>> {
         }
         List<Object> values = component.getChildren().stream()
             .filter(c -> !UIParameter.class.isAssignableFrom(c.getClass()))
-            .map(c -> exportObjectValue(context, c))
+            .filter(UIComponent::isRendered)
+            .map(c -> convertExplicitValue ? exportValue(context, c) : exportObjectValue(context, c))
             .filter(Objects::nonNull)
             .collect(Collectors.toList());
         if (values.isEmpty()) {
