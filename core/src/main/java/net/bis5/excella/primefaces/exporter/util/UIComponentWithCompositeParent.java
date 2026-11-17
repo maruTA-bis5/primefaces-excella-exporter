@@ -2,22 +2,24 @@ package net.bis5.excella.primefaces.exporter.util;
 
 import javax.faces.component.UIComponent;
 
+import org.jspecify.annotations.Nullable;
+
 /**
  * A wrapper of UIComponent to keep its composite component parent if exists.
  */
 public class UIComponentWithCompositeParent {
     private final UIComponent component;
-    private final UIComponent compositeParent;
+    private final @Nullable UIComponent compositeParent;
 
     public UIComponent getComponent() {
         return component;
     }
 
-    public UIComponent getCompositeParent() {
+    public @Nullable UIComponent getCompositeParent() {
         return compositeParent;
     }
 
-    public UIComponentWithCompositeParent(UIComponent component, UIComponent compositeParent) {
+    public UIComponentWithCompositeParent(UIComponent component, @Nullable UIComponent compositeParent) {
         this.component = component;
         this.compositeParent = compositeParent;
     }
