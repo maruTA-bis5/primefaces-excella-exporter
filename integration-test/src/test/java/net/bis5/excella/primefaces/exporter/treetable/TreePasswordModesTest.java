@@ -37,12 +37,33 @@ class TreePasswordModesTest extends AbstractPrimePageTest {
         assertMaskedRows("tree-password-selection.xlsx", 1);
     }
 
+    @Test
+    void exportColumnGroupFacets(Page page) throws IOException {
+        page.exportGroupedFacets.getRoot().click();
+        Path localFile = Download.downloadFileToLocal("tree-password-grouped-facets.xlsx");
+        try (Workbook workbook = WorkbookFactory.create(localFile.toFile(), null, true)) {
+            Sheet sheet = workbook.getSheetAt(0);
+            assertAll(
+                () -> assertEquals("MASKED", sheet.getRow(0).getCell(0).getStringCellValue()),
+                () -> assertEquals("MASKED", sheet.getRow(0).getCell(1).getStringCellValue()),
+                () -> assertEquals("MASKED", sheet.getRow(sheet.getLastRowNum()).getCell(0).getStringCellValue()),
+                () -> assertEquals("MASKED", sheet.getRow(sheet.getLastRowNum()).getCell(1).getStringCellValue())
+            );
+        }
+    }
+
     private void assertMaskedRows(String fileName, int expectedRows) throws IOException {
         Path localFile = Download.downloadFileToLocal(fileName);
         try (Workbook workbook = WorkbookFactory.create(localFile.toFile(), null, true)) {
             Sheet sheet = workbook.getSheetAt(0);
             assertEquals(expectedRows + 2, sheet.getPhysicalNumberOfRows());
             assertEquals("String", sheet.getRow(expectedRows + 1).getCell(0).getStringCellValue());
+            assertAll(
+                () -> assertEquals("MASKED", sheet.getRow(0).getCell(7).getStringCellValue()),
+                () -> assertEquals("MASKED", sheet.getRow(expectedRows + 1).getCell(7).getStringCellValue()),
+                () -> assertEquals("MASKED", sheet.getRow(0).getCell(8).getStringCellValue()),
+                () -> assertEquals("MASKED", sheet.getRow(expectedRows + 1).getCell(8).getStringCellValue())
+            );
             for (int i = 1; i <= expectedRows; i++) {
                 Row row = sheet.getRow(i);
                 String expectedValue = i + "-STRING value";
@@ -65,6 +86,9 @@ class TreePasswordModesTest extends AbstractPrimePageTest {
 
         @FindBy(id = "form:exportSelection")
         CommandLink exportSelection;
+
+        @FindBy(id = "form:exportGroupedFacets")
+        CommandLink exportGroupedFacets;
 
         @FindBy(id = "form:tbl_node_0")
         WebElement firstRow;

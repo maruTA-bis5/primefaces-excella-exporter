@@ -99,6 +99,14 @@ public class DataTableExcellaExporter extends DataTableExporter<ReportBook, ExCe
     }
 
     @Override
+    public String getComponentValue(FacesContext context, UIComponent component) {
+        if (isMaskedPassword(component)) {
+            return getExporterOptions().getPasswordReplacement();
+        }
+        return super.getComponentValue(context, component);
+    }
+
+    @Override
     protected void exportCellValue(FacesContext context, DataTable table, UIColumn col, ColumnValue value, int index) {
         Map<String, List<Object>> dataContainer = getDataContainer(currentSheet);
         addCellValue(context, dataContainer, table, index, col);

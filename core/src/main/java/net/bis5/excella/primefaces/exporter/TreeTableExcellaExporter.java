@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import javax.faces.component.UIComponent;
 import javax.faces.context.FacesContext;
 
 import org.apache.commons.math3.util.Pair;
@@ -448,6 +449,14 @@ public class TreeTableExcellaExporter extends TreeTableExporter<ReportBook, ExCe
     @Override
     public ColumnValue getColumnValue(FacesContext context, @SuppressWarnings("rawtypes") UITable table, UIColumn column, boolean joinComponents) {
         return getExCellaColumnValue(context, (TreeTable)table, column, joinComponents);
+    }
+
+    @Override
+    public String getComponentValue(FacesContext context, UIComponent component) {
+        if (isMaskedPassword(component)) {
+            return getExporterOptions().getPasswordReplacement();
+        }
+        return super.getComponentValue(context, component);
     }
 
     @Override
