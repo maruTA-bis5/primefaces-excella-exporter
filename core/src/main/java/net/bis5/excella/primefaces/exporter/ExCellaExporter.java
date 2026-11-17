@@ -261,10 +261,10 @@ interface ExCellaExporter<T extends UITable<?>> {
             return getExporterOptions().getPasswordReplacement();
         }
         if (component instanceof UICommand) {
-            return Objects.toString(exportLinkValue(context, component, ((UICommand)component).getValue()), null);
+            return Objects.toString(exportLinkValue(context, component, ((UICommand)component).getValue(), true), null);
         }
         if (component instanceof Link) {
-            return Objects.toString(exportLinkValue(context, component, ((Link)component).getValue()), null);
+            return Objects.toString(exportLinkValue(context, component, ((Link)component).getValue(), true), null);
         }
         if (component instanceof CellEditor) {
             UIComponent output = component.getFacet("output");
@@ -474,7 +474,7 @@ interface ExCellaExporter<T extends UITable<?>> {
         }
         if (component instanceof Link) {
             Link link = (Link)component;
-            return exportLinkValue(context, component, link.getValue());
+            return exportLinkValue(context, component, link.getValue(), false);
         } else if (isMaskedPassword(component)) {
             return getExporterOptions().getPasswordReplacement();
         } else if (component instanceof ValueHolder) {
@@ -486,9 +486,9 @@ interface ExCellaExporter<T extends UITable<?>> {
         return exportValue(context, component);
     }
 
-    private Object exportLinkValue(FacesContext context, UIComponent component, Object value) {
+    private Object exportLinkValue(FacesContext context, UIComponent component, Object value, boolean convertExplicitValue) {
         if (value != null) {
-            return getComponentValue(context, component);
+            return convertExplicitValue ? getComponentValue(context, component) : value;
         }
         List<Object> values = component.getChildren().stream()
             .filter(c -> !UIParameter.class.isAssignableFrom(c.getClass()))

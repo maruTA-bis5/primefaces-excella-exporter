@@ -2,10 +2,12 @@ package net.bis5.excella.primefaces.exporter.datatable;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.nio.file.Path;
 
+import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -48,7 +50,8 @@ class DataPasswordModesTest extends AbstractPrimePageTest {
                 () -> assertEquals("Wrapped Password", sheet.getRow(0).getCell(2).getStringCellValue()),
                 () -> assertEquals("MASKED", sheet.getRow(expectedRows + 1).getCell(0).getStringCellValue()),
                 () -> assertEquals("MASKED", sheet.getRow(expectedRows + 1).getCell(1).getStringCellValue()),
-                () -> assertEquals("Wrapped Password", sheet.getRow(expectedRows + 1).getCell(2).getStringCellValue())
+                () -> assertEquals("Wrapped Password", sheet.getRow(expectedRows + 1).getCell(2).getStringCellValue()),
+                () -> assertTrue(sheet.getRow(0).getCell(3).getStringCellValue().contains("$"))
             );
             for (int i = 1; i <= expectedRows; i++) {
                 Row row = sheet.getRow(i);
@@ -57,11 +60,13 @@ class DataPasswordModesTest extends AbstractPrimePageTest {
                     () -> assertEquals(expectedValue, row.getCell(0).getStringCellValue()),
                     () -> assertEquals("MASKED", row.getCell(1).getStringCellValue()),
                     () -> assertEquals("MASKED", row.getCell(2).getStringCellValue()),
-                    () -> assertEquals("MASKED", row.getCell(3).getStringCellValue()),
-                    () -> assertEquals(expectedValue, row.getCell(4).getStringCellValue()),
-                    () -> assertEquals("MASKED", row.getCell(5).getStringCellValue()),
-                    () -> assertEquals(expectedValue, row.getCell(6).getStringCellValue()),
-                    () -> assertEquals(expectedValue, row.getCell(7).getStringCellValue())
+                    () -> assertEquals(CellType.NUMERIC, row.getCell(3).getCellType()),
+                    () -> assertEquals(204.89, row.getCell(3).getNumericCellValue(), 0.001),
+                    () -> assertEquals("MASKED", row.getCell(4).getStringCellValue()),
+                    () -> assertEquals(expectedValue, row.getCell(5).getStringCellValue()),
+                    () -> assertEquals("MASKED", row.getCell(6).getStringCellValue()),
+                    () -> assertEquals(expectedValue, row.getCell(7).getStringCellValue()),
+                    () -> assertEquals(expectedValue, row.getCell(8).getStringCellValue())
                 );
             }
         }
