@@ -42,7 +42,8 @@ class DataPasswordModesTest extends AbstractPrimePageTest {
         try (Workbook workbook = WorkbookFactory.create(localFile.toFile(), null, true)) {
             Sheet sheet = workbook.getSheetAt(0);
             assertEquals(expectedRows + 2, sheet.getPhysicalNumberOfRows());
-            assertEquals("String", sheet.getRow(expectedRows + 1).getCell(0).getStringCellValue());
+            assertEquals("MASKED", sheet.getRow(0).getCell(0).getStringCellValue());
+            assertEquals("MASKED", sheet.getRow(expectedRows + 1).getCell(0).getStringCellValue());
             for (int i = 1; i <= expectedRows; i++) {
                 Row row = sheet.getRow(i);
                 String expectedValue = i + "-STRING value";

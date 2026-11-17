@@ -256,6 +256,9 @@ interface ExCellaExporter<T extends UITable<?>> {
     void setExportParameters(ReportSheet reportSheet, List<Object> columnHeader, List<Object> columnFooter, Map<String, List<Object>> dataContainer);
 
     default String exportValue(FacesContext context, UIComponent component) {
+        if (isMaskedPassword(component)) {
+            return getExporterOptions().getPasswordReplacement();
+        }
         String value = getComponentValue(context, component);
         if (isComponentUIInstructions(component)) {
             return exportUIInstructionsValue(context, component, value);
@@ -364,6 +367,10 @@ interface ExCellaExporter<T extends UITable<?>> {
         }
     }
 
+    private boolean isMaskedPassword(UIComponent component) {
+        return component instanceof Password && !getExporterOptions().isExportPassword();
+    }
+
     private boolean isMaskedPasswordField(FacesContext context, UIColumn column) {
         return !getExporterOptions().isExportPassword()
             && LangUtils.isNotBlank(column.getField())
@@ -438,7 +445,7 @@ interface ExCellaExporter<T extends UITable<?>> {
             return values.stream()
                 .map(Object::toString)
                 .collect(Collectors.joining());
-        } else if (component instanceof Password && !getExporterOptions().isExportPassword()) {
+        } else if (isMaskedPassword(component)) {
             return getExporterOptions().getPasswordReplacement();
         } else if (component instanceof ValueHolder) {
             ValueHolder valueHolder = (ValueHolder)component;
