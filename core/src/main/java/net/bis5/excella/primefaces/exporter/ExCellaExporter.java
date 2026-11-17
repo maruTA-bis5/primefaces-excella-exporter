@@ -396,6 +396,19 @@ interface ExCellaExporter<T extends UITable<?>> {
         component.visitTree(
             VisitContext.createVisitContext(context, null, EnumSet.of(VisitHint.SKIP_UNRENDERED)),
             (visitContext, visitedComponent) -> {
+                if (UIComponent.isCompositeComponent(visitedComponent)) {
+                    visitedComponent.pushComponentToEL(context, null);
+                    try {
+                        if (containsExportedPassword(context,
+                                visitedComponent.getFacet(UIComponent.COMPOSITE_FACET_NAME))) {
+                            found[0] = true;
+                            return VisitResult.COMPLETE;
+                        }
+                    } finally {
+                        visitedComponent.popComponentFromEL(context);
+                    }
+                    return VisitResult.REJECT;
+                }
                 if (visitedComponent instanceof CellEditor) {
                     if (containsExportedPassword(context, visitedComponent.getFacet("output"))) {
                         found[0] = true;
