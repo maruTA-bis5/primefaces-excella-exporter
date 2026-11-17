@@ -32,9 +32,18 @@ import javax.inject.Named;
 import org.primefaces.model.DefaultTreeNode;
 import org.primefaces.model.TreeNode;
 
+import net.bis5.excella.primefaces.exporter.ExCellaExporterOptions;
+
 @Named("ttBasicView")
 @ViewScoped
 public class BasicView implements Serializable {
+
+    public ExCellaExporterOptions getPasswordOptions() {
+        ExCellaExporterOptions options = new ExCellaExporterOptions();
+        options.setExportPassword(false);
+        options.setPasswordReplacement("MASKED");
+        return options;
+    }
 
     private List<TreeNode<DataTypeCheck>> selection;
 
@@ -55,6 +64,11 @@ public class BasicView implements Serializable {
     }
 
     private TreeNode<DataTypeCheck> root = new DefaultTreeNode<>();
+    private final TreeNode<DataTypeCheck> passwordRoot = new DefaultTreeNode<>();
+
+    public TreeNode<DataTypeCheck> getPasswordRoot() {
+        return passwordRoot;
+    }
 
     public static class EvenOddNode<T> extends DefaultTreeNode<T> {
         private final boolean even;
@@ -74,6 +88,9 @@ public class BasicView implements Serializable {
 
     @PostConstruct
     public void initialize() {
+        for (int i = 1; i <= 3; i++) {
+            new DefaultTreeNode<>(new DataTypeCheck(i + "-"), passwordRoot);
+        }
         TreeNode<DataTypeCheck> parent = createTreeNode("P1-", 1, root, false);
         createTreeNode("C1-", 2, parent, true);
         parent.setExpanded(true);

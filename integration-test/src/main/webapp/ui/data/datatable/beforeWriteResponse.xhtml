@@ -103,6 +103,26 @@
                 <comp2:compositeOutput labelValue="foo" textValue="bar" />
                 <h:outputText value="(note)" />
               </p:column>
+              <p:column headerText="Password" footerText="Password">
+                  <p:password value="#{row.stringProperty}" disabled="true" />
+              </p:column>
+              <p:column headerText="Password (null)" footerText="Password (null)">
+                  <p:password value="#{row.passwordNullProperty}" disabled="true" />
+              </p:column>
+              <p:column headerText="Password (empty)" footerText="Password (empty)">
+                  <p:password value="#{row.passwordEmptyProperty}" disabled="true" />
+              </p:column>
+              <p:column field="stringProperty" headerText="Password field" footerText="Password field">
+                  <p:password value="#{row.stringProperty}" disabled="true" />
+                  <h:outputText value="additional child" />
+              </p:column>
+              <p:column field="stringProperty" headerText="Password field (panelGroup)" footerText="Password field (panelGroup)">
+                  <h:panelGroup>
+                      <p:password value="#{row.stringProperty}" disabled="true" />
+                  </h:panelGroup>
+                  <h:outputText value="additional child 1" />
+                  <h:outputText value="additional child 2" />
+              </p:column>
           </p:dataTable>
       </h:form>
     </h:body>
