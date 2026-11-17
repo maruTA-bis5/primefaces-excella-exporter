@@ -314,7 +314,9 @@ interface ExCellaExporter<T extends UITable<?>> {
 
         Object exportValue;
         List<UIComponentWithCompositeParent> valueHoldingChildren = extractValueHoldingChildren(column);
-        if (valueHoldingChildren.size() == 1 && !isMaskedPasswordField(context, column)) {
+        boolean selectedExplicitLinkValue = valueHoldingChildren.size() == 1
+            && hasExplicitLinkValue(context, valueHoldingChildren.get(0));
+        if (valueHoldingChildren.size() == 1 && (selectedExplicitLinkValue || !isMaskedPasswordField(context, column))) {
             exportValue = exportObjectValue(context, valueHoldingChildren.get(0));
         } else {
             exportValue = getExCellaColumnValue(context, table, column, valueHoldingChildren, true).getValue();
@@ -343,6 +345,22 @@ interface ExCellaExporter<T extends UITable<?>> {
             return Stream.of(new UIComponentWithCompositeParent(parent.getFacet("output")));
         }
         return Stream.empty();
+    }
+
+    private boolean hasExplicitLinkValue(FacesContext context, UIComponentWithCompositeParent component) {
+        UIComponent child = component.getComponent();
+        if (!(child instanceof Link)) {
+            return false;
+        }
+        if (!component.isInCompositeComponent()) {
+            return ((Link)child).getValue() != null;
+        }
+        component.getCompositeParent().pushComponentToEL(context, null);
+        try {
+            return ((Link)child).getValue() != null;
+        } finally {
+            component.getCompositeParent().popComponentFromEL(context);
+        }
     }
 
     default ColumnValue getExCellaColumnValue(FacesContext context, T table, UIColumn column, boolean joinComponents) {
@@ -410,12 +428,6 @@ interface ExCellaExporter<T extends UITable<?>> {
                     } finally {
                         visitedComponent.popComponentFromEL(context);
                     }
-                    return VisitResult.REJECT;
-                }
-                if (visitedComponent instanceof UICommand && ((UICommand)visitedComponent).getValue() != null) {
-                    return VisitResult.REJECT;
-                }
-                if (visitedComponent instanceof Link && ((Link)visitedComponent).getValue() != null) {
                     return VisitResult.REJECT;
                 }
                 if (visitedComponent instanceof CellEditor) {

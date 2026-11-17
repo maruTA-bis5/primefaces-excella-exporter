@@ -82,8 +82,9 @@ class DataPasswordModesTest extends AbstractPrimePageTest {
                     () -> assertEquals(CellType.NUMERIC, row.getCell(9).getCellType()),
                     () -> assertEquals(204.89, row.getCell(9).getNumericCellValue(), 0.001),
                     () -> assertEquals("Public link label", row.getCell(10).getStringCellValue()),
-                    () -> assertEquals(expectedValue, row.getCell(11).getStringCellValue()),
-                    () -> assertEquals(expectedValue, row.getCell(12).getStringCellValue())
+                    () -> assertEquals("MASKED", row.getCell(11).getStringCellValue()),
+                    () -> assertEquals(expectedValue, row.getCell(12).getStringCellValue()),
+                    () -> assertEquals("MASKED", row.getCell(13).getStringCellValue())
                 );
             }
         }
