@@ -16,9 +16,9 @@ import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +34,9 @@ import javax.el.ValueExpression;
 import javax.faces.component.UIComponent;
 import javax.faces.component.UIParameter;
 import javax.faces.component.ValueHolder;
+import javax.faces.component.visit.VisitContext;
+import javax.faces.component.visit.VisitHint;
+import javax.faces.component.visit.VisitResult;
 import javax.faces.context.FacesContext;
 import javax.faces.convert.Converter;
 
@@ -367,33 +370,9 @@ interface ExCellaExporter<T extends UITable<?>> {
     private boolean isMaskedPasswordField(FacesContext context, UIColumn column) {
         return !getExporterOptions().isExportPassword()
             && LangUtils.isNotBlank(column.getField())
-            && column.getChildren().stream().anyMatch(c -> hasRenderedPassword(context, c));
-    }
-
-    private boolean hasRenderedPassword(FacesContext context, UIComponent component) {
-        if (!component.isRendered()) {
-            return false;
-        }
-        if (component instanceof Password) {
-            return true;
-        }
-        boolean composite = UIComponent.isCompositeComponent(component);
-        if (composite) {
-            component.pushComponentToEL(context, null);
-        }
-        try {
-            Iterator<UIComponent> descendants = component.getFacetsAndChildren();
-            while (descendants.hasNext()) {
-                if (hasRenderedPassword(context, descendants.next())) {
-                    return true;
-                }
-            }
-            return false;
-        } finally {
-            if (composite) {
-                component.popComponentFromEL(context);
-            }
-        }
+            && column.getChildren().stream().anyMatch(c -> c.visitTree(
+                VisitContext.createVisitContext(context, null, EnumSet.of(VisitHint.SKIP_UNRENDERED)),
+                (visitContext, component) -> component instanceof Password ? VisitResult.COMPLETE : VisitResult.ACCEPT));
     }
 
     default Entry<String, List<Object>> normalizeValues(Entry<String, List<Object>> entry) {
