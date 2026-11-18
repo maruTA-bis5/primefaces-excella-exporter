@@ -56,6 +56,16 @@ class DataPasswordModesTest extends AbstractPrimePageTest {
         }
     }
 
+    @Test
+    void exportChangingLinkValue(Page page) throws IOException {
+        page.exportChangingLinkValue.getRoot().click();
+        Path localFile = Download.downloadFileToLocal("changing-link-value.xlsx");
+        try (Workbook workbook = WorkbookFactory.create(localFile.toFile(), null, true)) {
+            Sheet sheet = workbook.getSheetAt(0);
+            assertEquals("Captured link label", sheet.getRow(1).getCell(0).getStringCellValue());
+        }
+    }
+
     private void assertMaskedRows(String fileName, int expectedRows) throws IOException {
         Path localFile = Download.downloadFileToLocal(fileName);
         try (Workbook workbook = WorkbookFactory.create(localFile.toFile(), null, true)) {
@@ -84,7 +94,9 @@ class DataPasswordModesTest extends AbstractPrimePageTest {
                     () -> assertEquals("Public link label", row.getCell(10).getStringCellValue()),
                     () -> assertEquals("MASKED", row.getCell(11).getStringCellValue()),
                     () -> assertEquals(expectedValue, row.getCell(12).getStringCellValue()),
-                    () -> assertEquals("MASKED", row.getCell(13).getStringCellValue())
+                    () -> assertEquals("MASKED", row.getCell(13).getStringCellValue()),
+                    () -> assertEquals("MASKED", row.getCell(14).getStringCellValue()),
+                    () -> assertEquals("MASKED", row.getCell(15).getStringCellValue())
                 );
             }
         }
@@ -99,6 +111,9 @@ class DataPasswordModesTest extends AbstractPrimePageTest {
 
         @FindBy(id = "form:exportGroupedFacets")
         CommandLink exportGroupedFacets;
+
+        @FindBy(id = "form:exportChangingLinkValue")
+        CommandLink exportChangingLinkValue;
 
         @FindBy(css = "[id='form:tbl_data'] > tr:first-child > td:first-child")
         WebElement firstRow;

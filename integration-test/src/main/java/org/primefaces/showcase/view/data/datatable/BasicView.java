@@ -27,6 +27,8 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
+import javax.faces.context.FacesContext;
+import javax.faces.event.PhaseId;
 import javax.faces.view.ViewScoped;
 import javax.inject.Named;
 
@@ -61,9 +63,21 @@ public class BasicView implements Serializable {
     private final List<DataTypeCheck> passwordRows = Arrays.asList(
         new DataTypeCheck("1-"), new DataTypeCheck("2-"), new DataTypeCheck("3-"));
     private List<DataTypeCheck> selection;
+    private int changingLinkValueReads;
 
     public List<DataTypeCheck> getPasswordRows() {
         return passwordRows;
+    }
+
+    public List<DataTypeCheck> getSinglePasswordRow() {
+        return Arrays.asList(passwordRows.get(0));
+    }
+
+    public String getChangingLinkValue() {
+        if (FacesContext.getCurrentInstance().getCurrentPhaseId() == PhaseId.INVOKE_APPLICATION) {
+            return changingLinkValueReads++ == 0 ? "Captured link label" : null;
+        }
+        return "Rendered link label";
     }
 
     public List<DataTypeCheck> getSelection() {
