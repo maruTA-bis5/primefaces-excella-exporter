@@ -307,8 +307,10 @@ interface ExCellaExporter<T extends UITable<?>> {
 
         Object exportValue;
         List<UIComponentWithCompositeParent> valueHoldingChildren = extractValueHoldingChildren(column);
-        if (valueHoldingChildren.size() == 1 && valueHoldingChildren.get(0).getComponent() instanceof Link) {
-            exportValue = exportLinkCellValue(context, table, column, valueHoldingChildren.get(0), valueHoldingChildren);
+        if (valueHoldingChildren.size() == 1
+                && isExplicitValueComponent(valueHoldingChildren.get(0).getComponent())) {
+            exportValue = exportExplicitValueCell(context, table, column,
+                    valueHoldingChildren.get(0), valueHoldingChildren);
         } else if (valueHoldingChildren.size() == 1 && isMaskedPasswordField(context, column)) {
             exportValue = getExCellaColumnValue(context, table, column, valueHoldingChildren, true).getValue();
         } else if (valueHoldingChildren.size() == 1) {
@@ -321,34 +323,49 @@ interface ExCellaExporter<T extends UITable<?>> {
         values.add(exportValue);
     }
 
-    private Object exportLinkCellValue(FacesContext context, T table, UIColumn column,
+    private boolean isExplicitValueComponent(UIComponent component) {
+        return component instanceof Link || component instanceof UICommand;
+    }
+
+    private Object exportExplicitValueCell(FacesContext context, T table, UIColumn column,
             UIComponentWithCompositeParent component, List<UIComponentWithCompositeParent> valueHoldingChildren) {
+        UIComponent selectedComponent = component.getComponent();
+        boolean rendered;
+        Object value;
         if (component.isInCompositeComponent()) {
             component.getCompositeParent().pushComponentToEL(context, null);
             try {
-                return exportLinkCellValue(context, table, column, component.getComponent(), valueHoldingChildren);
+                rendered = selectedComponent.isRendered();
+                value = rendered ? getExplicitComponentValue(selectedComponent) : null;
             } finally {
                 component.getCompositeParent().popComponentFromEL(context);
             }
+        } else {
+            rendered = selectedComponent.isRendered();
+            value = rendered ? getExplicitComponentValue(selectedComponent) : null;
         }
-        return exportLinkCellValue(context, table, column, component.getComponent(), valueHoldingChildren);
-    }
 
-    private Object exportLinkCellValue(FacesContext context, T table, UIColumn column,
-            UIComponent component, List<UIComponentWithCompositeParent> valueHoldingChildren) {
-        if (!component.isRendered()) {
+        if (!rendered) {
             return isMaskedPasswordField(context, column)
                 ? getExCellaColumnValue(context, table, column, valueHoldingChildren, true).getValue()
                 : null;
         }
-        Object linkValue = ((Link)component).getValue();
-        boolean maskField = linkValue == null
+        boolean maskField = value == null
             ? isMaskedPasswordField(context, column)
-            : isMaskedPasswordField(context, column, component);
+            : isMaskedPasswordField(context, column, selectedComponent);
         if (maskField) {
             return getExCellaColumnValue(context, table, column, valueHoldingChildren, true).getValue();
         }
-        return linkValue != null ? linkValue : exportLinkValue(context, component, null, false);
+        return value != null
+            ? value
+            : exportLinkValue(context, selectedComponent, null, false);
+    }
+
+    private Object getExplicitComponentValue(UIComponent component) {
+        if (component instanceof Link) {
+            return ((Link)component).getValue();
+        }
+        return ((UICommand)component).getValue();
     }
 
     private List<UIComponentWithCompositeParent> extractValueHoldingChildren(UIColumn column) {
@@ -380,7 +397,9 @@ interface ExCellaExporter<T extends UITable<?>> {
     // clone of TableExporter#getColumnValue
     default ColumnValue getExCellaColumnValue(FacesContext context, T table, UIColumn column, List<UIComponentWithCompositeParent> valueHoldingComponents, boolean joinComponents) {
         if (column.getExportValue() != null) {
-            return ColumnValue.of(column.getExportValue());
+            return ColumnValue.of(isMaskedPasswordField(context, column)
+                ? getExporterOptions().getPasswordReplacement()
+                : column.getExportValue());
         }
         else if (column.getExportFunction() != null) {
             MethodExpression exportFunction = column.getExportFunction();
