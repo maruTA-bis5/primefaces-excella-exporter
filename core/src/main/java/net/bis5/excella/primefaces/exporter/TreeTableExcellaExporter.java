@@ -453,7 +453,7 @@ public class TreeTableExcellaExporter extends TreeTableExporter<ReportBook, ExCe
     @Override
     protected void exportCellValue(FacesContext context, TreeTable table, UIColumn col, ColumnValue value, int index) {
         Map<String, List<Object>> dataContainer = getDataContainer(currentSheet);
-        addCellValue(context, dataContainer, table, index, col, value);
+        addCellValue(context, dataContainer, table, index, col);
     }
 
     @Override

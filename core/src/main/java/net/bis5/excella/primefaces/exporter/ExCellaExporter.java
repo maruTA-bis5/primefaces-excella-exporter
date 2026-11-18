@@ -19,6 +19,7 @@ import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -71,7 +72,6 @@ import net.bis5.excella.primefaces.exporter.util.UIComponentWithCompositeParent;
 
 // internal
 interface ExCellaExporter<T extends UITable<?>> {
-
     String COLUMN_GROUP_MERGED_AREAS_KEY = "HEADER_MERGED_AREAS_KEY";
 
     URL DEFAULT_TEMPLATE_URL = ExCellaExporter.class.getResource("/DefaultTemplate.xlsx");
@@ -302,7 +302,7 @@ interface ExCellaExporter<T extends UITable<?>> {
     }
 
     default void addCellValue(FacesContext context, Map<String, List<Object>> dataContainer, T table, int colIndex,
-            UIColumn column, ColumnValue columnValue) {
+            UIColumn column) {
         String columnKey = "data" + colIndex;
 
         Object exportValue;
@@ -312,7 +312,7 @@ interface ExCellaExporter<T extends UITable<?>> {
             : null;
         UIComponent singleComponent = singleValueChild != null ? singleValueChild.getComponent() : null;
         if (singleComponent instanceof Link || singleComponent instanceof UICommand) {
-            exportValue = exportExplicitValueCell(context, column, singleValueChild, columnValue);
+            exportValue = exportExplicitValueCell(context, column, singleValueChild);
         } else if (valueHoldingChildren.size() == 1 && isMaskedPasswordField(context, column)) {
             exportValue = getExCellaColumnValue(context, table, column, valueHoldingChildren, true).getValue();
         } else if (valueHoldingChildren.size() == 1) {
@@ -326,16 +326,17 @@ interface ExCellaExporter<T extends UITable<?>> {
     }
 
     private Object exportExplicitValueCell(FacesContext context, UIColumn column,
-            UIComponentWithCompositeParent component, ColumnValue columnValue) {
+            UIComponentWithCompositeParent component) {
         UIComponent selectedComponent = component.getComponent();
         boolean useColumnValue = LangUtils.isBlank(column.getField())
             && column.getExportValue() == null
             && column.getExportFunction() == null;
-        ExplicitComponentValue explicitValue = useColumnValue
-            ? getRenderedComponentState(context, component)
-            : getExplicitComponentValue(context, component);
+        ExplicitComponentValue explicitValue = useColumnValue ? consumeExplicitComponentValue(context, column) : null;
+        if (explicitValue == null) {
+            explicitValue = getExplicitComponentValue(context, component);
+        }
         boolean rendered = explicitValue.isRendered();
-        Object value = useColumnValue ? columnValue.getValue() : explicitValue.getValue();
+        Object value = explicitValue.getValue();
 
         if (!rendered) {
             return isMaskedPasswordColumn(context, column)
@@ -401,6 +402,9 @@ interface ExCellaExporter<T extends UITable<?>> {
     }
 
     private boolean hasProtectedComponentValue(FacesContext context, UIComponentWithCompositeParent component) {
+        if (getExporterOptions().isExportPassword()) {
+            return false;
+        }
         UIComponent selectedComponent = component.getComponent();
         if (selectedComponent.getValueExpression("value") == null) {
             return false;
@@ -414,6 +418,31 @@ interface ExCellaExporter<T extends UITable<?>> {
             }
         }
         return containsExportedPassword(context, selectedComponent, null);
+    }
+
+    @SuppressWarnings("unchecked")
+    private ExplicitComponentValue consumeExplicitComponentValue(FacesContext context, UIColumn column) {
+        Map<UIColumn, ExplicitComponentValue> cache = (Map<UIColumn, ExplicitComponentValue>)
+            context.getAttributes().get(explicitComponentValueCacheKey());
+        return cache != null ? cache.remove(column) : null;
+    }
+
+    @SuppressWarnings("unchecked")
+    private void cacheExplicitComponentValue(FacesContext context, UIColumn column,
+            UIComponentWithCompositeParent component, Object value) {
+        if (!(component.getComponent() instanceof Link)
+                && !(component.getComponent() instanceof UICommand)) {
+            return;
+        }
+        Map<UIColumn, ExplicitComponentValue> cache = (Map<UIColumn, ExplicitComponentValue>)
+            context.getAttributes().computeIfAbsent(
+                explicitComponentValueCacheKey(), ignored -> new IdentityHashMap<>());
+        ExplicitComponentValue state = getRenderedComponentState(context, component);
+        cache.put(column, state.isRendered() ? ExplicitComponentValue.rendered(value) : state);
+    }
+
+    private static String explicitComponentValueCacheKey() {
+        return ExCellaExporter.class.getName() + ".explicitComponentValueCache";
     }
 
     private List<UIComponentWithCompositeParent> extractValueHoldingChildren(UIColumn column) {
@@ -471,6 +500,9 @@ interface ExCellaExporter<T extends UITable<?>> {
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
             if (values.isEmpty()) {
+                if (valueHoldingComponents.size() == 1) {
+                    cacheExplicitComponentValue(context, column, valueHoldingComponents.get(0), null);
+                }
                 return ColumnValue.of(null);
             }
             boolean collectAsString = joinComponents || values.size() > 1;
@@ -479,9 +511,16 @@ interface ExCellaExporter<T extends UITable<?>> {
                         .limit(!joinComponents ? 1 : values.size())
                         .map(Object::toString)
                         .collect(Collectors.joining(Constants.SPACE));
+                if (valueHoldingComponents.size() == 1) {
+                    cacheExplicitComponentValue(context, column, valueHoldingComponents.get(0), joined);
+                }
                 return joined.isEmpty() ? ColumnValue.of(null) : ColumnValue.of(joined);
             }
-            return ColumnValue.of(values.get(0));
+            Object value = values.get(0);
+            if (valueHoldingComponents.size() == 1) {
+                cacheExplicitComponentValue(context, column, valueHoldingComponents.get(0), value);
+            }
+            return ColumnValue.of(value);
         }
     }
 

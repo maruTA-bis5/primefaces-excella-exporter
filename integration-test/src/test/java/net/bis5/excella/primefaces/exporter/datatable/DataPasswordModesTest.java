@@ -49,6 +49,16 @@ class DataPasswordModesTest extends AbstractPrimePageTest {
         }
     }
 
+    @Test
+    void exportEnabledPassword(Page page) throws IOException {
+        page.exportEnabledPassword.getRoot().click();
+        Path localFile = Download.downloadFileToLocal("enabled-password.xlsx");
+        try (Workbook workbook = WorkbookFactory.create(localFile.toFile(), null, true)) {
+            Sheet sheet = workbook.getSheetAt(0);
+            assertEquals("1-STRING value", sheet.getRow(1).getCell(0).getStringCellValue());
+        }
+    }
+
     private void assertMaskedRows(String fileName, int expectedRows) throws IOException {
         Path localFile = Download.downloadFileToLocal(fileName);
         try (Workbook workbook = WorkbookFactory.create(localFile.toFile(), null, true)) {
@@ -122,6 +132,9 @@ class DataPasswordModesTest extends AbstractPrimePageTest {
 
         @FindBy(id = "form:exportChangingLink")
         CommandLink exportChangingLink;
+
+        @FindBy(id = "form:exportEnabledPassword")
+        CommandLink exportEnabledPassword;
 
         @FindBy(css = "[id='form:tbl_data'] > tr:first-child > td:first-child")
         WebElement firstRow;

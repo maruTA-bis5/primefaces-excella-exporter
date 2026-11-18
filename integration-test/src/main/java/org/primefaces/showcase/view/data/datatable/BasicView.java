@@ -53,6 +53,10 @@ public class BasicView implements Serializable {
         return options;
     }
 
+    public ExCellaExporterOptions getPasswordEnabledOptions() {
+        return new ExCellaExporterOptions();
+    }
+
     public String exportPassword(UIColumn column) {
         return "EXPLICIT FUNCTION SECRET";
     }
