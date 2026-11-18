@@ -307,9 +307,11 @@ interface ExCellaExporter<T extends UITable<?>> {
 
         Object exportValue;
         List<UIComponentWithCompositeParent> valueHoldingChildren = extractValueHoldingChildren(column);
-        if (valueHoldingChildren.size() == 1
-                && (hasExplicitValueThatOverridesChildren(context, valueHoldingChildren.get(0))
-                    || !isMaskedPasswordField(context, column))) {
+        if (valueHoldingChildren.size() == 1 && valueHoldingChildren.get(0).getComponent() instanceof Link) {
+            exportValue = exportLinkCellValue(context, table, column, valueHoldingChildren.get(0), valueHoldingChildren);
+        } else if (valueHoldingChildren.size() == 1 && isMaskedPasswordField(context, column)) {
+            exportValue = getExCellaColumnValue(context, table, column, valueHoldingChildren, true).getValue();
+        } else if (valueHoldingChildren.size() == 1) {
             exportValue = exportObjectValue(context, valueHoldingChildren.get(0));
         } else {
             exportValue = getExCellaColumnValue(context, table, column, valueHoldingChildren, true).getValue();
@@ -319,29 +321,34 @@ interface ExCellaExporter<T extends UITable<?>> {
         values.add(exportValue);
     }
 
-    private boolean hasExplicitValueThatOverridesChildren(FacesContext context, UIComponentWithCompositeParent component) {
+    private Object exportLinkCellValue(FacesContext context, T table, UIColumn column,
+            UIComponentWithCompositeParent component, List<UIComponentWithCompositeParent> valueHoldingChildren) {
         if (component.isInCompositeComponent()) {
             component.getCompositeParent().pushComponentToEL(context, null);
             try {
-                return hasExplicitValueThatOverridesChildren(component.getComponent());
+                return exportLinkCellValue(context, table, column, component.getComponent(), valueHoldingChildren);
             } finally {
                 component.getCompositeParent().popComponentFromEL(context);
             }
         }
-        return hasExplicitValueThatOverridesChildren(component.getComponent());
+        return exportLinkCellValue(context, table, column, component.getComponent(), valueHoldingChildren);
     }
 
-    private boolean hasExplicitValueThatOverridesChildren(UIComponent component) {
-        if (component instanceof UICommand) {
-            return ((UICommand)component).getValue() != null;
+    private Object exportLinkCellValue(FacesContext context, T table, UIColumn column,
+            UIComponent component, List<UIComponentWithCompositeParent> valueHoldingChildren) {
+        if (!component.isRendered()) {
+            return isMaskedPasswordField(context, column)
+                ? getExCellaColumnValue(context, table, column, valueHoldingChildren, true).getValue()
+                : null;
         }
-        if (component instanceof Link) {
-            return ((Link)component).getValue() != null;
+        Object linkValue = ((Link)component).getValue();
+        boolean maskField = linkValue == null
+            ? isMaskedPasswordField(context, column)
+            : isMaskedPasswordField(context, column, component);
+        if (maskField) {
+            return getExCellaColumnValue(context, table, column, valueHoldingChildren, true).getValue();
         }
-        if (component instanceof CellEditor) {
-            return hasExplicitValueThatOverridesChildren(component.getFacet("output"));
-        }
-        return false;
+        return linkValue != null ? linkValue : exportLinkValue(context, component, null, false);
     }
 
     private List<UIComponentWithCompositeParent> extractValueHoldingChildren(UIColumn column) {
@@ -410,24 +417,31 @@ interface ExCellaExporter<T extends UITable<?>> {
     }
 
     private boolean isMaskedPasswordField(FacesContext context, UIColumn column) {
-        return !getExporterOptions().isExportPassword()
-            && LangUtils.isNotBlank(column.getField())
-            && column.getChildren().stream().anyMatch(c -> containsExportedPassword(context, c));
+        return isMaskedPasswordField(context, column, null);
     }
 
-    private boolean containsExportedPassword(FacesContext context, UIComponent component) {
-        if (component == null || !component.isRendered()) {
+    private boolean isMaskedPasswordField(FacesContext context, UIColumn column, UIComponent excludedComponent) {
+        return !getExporterOptions().isExportPassword()
+            && LangUtils.isNotBlank(column.getField())
+            && column.getChildren().stream().anyMatch(c -> containsExportedPassword(context, c, excludedComponent));
+    }
+
+    private boolean containsExportedPassword(FacesContext context, UIComponent component, UIComponent excludedComponent) {
+        if (component == null || component == excludedComponent || !component.isRendered()) {
             return false;
         }
         boolean[] found = {false};
         component.visitTree(
             VisitContext.createVisitContext(context, null, EnumSet.of(VisitHint.SKIP_UNRENDERED)),
             (visitContext, visitedComponent) -> {
+                if (visitedComponent == excludedComponent) {
+                    return VisitResult.REJECT;
+                }
                 if (UIComponent.isCompositeComponent(visitedComponent)) {
                     visitedComponent.pushComponentToEL(context, null);
                     try {
                         if (containsExportedPassword(context,
-                                visitedComponent.getFacet(UIComponent.COMPOSITE_FACET_NAME))) {
+                                visitedComponent.getFacet(UIComponent.COMPOSITE_FACET_NAME), excludedComponent)) {
                             found[0] = true;
                             return VisitResult.COMPLETE;
                         }
@@ -437,7 +451,7 @@ interface ExCellaExporter<T extends UITable<?>> {
                     return VisitResult.REJECT;
                 }
                 if (visitedComponent instanceof CellEditor) {
-                    if (containsExportedPassword(context, visitedComponent.getFacet("output"))) {
+                    if (containsExportedPassword(context, visitedComponent.getFacet("output"), excludedComponent)) {
                         found[0] = true;
                         return VisitResult.COMPLETE;
                     }
