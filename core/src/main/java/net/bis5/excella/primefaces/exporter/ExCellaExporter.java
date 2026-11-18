@@ -406,7 +406,7 @@ interface ExCellaExporter<T extends UITable<?>> {
     // clone of TableExporter#getColumnValue
     default ColumnValue getExCellaColumnValue(FacesContext context, T table, UIColumn column, List<UIComponentWithCompositeParent> valueHoldingComponents, boolean joinComponents) {
         if (column.getExportValue() != null) {
-            return ColumnValue.of(isMaskedPasswordField(context, column)
+            return ColumnValue.of(isMaskedPasswordColumn(context, column)
                 ? getExporterOptions().getPasswordReplacement()
                 : column.getExportValue());
         }
@@ -445,12 +445,20 @@ interface ExCellaExporter<T extends UITable<?>> {
     }
 
     private boolean isMaskedPasswordField(FacesContext context, UIColumn column) {
-        return isMaskedPasswordField(context, column, null);
+        return LangUtils.isNotBlank(column.getField()) && isMaskedPasswordColumn(context, column);
     }
 
     private boolean isMaskedPasswordField(FacesContext context, UIColumn column, UIComponent excludedComponent) {
+        return LangUtils.isNotBlank(column.getField())
+            && isMaskedPasswordColumn(context, column, excludedComponent);
+    }
+
+    private boolean isMaskedPasswordColumn(FacesContext context, UIColumn column) {
+        return isMaskedPasswordColumn(context, column, null);
+    }
+
+    private boolean isMaskedPasswordColumn(FacesContext context, UIColumn column, UIComponent excludedComponent) {
         return !getExporterOptions().isExportPassword()
-            && LangUtils.isNotBlank(column.getField())
             && column.getChildren().stream().anyMatch(c -> containsExportedPassword(context, c, excludedComponent));
     }
 

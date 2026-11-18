@@ -91,7 +91,7 @@ class DataPasswordModesTest extends AbstractPrimePageTest {
                     () -> assertEquals("MASKED", row.getCell(13).getStringCellValue()),
                     () -> assertEquals("Public cell editor command label", row.getCell(14).getStringCellValue()),
                     () -> assertEquals("MASKED", row.getCell(15).getStringCellValue()),
-                    () -> assertEquals(expectedValue, row.getCell(16).getStringCellValue())
+                    () -> assertEquals("Composite valueless label", row.getCell(16).getStringCellValue())
                 );
             }
         }

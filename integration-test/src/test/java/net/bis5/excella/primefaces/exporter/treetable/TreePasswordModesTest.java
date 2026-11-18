@@ -84,7 +84,7 @@ class TreePasswordModesTest extends AbstractPrimePageTest {
                     () -> assertEquals("MASKED", row.getCell(11).getStringCellValue()),
                     () -> assertEquals("Public tree cell editor command label", row.getCell(12).getStringCellValue()),
                     () -> assertEquals("MASKED", row.getCell(13).getStringCellValue()),
-                    () -> assertEquals(expectedValue, row.getCell(14).getStringCellValue())
+                    () -> assertEquals("Composite valueless label", row.getCell(14).getStringCellValue())
                 );
             }
         }
