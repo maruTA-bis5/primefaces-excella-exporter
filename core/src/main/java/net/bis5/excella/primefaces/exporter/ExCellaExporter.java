@@ -356,9 +356,18 @@ interface ExCellaExporter<T extends UITable<?>> {
         if (maskField) {
             return getExCellaColumnValue(context, table, column, valueHoldingChildren, true).getValue();
         }
-        return value != null
-            ? value
-            : exportLinkValue(context, selectedComponent, null, false);
+        if (value != null) {
+            return value;
+        }
+        if (component.isInCompositeComponent()) {
+            component.getCompositeParent().pushComponentToEL(context, null);
+            try {
+                return exportLinkValue(context, selectedComponent, null, false);
+            } finally {
+                component.getCompositeParent().popComponentFromEL(context);
+            }
+        }
+        return exportLinkValue(context, selectedComponent, null, false);
     }
 
     private Object getExplicitComponentValue(UIComponent component) {

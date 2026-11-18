@@ -53,7 +53,7 @@ class TreePasswordModesTest extends AbstractPrimePageTest {
                 () -> assertEquals("Composite Link Unrendered With Password", sheet.getRow(0).getCell(11).getStringCellValue()),
                 () -> assertEquals("Cell Editor Public Command Label", sheet.getRow(0).getCell(12).getStringCellValue()),
                 () -> assertEquals("Explicit Export Value", sheet.getRow(0).getCell(13).getStringCellValue()),
-                () -> assertEquals("Password Outside Composite Link", sheet.getRow(0).getCell(14).getStringCellValue()),
+                () -> assertEquals("Composite Valueless Link", sheet.getRow(0).getCell(14).getStringCellValue()),
                 () -> assertEquals("MASKED", sheet.getRow(expectedRows + 1).getCell(0).getStringCellValue()),
                 () -> assertEquals("MASKED", sheet.getRow(expectedRows + 1).getCell(1).getStringCellValue()),
                 () -> assertEquals("Wrapped Password", sheet.getRow(expectedRows + 1).getCell(2).getStringCellValue()),
@@ -64,7 +64,7 @@ class TreePasswordModesTest extends AbstractPrimePageTest {
                 () -> assertEquals("Composite Link Unrendered With Password", sheet.getRow(expectedRows + 1).getCell(11).getStringCellValue()),
                 () -> assertEquals("Cell Editor Public Command Label", sheet.getRow(expectedRows + 1).getCell(12).getStringCellValue()),
                 () -> assertEquals("Explicit Export Value", sheet.getRow(expectedRows + 1).getCell(13).getStringCellValue()),
-                () -> assertEquals("Password Outside Composite Link", sheet.getRow(expectedRows + 1).getCell(14).getStringCellValue())
+                () -> assertEquals("Composite Valueless Link", sheet.getRow(expectedRows + 1).getCell(14).getStringCellValue())
             );
             for (int i = 1; i <= expectedRows; i++) {
                 Row row = sheet.getRow(i);
@@ -84,7 +84,7 @@ class TreePasswordModesTest extends AbstractPrimePageTest {
                     () -> assertEquals("MASKED", row.getCell(11).getStringCellValue()),
                     () -> assertEquals("Public tree cell editor command label", row.getCell(12).getStringCellValue()),
                     () -> assertEquals("MASKED", row.getCell(13).getStringCellValue()),
-                    () -> assertEquals("MASKED", row.getCell(14).getStringCellValue())
+                    () -> assertEquals(expectedValue, row.getCell(14).getStringCellValue())
                 );
             }
         }
