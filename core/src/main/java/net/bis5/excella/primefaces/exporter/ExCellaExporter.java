@@ -506,19 +506,16 @@ interface ExCellaExporter<T extends UITable<?>> {
                 return ColumnValue.of(null);
             }
             boolean collectAsString = joinComponents || values.size() > 1;
+            Object value = values.get(0);
+            if (valueHoldingComponents.size() == 1) {
+                cacheExplicitComponentValue(context, column, valueHoldingComponents.get(0), value);
+            }
             if (collectAsString) {
                 String joined = values.stream()
                         .limit(!joinComponents ? 1 : values.size())
                         .map(Object::toString)
                         .collect(Collectors.joining(Constants.SPACE));
-                if (valueHoldingComponents.size() == 1) {
-                    cacheExplicitComponentValue(context, column, valueHoldingComponents.get(0), joined);
-                }
                 return joined.isEmpty() ? ColumnValue.of(null) : ColumnValue.of(joined);
-            }
-            Object value = values.get(0);
-            if (valueHoldingComponents.size() == 1) {
-                cacheExplicitComponentValue(context, column, valueHoldingComponents.get(0), value);
             }
             return ColumnValue.of(value);
         }
