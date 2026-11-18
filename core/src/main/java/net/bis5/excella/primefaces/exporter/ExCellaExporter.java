@@ -321,7 +321,7 @@ interface ExCellaExporter<T extends UITable<?>> {
             ? singleValueHoldingChild.getComponent()
             : null;
         boolean singleChildHasExplicitValue = singleValueHoldingComponent instanceof Link
-            || singleValueHoldingComponent instanceof UICommand;
+            || isPublicCommandValue(singleValueHoldingComponent);
         boolean[] componentRendered = {false};
         Object componentValue = singleChildHasExplicitValue
             ? getRenderedComponentValue(context, singleValueHoldingChild, componentRendered)
@@ -337,7 +337,7 @@ interface ExCellaExporter<T extends UITable<?>> {
         } else if (isMaskedPasswordField(context, column)) {
             exportValue = getExporterOptions().getPasswordReplacement();
         } else if (singleChildHasExplicitValue && !componentRendered[0]) {
-            exportValue = getExCellaColumnValue(context, table, column, valueHoldingChildren, true).getValue();
+            exportValue = null;
         } else if (singleValueHoldingChild != null) {
             exportValue = singleChildHasExplicitValue
                 ? exportComponentValue(context, singleValueHoldingChild, componentValue, false)
@@ -348,6 +348,10 @@ interface ExCellaExporter<T extends UITable<?>> {
 
         List<Object> values = dataContainer.computeIfAbsent(columnKey, ignore -> new ArrayList<>());
         values.add(exportValue);
+    }
+
+    private boolean isPublicCommandValue(UIComponent component) {
+        return component instanceof UICommand && component.getValueExpression("value") == null;
     }
 
     private List<UIComponentWithCompositeParent> extractValueHoldingChildren(UIColumn column) {

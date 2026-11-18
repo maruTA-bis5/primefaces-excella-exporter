@@ -63,7 +63,7 @@ public class BasicView implements Serializable {
     private final List<DataTypeCheck> passwordRows = Arrays.asList(
         new DataTypeCheck("1-"), new DataTypeCheck("2-"), new DataTypeCheck("3-"));
     private List<DataTypeCheck> selection;
-    private int changingLinkValueReads;
+    private static final String CHANGING_LINK_VALUE_READS = BasicView.class.getName() + ".changingLinkValueReads";
 
     public List<DataTypeCheck> getPasswordRows() {
         return passwordRows;
@@ -74,8 +74,12 @@ public class BasicView implements Serializable {
     }
 
     public String getChangingLinkValue() {
-        if (FacesContext.getCurrentInstance().getCurrentPhaseId() == PhaseId.INVOKE_APPLICATION) {
-            return changingLinkValueReads++ == 0 ? "Captured link label" : null;
+        FacesContext context = FacesContext.getCurrentInstance();
+        if (context.getCurrentPhaseId() == PhaseId.INVOKE_APPLICATION) {
+            Integer reads = (Integer)context.getExternalContext().getRequestMap().get(CHANGING_LINK_VALUE_READS);
+            context.getExternalContext().getRequestMap().put(
+                CHANGING_LINK_VALUE_READS, reads == null ? 1 : reads + 1);
+            return reads == null ? "Captured link label" : null;
         }
         return "Rendered link label";
     }
