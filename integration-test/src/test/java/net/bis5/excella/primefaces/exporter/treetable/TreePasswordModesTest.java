@@ -2,7 +2,6 @@ package net.bis5.excella.primefaces.exporter.treetable;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -88,7 +87,7 @@ class TreePasswordModesTest extends AbstractPrimePageTest {
                     () -> assertEquals("MASKED", row.getCell(13).getStringCellValue()),
                     () -> assertEquals("MASKED", row.getCell(14).getStringCellValue()),
                     () -> assertEquals("Hidden link label", row.getCell(15).getStringCellValue()),
-                    () -> assertNull(row.getCell(16)),
+                    () -> assertEquals("", row.getCell(16).getStringCellValue()),
                     () -> assertEquals("Public cell editor command label", row.getCell(17).getStringCellValue()),
                     () -> assertEquals("MASKED", row.getCell(18).getStringCellValue()),
                     () -> assertEquals("MASKED", row.getCell(19).getStringCellValue())

@@ -2,7 +2,6 @@ package net.bis5.excella.primefaces.exporter.datatable;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -101,8 +100,8 @@ class DataPasswordModesTest extends AbstractPrimePageTest {
                     () -> assertEquals("MASKED", row.getCell(14).getStringCellValue()),
                     () -> assertEquals("MASKED", row.getCell(15).getStringCellValue()),
                     () -> assertEquals("Hidden link label", row.getCell(16).getStringCellValue()),
-                    () -> assertEquals("MASKED", row.getCell(17).getStringCellValue()),
-                    () -> assertNull(row.getCell(18)),
+                    () -> assertEquals("", row.getCell(17).getStringCellValue()),
+                    () -> assertEquals("MASKED", row.getCell(18).getStringCellValue()),
                     () -> assertEquals("Public cell editor command label", row.getCell(19).getStringCellValue()),
                     () -> assertEquals("MASKED", row.getCell(20).getStringCellValue()),
                     () -> assertEquals("MASKED", row.getCell(21).getStringCellValue())
