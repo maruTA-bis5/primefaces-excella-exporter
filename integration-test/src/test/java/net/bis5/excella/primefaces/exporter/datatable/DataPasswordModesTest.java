@@ -39,6 +39,16 @@ class DataPasswordModesTest extends AbstractPrimePageTest {
         assertMaskedRows("password-selection.xlsx", 1);
     }
 
+    @Test
+    void exportChangingLink(Page page) throws IOException {
+        page.exportChangingLink.getRoot().click();
+        Path localFile = Download.downloadFileToLocal("changing-link.xlsx");
+        try (Workbook workbook = WorkbookFactory.create(localFile.toFile(), null, true)) {
+            Sheet sheet = workbook.getSheetAt(0);
+            assertEquals("Captured changing link label", sheet.getRow(1).getCell(0).getStringCellValue());
+        }
+    }
+
     private void assertMaskedRows(String fileName, int expectedRows) throws IOException {
         Path localFile = Download.downloadFileToLocal(fileName);
         try (Workbook workbook = WorkbookFactory.create(localFile.toFile(), null, true)) {
@@ -50,25 +60,27 @@ class DataPasswordModesTest extends AbstractPrimePageTest {
                 () -> assertEquals("Wrapped Password", sheet.getRow(0).getCell(2).getStringCellValue()),
                 () -> assertEquals("Public Link Label", sheet.getRow(0).getCell(9).getStringCellValue()),
                 () -> assertEquals("Public Command Link Label", sheet.getRow(0).getCell(10).getStringCellValue()),
-                () -> assertEquals("Masked Link With Sibling", sheet.getRow(0).getCell(11).getStringCellValue()),
-                () -> assertEquals("Composite Link With Password Sibling", sheet.getRow(0).getCell(12).getStringCellValue()),
-                () -> assertEquals("Composite Link Unrendered With Password", sheet.getRow(0).getCell(13).getStringCellValue()),
-                () -> assertEquals("Cell Editor Public Command Label", sheet.getRow(0).getCell(14).getStringCellValue()),
-                () -> assertEquals("Explicit Export Value", sheet.getRow(0).getCell(15).getStringCellValue()),
-                () -> assertEquals("Composite Valueless Link", sheet.getRow(0).getCell(16).getStringCellValue()),
-                () -> assertEquals("Explicit Export Function", sheet.getRow(0).getCell(17).getStringCellValue()),
+                () -> assertEquals("Protected Command Link", sheet.getRow(0).getCell(11).getStringCellValue()),
+                () -> assertEquals("Masked Link With Sibling", sheet.getRow(0).getCell(12).getStringCellValue()),
+                () -> assertEquals("Composite Link With Password Sibling", sheet.getRow(0).getCell(13).getStringCellValue()),
+                () -> assertEquals("Composite Link Unrendered With Password", sheet.getRow(0).getCell(14).getStringCellValue()),
+                () -> assertEquals("Cell Editor Public Command Label", sheet.getRow(0).getCell(15).getStringCellValue()),
+                () -> assertEquals("Explicit Export Value", sheet.getRow(0).getCell(16).getStringCellValue()),
+                () -> assertEquals("Composite Valueless Link", sheet.getRow(0).getCell(17).getStringCellValue()),
+                () -> assertEquals("Explicit Export Function", sheet.getRow(0).getCell(18).getStringCellValue()),
                 () -> assertEquals("MASKED", sheet.getRow(expectedRows + 1).getCell(0).getStringCellValue()),
                 () -> assertEquals("MASKED", sheet.getRow(expectedRows + 1).getCell(1).getStringCellValue()),
                 () -> assertEquals("Wrapped Password", sheet.getRow(expectedRows + 1).getCell(2).getStringCellValue()),
                 () -> assertEquals("Public Link Label", sheet.getRow(expectedRows + 1).getCell(9).getStringCellValue()),
                 () -> assertEquals("Public Command Link Label", sheet.getRow(expectedRows + 1).getCell(10).getStringCellValue()),
-                () -> assertEquals("Masked Link With Sibling", sheet.getRow(expectedRows + 1).getCell(11).getStringCellValue()),
-                () -> assertEquals("Composite Link With Password Sibling", sheet.getRow(expectedRows + 1).getCell(12).getStringCellValue()),
-                () -> assertEquals("Composite Link Unrendered With Password", sheet.getRow(expectedRows + 1).getCell(13).getStringCellValue()),
-                () -> assertEquals("Cell Editor Public Command Label", sheet.getRow(expectedRows + 1).getCell(14).getStringCellValue()),
-                () -> assertEquals("Explicit Export Value", sheet.getRow(expectedRows + 1).getCell(15).getStringCellValue()),
-                () -> assertEquals("Composite Valueless Link", sheet.getRow(expectedRows + 1).getCell(16).getStringCellValue()),
-                () -> assertEquals("Explicit Export Function", sheet.getRow(expectedRows + 1).getCell(17).getStringCellValue()),
+                () -> assertEquals("Protected Command Link", sheet.getRow(expectedRows + 1).getCell(11).getStringCellValue()),
+                () -> assertEquals("Masked Link With Sibling", sheet.getRow(expectedRows + 1).getCell(12).getStringCellValue()),
+                () -> assertEquals("Composite Link With Password Sibling", sheet.getRow(expectedRows + 1).getCell(13).getStringCellValue()),
+                () -> assertEquals("Composite Link Unrendered With Password", sheet.getRow(expectedRows + 1).getCell(14).getStringCellValue()),
+                () -> assertEquals("Cell Editor Public Command Label", sheet.getRow(expectedRows + 1).getCell(15).getStringCellValue()),
+                () -> assertEquals("Explicit Export Value", sheet.getRow(expectedRows + 1).getCell(16).getStringCellValue()),
+                () -> assertEquals("Composite Valueless Link", sheet.getRow(expectedRows + 1).getCell(17).getStringCellValue()),
+                () -> assertEquals("Explicit Export Function", sheet.getRow(expectedRows + 1).getCell(18).getStringCellValue()),
                 () -> assertTrue(sheet.getRow(expectedRows + 1).getCell(3).getStringCellValue().contains("$")),
                 () -> assertTrue(sheet.getRow(0).getCell(3).getStringCellValue().contains("$"))
             );
@@ -91,10 +103,11 @@ class DataPasswordModesTest extends AbstractPrimePageTest {
                     () -> assertEquals("MASKED", row.getCell(11).getStringCellValue()),
                     () -> assertEquals("MASKED", row.getCell(12).getStringCellValue()),
                     () -> assertEquals("MASKED", row.getCell(13).getStringCellValue()),
-                    () -> assertEquals("Public cell editor command label", row.getCell(14).getStringCellValue()),
-                    () -> assertEquals("MASKED", row.getCell(15).getStringCellValue()),
-                    () -> assertEquals("Composite valueless label", row.getCell(16).getStringCellValue()),
-                    () -> assertEquals("MASKED", row.getCell(17).getStringCellValue())
+                    () -> assertEquals("MASKED", row.getCell(14).getStringCellValue()),
+                    () -> assertEquals("Public cell editor command label", row.getCell(15).getStringCellValue()),
+                    () -> assertEquals("MASKED", row.getCell(16).getStringCellValue()),
+                    () -> assertEquals("Composite valueless label", row.getCell(17).getStringCellValue()),
+                    () -> assertEquals("MASKED", row.getCell(18).getStringCellValue())
                 );
             }
         }
@@ -106,6 +119,9 @@ class DataPasswordModesTest extends AbstractPrimePageTest {
 
         @FindBy(id = "form:exportSelection")
         CommandLink exportSelection;
+
+        @FindBy(id = "form:exportChangingLink")
+        CommandLink exportChangingLink;
 
         @FindBy(css = "[id='form:tbl_data'] > tr:first-child > td:first-child")
         WebElement firstRow;

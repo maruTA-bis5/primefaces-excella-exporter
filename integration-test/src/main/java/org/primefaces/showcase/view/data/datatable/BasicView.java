@@ -27,6 +27,8 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
+import jakarta.faces.context.FacesContext;
+import jakarta.faces.event.PhaseId;
 import jakarta.faces.view.ViewScoped;
 import jakarta.inject.Named;
 
@@ -53,6 +55,17 @@ public class BasicView implements Serializable {
 
     public String exportPassword(UIColumn column) {
         return "EXPLICIT FUNCTION SECRET";
+    }
+
+    public String getChangingLinkValue() {
+        FacesContext context = FacesContext.getCurrentInstance();
+        if (context.getCurrentPhaseId() != PhaseId.INVOKE_APPLICATION) {
+            return "Rendered changing link label";
+        }
+        String key = BasicView.class.getName() + ".changingLinkValueReads";
+        Integer reads = (Integer)context.getAttributes().get(key);
+        context.getAttributes().put(key, reads == null ? 1 : reads + 1);
+        return reads == null ? "Captured changing link label" : null;
     }
 
     public List<DataTypeCheck> getDataTypes() {

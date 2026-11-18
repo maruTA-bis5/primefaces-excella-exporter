@@ -302,15 +302,17 @@ interface ExCellaExporter<T extends UITable<?>> {
     }
 
     default void addCellValue(FacesContext context, Map<String, List<Object>> dataContainer, T table, int colIndex,
-            UIColumn column) {
+            UIColumn column, ColumnValue columnValue) {
         String columnKey = "data" + colIndex;
 
         Object exportValue;
         List<UIComponentWithCompositeParent> valueHoldingChildren = extractValueHoldingChildren(column);
-        if (valueHoldingChildren.size() == 1
-                && isExplicitValueComponent(valueHoldingChildren.get(0).getComponent())) {
-            exportValue = exportExplicitValueCell(context, table, column,
-                    valueHoldingChildren.get(0), valueHoldingChildren);
+        UIComponentWithCompositeParent singleValueChild = valueHoldingChildren.size() == 1
+            ? valueHoldingChildren.get(0)
+            : null;
+        UIComponent singleComponent = singleValueChild != null ? singleValueChild.getComponent() : null;
+        if (singleComponent instanceof Link || singleComponent instanceof UICommand) {
+            exportValue = exportExplicitValueCell(context, column, singleValueChild, columnValue);
         } else if (valueHoldingChildren.size() == 1 && isMaskedPasswordField(context, column)) {
             exportValue = getExCellaColumnValue(context, table, column, valueHoldingChildren, true).getValue();
         } else if (valueHoldingChildren.size() == 1) {
@@ -323,38 +325,29 @@ interface ExCellaExporter<T extends UITable<?>> {
         values.add(exportValue);
     }
 
-    private boolean isExplicitValueComponent(UIComponent component) {
-        return component instanceof Link || component instanceof UICommand;
-    }
-
-    private Object exportExplicitValueCell(FacesContext context, T table, UIColumn column,
-            UIComponentWithCompositeParent component, List<UIComponentWithCompositeParent> valueHoldingChildren) {
+    private Object exportExplicitValueCell(FacesContext context, UIColumn column,
+            UIComponentWithCompositeParent component, ColumnValue columnValue) {
         UIComponent selectedComponent = component.getComponent();
-        boolean rendered;
-        Object value;
-        if (component.isInCompositeComponent()) {
-            component.getCompositeParent().pushComponentToEL(context, null);
-            try {
-                rendered = selectedComponent.isRendered();
-                value = rendered ? getExplicitComponentValue(selectedComponent) : null;
-            } finally {
-                component.getCompositeParent().popComponentFromEL(context);
-            }
-        } else {
-            rendered = selectedComponent.isRendered();
-            value = rendered ? getExplicitComponentValue(selectedComponent) : null;
-        }
+        boolean useColumnValue = LangUtils.isBlank(column.getField())
+            && column.getExportValue() == null
+            && column.getExportFunction() == null;
+        ExplicitComponentValue explicitValue = useColumnValue
+            ? getRenderedComponentState(context, component)
+            : getExplicitComponentValue(context, component);
+        boolean rendered = explicitValue.isRendered();
+        Object value = useColumnValue ? columnValue.getValue() : explicitValue.getValue();
 
         if (!rendered) {
-            return isMaskedPasswordField(context, column)
-                ? getExCellaColumnValue(context, table, column, valueHoldingChildren, true).getValue()
+            return isMaskedPasswordColumn(context, column)
+                ? getExporterOptions().getPasswordReplacement()
                 : null;
         }
         boolean maskField = value == null
-            ? isMaskedPasswordField(context, column)
-            : isMaskedPasswordField(context, column, selectedComponent);
+            ? isMaskedPasswordColumn(context, column)
+            : isMaskedPasswordColumn(context, column, selectedComponent)
+                || hasProtectedComponentValue(context, component);
         if (maskField) {
-            return getExCellaColumnValue(context, table, column, valueHoldingChildren, true).getValue();
+            return getExporterOptions().getPasswordReplacement();
         }
         if (value != null) {
             return value;
@@ -370,11 +363,57 @@ interface ExCellaExporter<T extends UITable<?>> {
         return exportLinkValue(context, selectedComponent, null, false);
     }
 
-    private Object getExplicitComponentValue(UIComponent component) {
-        if (component instanceof Link) {
-            return ((Link)component).getValue();
+    private ExplicitComponentValue getExplicitComponentValue(FacesContext context,
+            UIComponentWithCompositeParent component) {
+        ExplicitComponentValue state = getRenderedComponentState(context, component);
+        if (!state.isRendered()) {
+            return state;
         }
-        return ((UICommand)component).getValue();
+        UIComponent child = component.getComponent();
+        if (component.isInCompositeComponent()) {
+            component.getCompositeParent().pushComponentToEL(context, null);
+            try {
+                return ExplicitComponentValue.rendered(
+                    child instanceof Link ? ((Link)child).getValue() : ((UICommand)child).getValue());
+            } finally {
+                component.getCompositeParent().popComponentFromEL(context);
+            }
+        }
+        return ExplicitComponentValue.rendered(
+            child instanceof Link ? ((Link)child).getValue() : ((UICommand)child).getValue());
+    }
+
+    private ExplicitComponentValue getRenderedComponentState(FacesContext context,
+            UIComponentWithCompositeParent component) {
+        if (component.isInCompositeComponent()) {
+            component.getCompositeParent().pushComponentToEL(context, null);
+            try {
+                return component.getComponent().isRendered()
+                    ? ExplicitComponentValue.rendered(null)
+                    : ExplicitComponentValue.unrendered();
+            } finally {
+                component.getCompositeParent().popComponentFromEL(context);
+            }
+        }
+        return component.getComponent().isRendered()
+            ? ExplicitComponentValue.rendered(null)
+            : ExplicitComponentValue.unrendered();
+    }
+
+    private boolean hasProtectedComponentValue(FacesContext context, UIComponentWithCompositeParent component) {
+        UIComponent selectedComponent = component.getComponent();
+        if (selectedComponent.getValueExpression("value") == null) {
+            return false;
+        }
+        if (component.isInCompositeComponent()) {
+            component.getCompositeParent().pushComponentToEL(context, null);
+            try {
+                return containsExportedPassword(context, selectedComponent, null);
+            } finally {
+                component.getCompositeParent().popComponentFromEL(context);
+            }
+        }
+        return containsExportedPassword(context, selectedComponent, null);
     }
 
     private List<UIComponentWithCompositeParent> extractValueHoldingChildren(UIColumn column) {
@@ -431,6 +470,9 @@ interface ExCellaExporter<T extends UITable<?>> {
                 .map(c -> exportObjectValue(context, c))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
+            if (values.isEmpty()) {
+                return ColumnValue.of(null);
+            }
             boolean collectAsString = joinComponents || values.size() > 1;
             if (collectAsString) {
                 String joined = values.stream()
@@ -503,6 +545,32 @@ interface ExCellaExporter<T extends UITable<?>> {
                 return VisitResult.ACCEPT;
             });
         return found[0];
+    }
+
+    final class ExplicitComponentValue {
+        private final boolean rendered;
+        private final Object value;
+
+        private ExplicitComponentValue(boolean rendered, Object value) {
+            this.rendered = rendered;
+            this.value = value;
+        }
+
+        static ExplicitComponentValue rendered(Object value) {
+            return new ExplicitComponentValue(true, value);
+        }
+
+        static ExplicitComponentValue unrendered() {
+            return new ExplicitComponentValue(false, null);
+        }
+
+        boolean isRendered() {
+            return rendered;
+        }
+
+        Object getValue() {
+            return value;
+        }
     }
 
     default Entry<String, List<Object>> normalizeValues(Entry<String, List<Object>> entry) {
