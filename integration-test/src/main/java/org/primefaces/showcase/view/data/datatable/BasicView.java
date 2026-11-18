@@ -30,6 +30,8 @@ import java.util.List;
 import jakarta.faces.view.ViewScoped;
 import jakarta.inject.Named;
 
+import org.primefaces.component.api.UIColumn;
+
 import net.bis5.excella.primefaces.exporter.ExCellaExporterOptions;
 
 @Named("dtBasicView")
@@ -47,6 +49,10 @@ public class BasicView implements Serializable {
         ExCellaExporterOptions options = new ExCellaExporterOptions();
         options.setExportPassword(false);
         return options;
+    }
+
+    public String exportPassword(UIColumn column) {
+        return "EXPLICIT FUNCTION SECRET";
     }
 
     public List<DataTypeCheck> getDataTypes() {

@@ -56,6 +56,7 @@ class DataPasswordModesTest extends AbstractPrimePageTest {
                 () -> assertEquals("Cell Editor Public Command Label", sheet.getRow(0).getCell(14).getStringCellValue()),
                 () -> assertEquals("Explicit Export Value", sheet.getRow(0).getCell(15).getStringCellValue()),
                 () -> assertEquals("Composite Valueless Link", sheet.getRow(0).getCell(16).getStringCellValue()),
+                () -> assertEquals("Explicit Export Function", sheet.getRow(0).getCell(17).getStringCellValue()),
                 () -> assertEquals("MASKED", sheet.getRow(expectedRows + 1).getCell(0).getStringCellValue()),
                 () -> assertEquals("MASKED", sheet.getRow(expectedRows + 1).getCell(1).getStringCellValue()),
                 () -> assertEquals("Wrapped Password", sheet.getRow(expectedRows + 1).getCell(2).getStringCellValue()),
@@ -67,6 +68,7 @@ class DataPasswordModesTest extends AbstractPrimePageTest {
                 () -> assertEquals("Cell Editor Public Command Label", sheet.getRow(expectedRows + 1).getCell(14).getStringCellValue()),
                 () -> assertEquals("Explicit Export Value", sheet.getRow(expectedRows + 1).getCell(15).getStringCellValue()),
                 () -> assertEquals("Composite Valueless Link", sheet.getRow(expectedRows + 1).getCell(16).getStringCellValue()),
+                () -> assertEquals("Explicit Export Function", sheet.getRow(expectedRows + 1).getCell(17).getStringCellValue()),
                 () -> assertTrue(sheet.getRow(expectedRows + 1).getCell(3).getStringCellValue().contains("$")),
                 () -> assertTrue(sheet.getRow(0).getCell(3).getStringCellValue().contains("$"))
             );
@@ -91,7 +93,8 @@ class DataPasswordModesTest extends AbstractPrimePageTest {
                     () -> assertEquals("MASKED", row.getCell(13).getStringCellValue()),
                     () -> assertEquals("Public cell editor command label", row.getCell(14).getStringCellValue()),
                     () -> assertEquals("MASKED", row.getCell(15).getStringCellValue()),
-                    () -> assertEquals("Composite valueless label", row.getCell(16).getStringCellValue())
+                    () -> assertEquals("Composite valueless label", row.getCell(16).getStringCellValue()),
+                    () -> assertEquals("MASKED", row.getCell(17).getStringCellValue())
                 );
             }
         }

@@ -411,6 +411,9 @@ interface ExCellaExporter<T extends UITable<?>> {
                 : column.getExportValue());
         }
         else if (column.getExportFunction() != null) {
+            if (isMaskedPasswordColumn(context, column)) {
+                return ColumnValue.of(getExporterOptions().getPasswordReplacement());
+            }
             MethodExpression exportFunction = column.getExportFunction();
             return ColumnValue.of(exportFunction.invoke(context.getELContext(), new Object[]{column}));
         }
