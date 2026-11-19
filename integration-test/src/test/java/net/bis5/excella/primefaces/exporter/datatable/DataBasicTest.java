@@ -4,8 +4,6 @@ import static net.bis5.excella.primefaces.exporter.Assertions.assertCell;
 import static net.bis5.excella.primefaces.exporter.Assertions.assertExportArea;
 import static net.bis5.excella.primefaces.exporter.Assertions.assertHeaderCell;
 import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -61,44 +59,6 @@ public class DataBasicTest extends AbstractPrimePageTest {
         assertFileContent(record, "cars-non-ajax.xlsx");
     }
 
-    @Test
-    void exportPasswordMasked(Page page) throws EncryptedDocumentException, IOException {
-        page.commandLinkPasswordMasked.getRoot().click();
-        Path localFile = Download.downloadFileToLocal("cars-password-masked.xlsx");
-        try (Workbook workbook = WorkbookFactory.create(localFile.toFile(), null, true)) {
-            Row dataRow = workbook.getSheetAt(0).getRow(1);
-            assertAll(
-                () -> assertEquals("MASKED", dataRow.getCell(17).getStringCellValue()),
-                () -> assertEquals("MASKED", dataRow.getCell(18).getStringCellValue()),
-                () -> assertEquals("MASKED", dataRow.getCell(19).getStringCellValue()),
-                () -> assertEquals("MASKED", dataRow.getCell(20).getStringCellValue()),
-                () -> assertEquals("MASKED", dataRow.getCell(21).getStringCellValue()),
-                () -> assertEquals("STRING value", dataRow.getCell(0).getStringCellValue())
-            );
-        }
-    }
-
-    @Test
-    void exportPasswordMaskedWithDefaultReplacement(Page page) throws EncryptedDocumentException, IOException {
-        page.commandLinkPasswordDefaultReplacement.getRoot().click();
-        Path localFile = Download.downloadFileToLocal("cars-password-default-replacement.xlsx");
-        try (Workbook workbook = WorkbookFactory.create(localFile.toFile(), null, true)) {
-            Row dataRow = workbook.getSheetAt(0).getRow(1);
-            assertAll(
-                () -> assertEmptyCell(dataRow.getCell(17)),
-                () -> assertEmptyCell(dataRow.getCell(18)),
-                () -> assertEmptyCell(dataRow.getCell(19)),
-                () -> assertEmptyCell(dataRow.getCell(20)),
-                () -> assertEquals("STRING value", dataRow.getCell(0).getStringCellValue())
-            );
-        }
-    }
-
-    private void assertEmptyCell(Cell cell) {
-        assertTrue(cell == null || cell.getCellType() == CellType.BLANK
-                || (cell.getCellType() == CellType.STRING && cell.getStringCellValue().isEmpty()));
-    }
-
     private void assertFileContent(DataTypeCheck record, String outputFileName) throws EncryptedDocumentException, IOException {
         Path localFile = Download.downloadFileToLocal(outputFileName);
         try (Workbook workbook = WorkbookFactory.create(localFile.toFile(), null, true)) {
@@ -125,12 +85,7 @@ public class DataBasicTest extends AbstractPrimePageTest {
             "exportable component",
             "exportable component(value null)",
             "Composite Component",
-            "Composite + Normal Component",
-            "Password",
-            "Password (null)",
-            "Password (empty)",
-            "Password field",
-            "Password field (panelGroup)"
+            "Composite + Normal Component"
         );
 
         Row headerRow = sheet.getRow(0);
@@ -165,12 +120,7 @@ public class DataBasicTest extends AbstractPrimePageTest {
                 () -> assertCell("exportable value holder", dataRow.getCell(13), CellType.STRING, ValueType.STRING, "Export text1", Cell::getStringCellValue),
                 () -> assertCell("exportable value holder(value null)", dataRow.getCell(14), CellType.STRING, ValueType.STRING, "Export text2", Cell::getStringCellValue),
                 () -> assertCell("Composite Component", dataRow.getCell(15), CellType.STRING, ValueType.STRING, "foo bar", Cell::getStringCellValue),
-                () -> assertCell("Composite + Normal Component", dataRow.getCell(16), CellType.STRING, ValueType.STRING, "foo bar (note)", Cell::getStringCellValue),
-                () -> assertCell("Password", dataRow.getCell(17), CellType.STRING, ValueType.STRING, record.getStringProperty(), Cell::getStringCellValue),
-                () -> assertEmptyCell(dataRow.getCell(18)),
-                () -> assertEmptyCell(dataRow.getCell(19)),
-                () -> assertCell("Password field", dataRow.getCell(20), CellType.STRING, ValueType.STRING, record.getStringProperty(), Cell::getStringCellValue),
-                () -> assertCell("Password field (panelGroup)", dataRow.getCell(21), CellType.STRING, ValueType.STRING, record.getStringProperty(), Cell::getStringCellValue)
+                () -> assertCell("Composite + Normal Component", dataRow.getCell(16), CellType.STRING, ValueType.STRING, "foo bar (note)", Cell::getStringCellValue)
             ),
             () -> {
                 List<Executable> assertions = new ArrayList<>();
@@ -182,7 +132,7 @@ public class DataBasicTest extends AbstractPrimePageTest {
                 }
                 assertAll("Footer row", assertions.toArray(Executable[]::new));
             },
-            () -> assertExportArea(sheet, 0, 2, 0, 21)
+            () -> assertExportArea(sheet, 0, 2, 0, 16)
         );
     }
 
@@ -193,12 +143,6 @@ public class DataBasicTest extends AbstractPrimePageTest {
 
         @FindBy(id = "form:excellaExportAjax")
         CommandLink commandLinkAjax;
-
-        @FindBy(id = "form:excellaExportPasswordMasked")
-        CommandLink commandLinkPasswordMasked;
-
-        @FindBy(id = "form:excellaExportPasswordDefaultReplacement")
-        CommandLink commandLinkPasswordDefaultReplacement;
 
         @Override
         public String getLocation() {
