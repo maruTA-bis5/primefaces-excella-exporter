@@ -103,15 +103,6 @@
                 <comp2:compositeOutput labelValue="foo" textValue="bar" />
                 <h:outputText value="(note)" />
               </p:column>
-              <p:column headerText="Password" footerText="Password">
-                  <p:password value="#{row.stringProperty}" disabled="true" />
-              </p:column>
-              <p:column field="stringProperty" headerText="Password field (link)" footerText="Password field (link)">
-                  <p:link outcome="basic.xhtml">
-                      <p:password value="#{row.stringProperty}" disabled="true" />
-                  </p:link>
-                  <h:outputText value="additional child" />
-              </p:column>
           </p:treeTable>
       </h:form>
     </h:body>

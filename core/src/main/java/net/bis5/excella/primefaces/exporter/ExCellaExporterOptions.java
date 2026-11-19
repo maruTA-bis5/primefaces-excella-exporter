@@ -88,42 +88,6 @@ public class ExCellaExporterOptions extends ExcelOptions {
         return throwExceptionWhenNoData;
     }
 
-    private boolean exportPassword = true;
-
-    /**
-     * Set whether Password component values are exported as-is.
-     * @param value {@code true} to export Password values, otherwise use the replacement value
-     */
-    public void setExportPassword(boolean value) {
-        exportPassword = value;
-    }
-
-    /**
-     * Returns whether Password component values are exported as-is.
-     * @return {@code true} if Password values are exported
-     */
-    public boolean isExportPassword() {
-        return exportPassword;
-    }
-
-    private String passwordReplacement = "";
-
-    /**
-     * Set the value used instead of Password component values when Password export is disabled.
-     * @param value replacement value
-     */
-    public void setPasswordReplacement(String value) {
-        passwordReplacement = value;
-    }
-
-    /**
-     * Returns the replacement value for Password components.
-     * @return replacement value
-     */
-    public String getPasswordReplacement() {
-        return passwordReplacement;
-    }
-
     private final List<BeforeWriteResponseListener> beforeWriteResponseListeners = new ArrayList<>();
 
     /**
