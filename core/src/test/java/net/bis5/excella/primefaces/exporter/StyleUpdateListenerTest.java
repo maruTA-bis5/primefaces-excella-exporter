@@ -203,11 +203,12 @@ class StyleUpdateListenerTest {
                     "date", List.of(LocalDate.of(2026, 1, 1)),
                     "dateTime", List.of(LocalDateTime.of(2026, 1, 1, 12, 30)),
                     "time", List.of(LocalTime.of(12, 30)),
+                    "invalidTime", List.of("25:99"),
                     "integer", List.of(42),
                     "decimal", List.of(1.5));
-            String[] keys = {"yearMonth", "date", "dateTime", "time", "integer", "decimal"};
+            String[] keys = {"yearMonth", "date", "dateTime", "time", "invalidTime", "integer", "decimal"};
             ValueType[] types = {ValueType.YEAR_MONTH, ValueType.DATE, ValueType.DATE_TIME,
-                    ValueType.TIME, ValueType.INTEGER, ValueType.DECIMAL};
+                    ValueType.TIME, ValueType.STRING, ValueType.INTEGER, ValueType.DECIMAL};
             Object[] tags = new Object[keys.length];
             var row = sheet.createRow(0);
             for (int i = 0; i < keys.length; i++) {
