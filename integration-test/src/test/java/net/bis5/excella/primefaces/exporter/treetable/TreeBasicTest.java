@@ -226,12 +226,12 @@ class TreeBasicTest extends AbstractPrimePageTest {
         );
     }
 
-    private void assertTimeValues(Row row, DataTypeCheck record) {
+    private void assertTimeValues(Row row, DataTypeCheck dataTypeCheck) {
         assertAll("Time values",
             () -> assertCell("String time cell", row.getCell(17), CellType.NUMERIC, ValueType.TIME, 1.0 / 24, Cell::getNumericCellValue),
             () -> assertCell("LocalTime cell", row.getCell(18), CellType.NUMERIC, ValueType.TIME, 1439.0 / 1440, Cell::getNumericCellValue),
             () -> assertCell("Extended string time cell", row.getCell(19), CellType.NUMERIC, ValueType.TIME, 1.0 + 1.0 / 1440, Cell::getNumericCellValue),
-            () -> assertCell("LocalTime with fractional seconds cell", row.getCell(20), CellType.NUMERIC, ValueType.TIME, record.getLocalTimeWithFractionProperty().toNanoOfDay() / 86_400_000_000_000d, Cell::getNumericCellValue),
+            () -> assertCell("LocalTime with fractional seconds cell", row.getCell(20), CellType.NUMERIC, ValueType.TIME, dataTypeCheck.getLocalTimeWithFractionProperty().toNanoOfDay() / 86_400_000_000_000d, Cell::getNumericCellValue),
             () -> assertCell("24:00 string time cell", row.getCell(21), CellType.NUMERIC, ValueType.TIME, 1.0, Cell::getNumericCellValue),
             () -> assertCell("1500:00 string time cell", row.getCell(22), CellType.NUMERIC, ValueType.TIME, 1500.0 / 24, Cell::getNumericCellValue),
             () -> assertEquals("[h]:mm", row.getCell(19).getCellStyle().getDataFormatString(), "extended time format is incorrect")
