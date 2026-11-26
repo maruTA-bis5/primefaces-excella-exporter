@@ -243,7 +243,8 @@ public class TreeTableExcellaExporter extends TreeTableExporter<ReportBook, ExCe
         String footersTagName = nonNull(getFootersTag(), DEFAULT_FOOTERS_TAG);
         reportSheet.addParam(ColRepeatParamParser.DEFAULT_TAG, headersTagName, columnHeader.toArray());
         reportSheet.addParam(ColRepeatParamParser.DEFAULT_TAG, footersTagName, columnFooter.toArray());
-        listeners.add(new StyleUpdateListener(reportSheet, dataContainer, dataTag(), headersTagName, footersTagName, columnSize, columnDataParams) {
+        listeners.add(new StyleUpdateListener(reportSheet, dataContainer, dataTag(), headersTagName, footersTagName,
+                columnSize, columnDataParams, getExporterOptions()) {
             @Override
             public void postParse(Sheet sheet, SheetParser sheetParser, SheetData sheetData) {
                 super.postParse(sheet, sheetParser, sheetData);

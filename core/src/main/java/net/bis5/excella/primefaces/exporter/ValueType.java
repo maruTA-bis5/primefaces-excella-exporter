@@ -30,36 +30,17 @@ public enum ValueType {
     }
 
     public static Map<ValueType, CellStyle> initStyles(Workbook workbook) {
+        return initStyles(workbook, null);
+    }
+
+    static Map<ValueType, CellStyle> initStyles(Workbook workbook, ExCellaExporterOptions options) {
         EnumMap<ValueType, CellStyle> styles = new EnumMap<>(ValueType.class);
-
-        CellStyle stringStyle = workbook.createCellStyle();
-        stringStyle.setDataFormat(ValueType.STRING.getFormat(workbook));
-        styles.put(ValueType.STRING, stringStyle);
-
-        CellStyle yearMonthStyle = workbook.createCellStyle();
-        yearMonthStyle.setDataFormat(ValueType.YEAR_MONTH.getFormat(workbook));
-        styles.put(ValueType.YEAR_MONTH, yearMonthStyle);
-
-        CellStyle dateStyle = workbook.createCellStyle();
-        dateStyle.setDataFormat(ValueType.DATE.getFormat(workbook));
-        styles.put(ValueType.DATE, dateStyle);
-
-        CellStyle dateTimeStyle = workbook.createCellStyle();
-        dateTimeStyle.setDataFormat(ValueType.DATE_TIME.getFormat(workbook));
-        styles.put(ValueType.DATE_TIME, dateTimeStyle);
-
-        CellStyle timeStyle = workbook.createCellStyle();
-        timeStyle.setDataFormat(ValueType.TIME.getFormat(workbook));
-        styles.put(ValueType.TIME, timeStyle);
-
-        CellStyle decimalStyle = workbook.createCellStyle();
-        decimalStyle.setDataFormat(ValueType.DECIMAL.getFormat(workbook));
-        styles.put(ValueType.DECIMAL, decimalStyle);
-
-        CellStyle integerStyle = workbook.createCellStyle();
-        integerStyle.setDataFormat(ValueType.INTEGER.getFormat(workbook));
-        styles.put(ValueType.INTEGER, integerStyle);
-
+        for (ValueType valueType : values()) {
+            CellStyle style = workbook.createCellStyle();
+            Short overrideDataFormat = options == null ? null : options.getOverrideDataFormat(valueType, workbook);
+            style.setDataFormat(overrideDataFormat == null ? valueType.getFormat(workbook) : overrideDataFormat);
+            styles.put(valueType, style);
+        }
         return styles;
     }
 }
