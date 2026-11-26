@@ -19,6 +19,7 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.YearMonth;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -51,6 +52,12 @@ public class BasicView implements Serializable {
         private final Date dateTimeProperty = newDateTime();
         private final LocalDate localDateProperty = LocalDate.of(2021, 3 ,23);
         private final LocalDateTime localDateTimeProperty = LocalDateTime.of(2021, 3,23, 21, 49, 0);
+        private final String timeStringProperty = "1:00";
+        private final LocalTime localTimeProperty = LocalTime.of(23, 59);
+        private final String extendedTimeStringProperty = "24:01";
+        private final String boundaryTimeStringProperty = "24:00";
+        private final String longTimeStringProperty = "1500:00";
+        private final LocalTime localTimeWithFractionProperty = LocalTime.of(23, 59, 30, 123_000_000);
         private final int intProperty = 123;
         private final BigDecimal bigDecimalIntProperty = new BigDecimal("321.00");
         private final double doubleProperty = 102.4;
@@ -76,6 +83,24 @@ public class BasicView implements Serializable {
         }
         public LocalDateTime getLocalDateTimeProperty() {
             return localDateTimeProperty;
+        }
+        public String getTimeStringProperty() {
+            return timeStringProperty;
+        }
+        public LocalTime getLocalTimeProperty() {
+            return localTimeProperty;
+        }
+        public String getExtendedTimeStringProperty() {
+            return extendedTimeStringProperty;
+        }
+        public String getBoundaryTimeStringProperty() {
+            return boundaryTimeStringProperty;
+        }
+        public String getLongTimeStringProperty() {
+            return longTimeStringProperty;
+        }
+        public LocalTime getLocalTimeWithFractionProperty() {
+            return localTimeWithFractionProperty;
         }
         public int getIntProperty() {
             return intProperty;
