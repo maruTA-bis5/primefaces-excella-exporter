@@ -4,6 +4,7 @@ import static net.bis5.excella.primefaces.exporter.Assertions.assertCell;
 import static net.bis5.excella.primefaces.exporter.Assertions.assertExportArea;
 import static net.bis5.excella.primefaces.exporter.Assertions.assertHeaderCell;
 import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -85,7 +86,13 @@ public class DataBasicTest extends AbstractPrimePageTest {
             "exportable component",
             "exportable component(value null)",
             "Composite Component",
-            "Composite + Normal Component"
+            "Composite + Normal Component",
+            "String time (1:00)",
+            "LocalTime (23:59)",
+            "String time (24:01)",
+            "LocalTime with fraction (23:59:30.123)",
+            "String time (24:00)",
+            "String time (1500:00)"
         );
 
         Row headerRow = sheet.getRow(0);
@@ -120,7 +127,14 @@ public class DataBasicTest extends AbstractPrimePageTest {
                 () -> assertCell("exportable value holder", dataRow.getCell(13), CellType.STRING, ValueType.STRING, "Export text1", Cell::getStringCellValue),
                 () -> assertCell("exportable value holder(value null)", dataRow.getCell(14), CellType.STRING, ValueType.STRING, "Export text2", Cell::getStringCellValue),
                 () -> assertCell("Composite Component", dataRow.getCell(15), CellType.STRING, ValueType.STRING, "foo bar", Cell::getStringCellValue),
-                () -> assertCell("Composite + Normal Component", dataRow.getCell(16), CellType.STRING, ValueType.STRING, "foo bar (note)", Cell::getStringCellValue)
+                () -> assertCell("Composite + Normal Component", dataRow.getCell(16), CellType.STRING, ValueType.STRING, "foo bar (note)", Cell::getStringCellValue),
+                () -> assertCell("String time cell", dataRow.getCell(17), CellType.NUMERIC, ValueType.TIME, 1.0 / 24, Cell::getNumericCellValue),
+                () -> assertCell("LocalTime cell", dataRow.getCell(18), CellType.NUMERIC, ValueType.TIME, 1439.0 / 1440, Cell::getNumericCellValue),
+                () -> assertCell("Extended string time cell", dataRow.getCell(19), CellType.NUMERIC, ValueType.TIME, 1.0 + 1.0 / 1440, Cell::getNumericCellValue),
+                () -> assertCell("LocalTime with fractional seconds cell", dataRow.getCell(20), CellType.NUMERIC, ValueType.TIME, record.getLocalTimeWithFractionProperty().toNanoOfDay() / 86_400_000_000_000d, Cell::getNumericCellValue),
+                () -> assertCell("24:00 string time cell", dataRow.getCell(21), CellType.NUMERIC, ValueType.TIME, 1.0, Cell::getNumericCellValue),
+                () -> assertCell("1500:00 string time cell", dataRow.getCell(22), CellType.NUMERIC, ValueType.TIME, 1500.0 / 24, Cell::getNumericCellValue),
+                () -> assertEquals("[h]:mm", dataRow.getCell(19).getCellStyle().getDataFormatString(), "extended time format is incorrect")
             ),
             () -> {
                 List<Executable> assertions = new ArrayList<>();
@@ -132,7 +146,7 @@ public class DataBasicTest extends AbstractPrimePageTest {
                 }
                 assertAll("Footer row", assertions.toArray(Executable[]::new));
             },
-            () -> assertExportArea(sheet, 0, 2, 0, 16)
+            () -> assertExportArea(sheet, 0, 2, 0, 22)
         );
     }
 
