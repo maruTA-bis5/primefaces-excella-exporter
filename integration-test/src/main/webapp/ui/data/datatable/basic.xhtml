@@ -38,6 +38,12 @@
               <h:outputLabel>ExCella Reports (Ajax)</h:outputLabel>
               <p:dataExporter type="excella" target="tbl2" fileName="cars-ajax" />
           </p:commandLink>
+          <br />
+          <p:commandLink id="excellaExportDataFormatOverride" ajax="false">
+              <h:outputLabel>ExCella Reports (data format override)</h:outputLabel>
+              <p:dataExporter type="excella" target="tbl2" fileName="cars-data-format-override"
+                  options="#{dtBasicView.dataFormatOverrideOptions}" />
+          </p:commandLink>
 
           <p:dataTable id="tbl2" var="row" value="#{dtBasicView.dataTypes}">
               <p:column headerText="String" footerText="String">

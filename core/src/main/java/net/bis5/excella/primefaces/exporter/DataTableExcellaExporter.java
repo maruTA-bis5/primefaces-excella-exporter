@@ -174,7 +174,8 @@ public class DataTableExcellaExporter extends DataTableExporter<ReportBook, ExCe
 
         getDocument().addReportSheet(reportSheet);
 
-        listeners.add(new StyleUpdateListener(reportSheet, dataContainer, dataTag(), headersTagName, footersTagName, columnSize, columnDataParams));
+        listeners.add(new StyleUpdateListener(reportSheet, dataContainer, dataTag(), headersTagName, footersTagName,
+                columnSize, columnDataParams, getExporterOptions()));
 
     }
 

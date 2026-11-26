@@ -31,10 +31,18 @@ import java.util.List;
 import jakarta.faces.view.ViewScoped;
 import jakarta.inject.Named;
 
+import net.bis5.excella.primefaces.exporter.ExCellaExporterOptions;
+import net.bis5.excella.primefaces.exporter.ValueType;
 
 @Named("dtBasicView")
 @ViewScoped
 public class BasicView implements Serializable {
+
+    public ExCellaExporterOptions getDataFormatOverrideOptions() {
+        ExCellaExporterOptions options = new ExCellaExporterOptions();
+        options.setOverrideDataType(ValueType.INTEGER, "#,##0.00");
+        return options;
+    }
 
     public List<DataTypeCheck> getDataTypes() {
         return dataTypes;

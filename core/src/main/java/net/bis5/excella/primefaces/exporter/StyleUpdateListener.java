@@ -75,6 +75,8 @@ class StyleUpdateListener extends ReportProcessAdaptor {
 
     private final Object[] columnDataParams;
 
+    private final ExCellaExporterOptions options;
+
     private final Map<String, ValueType> valueTypes;
 
     private final int repeatRows;
@@ -83,9 +85,16 @@ class StyleUpdateListener extends ReportProcessAdaptor {
 
     private final Set<CellRangeAddress> footerMergedAreas;
 
-    @SuppressWarnings("unchecked")
     StyleUpdateListener(ReportSheet reportSheet, Map<String, List<Object>> dataContainer, String dataTagName,
             String headersTagName, String footersTagName, int columnSize, Object[] columnDataParams) {
+        this(reportSheet, dataContainer, dataTagName, headersTagName, footersTagName, columnSize, columnDataParams,
+                new ExCellaExporterOptions());
+    }
+
+    @SuppressWarnings("unchecked")
+    StyleUpdateListener(ReportSheet reportSheet, Map<String, List<Object>> dataContainer, String dataTagName,
+            String headersTagName, String footersTagName, int columnSize, Object[] columnDataParams,
+            ExCellaExporterOptions options) {
         this.reportSheet = reportSheet;
         this.dataContainer = dataContainer;
         this.dataTagName = dataTagName;
@@ -93,6 +102,7 @@ class StyleUpdateListener extends ReportProcessAdaptor {
         this.footersTagName = footersTagName;
         this.columnSize = columnSize;
         this.columnDataParams = columnDataParams;
+        this.options = Objects.requireNonNullElseGet(options, ExCellaExporterOptions::new);
 
         valueTypes = detectValueTypes(dataContainer);
         repeatRows = dataContainer.values().stream()
@@ -177,7 +187,7 @@ class StyleUpdateListener extends ReportProcessAdaptor {
 
     @Override
     public void preBookParse(Workbook workbook, ReportBook reportBook) {
-        styles = ValueType.initStyles(workbook);
+        styles = ValueType.initStyles(workbook, options);
         updatedStyles.clear();
         xssfStyles.clear();
         indexedXssfStyleCount = 0;
