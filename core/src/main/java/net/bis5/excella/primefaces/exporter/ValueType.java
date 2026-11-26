@@ -3,6 +3,7 @@ package net.bis5.excella.primefaces.exporter;
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -12,9 +13,11 @@ public enum ValueType {
     YEAR_MONTH(w -> w.createDataFormat().getFormat("yyyy/m")),
     DATE(w -> 0xe),
     DATE_TIME(w -> 0x16),
-    TIME(w -> 0x14),
+    TIME(w -> w.createDataFormat().getFormat("[h]:mm")),
     DECIMAL(w -> 0x4),
     INTEGER(w -> 0x3);
+
+    static final Pattern timePattern = Pattern.compile("^\\d+:[0-5]\\d$");
 
     private final Function<Workbook, Short> dataFormat;
 
