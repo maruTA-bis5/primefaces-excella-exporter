@@ -378,7 +378,28 @@ interface ExCellaExporter<T extends UITable<?>> {
             YearMonth yearMonth = (YearMonth)rawValue;
             return Date.from(yearMonth.atDay(1).atStartOfDay(ZoneId.systemDefault()).toInstant());
         }
+        if (rawValue instanceof LocalTime) {
+            return normalizeTime((LocalTime)rawValue);
+        }
+        if (rawValue instanceof String && ValueType.timePattern.matcher((String)rawValue).matches()) {
+            return normalizeTime((String)rawValue);
+        }
         return rawValue;
+    }
+
+    private double normalizeTime(LocalTime timeValue) {
+        return (timeValue.toSecondOfDay() + timeValue.getNano() / 1_000_000_000d) / 86_400d;
+    }
+
+    private Object normalizeTime(String timeValue) {
+        try {
+            String[] timeParts = timeValue.split(":");
+            long hour = Long.parseLong(timeParts[0]);
+            long minutes = Long.parseLong(timeParts[1]);
+            return (hour * 60d + minutes) / 1440d;
+        } catch (NumberFormatException e) {
+            return timeValue;
+        }
     }
 
     default String exportColumnByFunction(FacesContext context, UIColumn column) {
