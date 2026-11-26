@@ -72,6 +72,64 @@ class StyleUpdateListenerTest {
     }
 
     @Test
+    void stringDataFormatOverrideAppliesToPlainStringColumn() throws IOException {
+        try (XSSFWorkbook workbook = new XSSFWorkbook()) {
+            ExCellaExporterOptions options = new ExCellaExporterOptions();
+            options.setOverrideDataType(ValueType.STRING, "@");
+            Sheet sheet = workbook.createSheet("Sheet");
+            Cell cell = sheet.createRow(0).createCell(0);
+
+            update(workbook, sheet, List.of("text"), options);
+
+            assertEquals("@", cell.getCellStyle().getDataFormatString());
+        }
+    }
+
+    @Test
+    void plainStringColumnPreservesItsTemplateFormatWithoutAnOverride() throws IOException {
+        try (XSSFWorkbook workbook = new XSSFWorkbook()) {
+            Sheet sheet = workbook.createSheet("Sheet");
+            CellStyle templateStyle = workbook.createCellStyle();
+            short templateFormat = workbook.createDataFormat().getFormat("0.0000");
+            templateStyle.setDataFormat(templateFormat);
+            Cell cell = sheet.createRow(0).createCell(0);
+            cell.setCellStyle(templateStyle);
+
+            update(workbook, sheet, List.of("text"));
+
+            assertEquals(templateFormat, cell.getCellStyle().getDataFormat());
+            assertEquals(templateStyle.getIndex(), cell.getCellStyle().getIndex());
+        }
+    }
+
+    @Test
+    void mixedColumnsPreferNonStringTypesAndAllNullColumnsAreSkipped() throws IOException {
+        try (XSSFWorkbook workbook = new XSSFWorkbook()) {
+            Sheet sheet = workbook.createSheet("Sheet");
+            short templateFormat = workbook.createDataFormat().getFormat("0.0000");
+            CellStyle templateStyle = workbook.createCellStyle();
+            templateStyle.setDataFormat(templateFormat);
+            for (int rowIndex = 0; rowIndex < 2; rowIndex++) {
+                var row = sheet.createRow(rowIndex);
+                row.createCell(0);
+                row.createCell(1).setCellStyle(templateStyle);
+            }
+
+            Map<String, List<Object>> values = Map.of(
+                    "mixed", Arrays.asList(123, "text"),
+                    "allNull", Arrays.asList(null, null));
+            update(workbook, sheet, values,
+                    new Object[] {"$R[]{mixed}", "$R[]{allNull}"}, new ExCellaExporterOptions());
+
+            for (int rowIndex = 0; rowIndex < 2; rowIndex++) {
+                var row = sheet.getRow(rowIndex);
+                assertEquals(ValueType.INTEGER.getFormat(workbook), row.getCell(0).getCellStyle().getDataFormat());
+                assertEquals(templateFormat, row.getCell(1).getCellStyle().getDataFormat());
+            }
+        }
+    }
+
+    @Test
     void nullStringDataFormatClearsAnOverride() throws IOException {
         try (XSSFWorkbook workbook = new XSSFWorkbook()) {
             ExCellaExporterOptions options = new ExCellaExporterOptions();
@@ -288,7 +346,7 @@ class StyleUpdateListenerTest {
                 tags[i] = "$R[]{" + keys[i] + "}";
             }
             StyleUpdateListener listener = new StyleUpdateListener(new ReportSheet("Sheet"), values,
-                    "data", "headers", "footers", keys.length, tags);
+                    "data", "headers", "footers", keys.length, tags, new ExCellaExporterOptions());
             listener.preBookParse(workbook, null);
             listener.postParse(sheet, null, new SheetData("Sheet"));
 
@@ -341,7 +399,7 @@ class StyleUpdateListenerTest {
             first.setCellStyle(source);
             second.setCellStyle(source);
             StyleUpdateListener listener = new StyleUpdateListener(new ReportSheet("Sheet"), Map.of(),
-                    "data", "headers", "footers", 1, new Object[0]);
+                    "data", "headers", "footers", 1, new Object[0], new ExCellaExporterOptions());
             listener.preBookParse(workbook, null);
 
             listener.setCellIndentation(first, (short) 2);
@@ -445,7 +503,7 @@ class StyleUpdateListenerTest {
             Cell cell = sheet.createRow(0).createCell(0);
             cell.setCellStyle(source);
             StyleUpdateListener listener = new StyleUpdateListener(new ReportSheet("Sheet"), Map.of(),
-                    "data", "headers", "footers", 1, new Object[0]);
+                    "data", "headers", "footers", 1, new Object[0], new ExCellaExporterOptions());
             listener.preBookParse(workbook, null);
             int styleCountBeforeUpdate = workbook.getNumCellStyles();
 
@@ -516,7 +574,7 @@ class StyleUpdateListenerTest {
     private static void update(Workbook workbook, Sheet sheet, List<Object> values) {
         ReportSheet reportSheet = new ReportSheet("Sheet");
         StyleUpdateListener listener = new StyleUpdateListener(reportSheet, Map.of("value", values),
-                "data", "headers", "footers", 1, new Object[] {"$R[]{value}"});
+                "data", "headers", "footers", 1, new Object[] {"$R[]{value}"}, new ExCellaExporterOptions());
         listener.preBookParse(workbook, null);
         listener.postParse(sheet, null, new SheetData("Sheet"));
     }

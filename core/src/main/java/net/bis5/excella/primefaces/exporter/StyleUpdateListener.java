@@ -15,7 +15,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
 
@@ -85,12 +84,6 @@ class StyleUpdateListener extends ReportProcessAdaptor {
 
     private final Set<CellRangeAddress> footerMergedAreas;
 
-    StyleUpdateListener(ReportSheet reportSheet, Map<String, List<Object>> dataContainer, String dataTagName,
-            String headersTagName, String footersTagName, int columnSize, Object[] columnDataParams) {
-        this(reportSheet, dataContainer, dataTagName, headersTagName, footersTagName, columnSize, columnDataParams,
-                new ExCellaExporterOptions());
-    }
-
     @SuppressWarnings("unchecked")
     StyleUpdateListener(ReportSheet reportSheet, Map<String, List<Object>> dataContainer, String dataTagName,
             String headersTagName, String footersTagName, int columnSize, Object[] columnDataParams,
@@ -127,13 +120,18 @@ class StyleUpdateListener extends ReportProcessAdaptor {
     }
 
     private ValueType detectValueType(List<Object> values) {
-        Set<ValueType> types = values.stream()
-            .map(this::detectValueType)
-            .filter(Objects::nonNull)
-            .collect(Collectors.toSet());
-
+        Set<ValueType> types = new HashSet<>();
+        boolean hasString = false;
+        for (Object value : values) {
+            ValueType type = detectValueType(value);
+            if (type == ValueType.STRING) {
+                hasString = true;
+            } else if (type != null) {
+                types.add(type);
+            }
+        }
         if (types.isEmpty()) {
-            return null;
+            return hasString ? ValueType.STRING : null;
         }
         if (types.contains(ValueType.INTEGER) && types.contains(ValueType.DECIMAL)) {
             return ValueType.DECIMAL;
@@ -153,6 +151,9 @@ class StyleUpdateListener extends ReportProcessAdaptor {
         }
         if (value instanceof LocalTime || (value instanceof String && ValueType.timePattern.matcher((String)value).matches())) {
             return ValueType.TIME;
+        }
+        if (value instanceof String) {
+            return ValueType.STRING;
         }
         if (value instanceof YearMonth) {
             return ValueType.YEAR_MONTH;
@@ -250,6 +251,10 @@ class StyleUpdateListener extends ReportProcessAdaptor {
             String columnTag = getColumnTag(entry.getKey());
             ValueType valueType = entry.getValue();
             if (valueType == null) {
+                continue;
+            }
+            if (valueType == ValueType.STRING
+                    && options.getOverrideDataFormat(ValueType.STRING, sheet.getWorkbook()) == null) {
                 continue;
             }
             CellStyle style = styles.get(valueType);
