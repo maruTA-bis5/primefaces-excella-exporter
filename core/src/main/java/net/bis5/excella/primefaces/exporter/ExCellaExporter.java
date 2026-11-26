@@ -387,6 +387,8 @@ interface ExCellaExporter<T extends UITable<?>> {
         return rawValue;
     }
 
+    // LocalTimeとtimePattern一致のStringはExcel時刻シリアル値(double)へ直接変換する。
+    // Date/LocalDateTime経由の1900年うるう年バグとタイムゾーン依存を避け、時の桁あふれ時は元文字列を返す。
     private double normalizeTime(LocalTime timeValue) {
         return (timeValue.toSecondOfDay() + timeValue.getNano() / 1_000_000_000d) / 86_400d;
     }
