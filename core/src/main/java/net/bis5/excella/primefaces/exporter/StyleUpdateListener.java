@@ -15,7 +15,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
@@ -117,8 +116,6 @@ class StyleUpdateListener extends ReportProcessAdaptor {
         return detectedValueTypes;
     }
 
-    private Pattern timePattern = Pattern.compile("^\\d+:\\d\\d$");
-
     private ValueType detectValueType(List<Object> values) {
         Set<ValueType> types = values.stream()
             .map(this::detectValueType)
@@ -144,7 +141,7 @@ class StyleUpdateListener extends ReportProcessAdaptor {
         if (value instanceof LocalDate || value instanceof Date || value instanceof Calendar) {
             return ValueType.DATE;
         }
-        if (value instanceof LocalTime || (value instanceof String && timePattern.matcher((String)value).matches())) {
+        if (value instanceof LocalTime || (value instanceof String && ValueType.timePattern.matcher((String)value).matches())) {
             return ValueType.TIME;
         }
         if (value instanceof YearMonth) {
