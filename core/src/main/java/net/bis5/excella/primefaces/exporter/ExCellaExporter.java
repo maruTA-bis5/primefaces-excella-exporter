@@ -354,7 +354,30 @@ interface ExCellaExporter<T extends ColumnAware> {
             YearMonth yearMonth = (YearMonth)rawValue;
             return Date.from(yearMonth.atDay(1).atStartOfDay(ZoneId.systemDefault()).toInstant());
         }
+        if (rawValue instanceof LocalTime) {
+            return normalizeTime((LocalTime)rawValue);
+        }
+        if (rawValue instanceof String && ValueType.timePattern.matcher((String)rawValue).matches()) {
+            return normalizeTime((String)rawValue);
+        }
         return rawValue;
+    }
+
+    // Convert time-only values directly to Excel's day fraction, avoiding Date's leap-year and time-zone behavior.
+    // Preserve strings when their hour cannot be represented as a long.
+    private double normalizeTime(LocalTime timeValue) {
+        return (timeValue.toSecondOfDay() + timeValue.getNano() / 1_000_000_000d) / 86_400d;
+    }
+
+    private Object normalizeTime(String timeValue) {
+        try {
+            String[] timeParts = timeValue.split(":");
+            long hour = Long.parseLong(timeParts[0]);
+            long minutes = Long.parseLong(timeParts[1]);
+            return (hour * 60d + minutes) / 1440d;
+        } catch (NumberFormatException e) {
+            return timeValue;
+        }
     }
 
     String exportColumnByFunction(FacesContext context, UIColumn column);
