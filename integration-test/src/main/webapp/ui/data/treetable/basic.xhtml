@@ -103,6 +103,24 @@
                 <comp2:compositeOutput labelValue="foo" textValue="bar" />
                 <h:outputText value="(note)" />
               </p:column>
+              <p:column headerText="String time (1:00)" footerText="String time (1:00)">
+                  <h:outputText value="#{row.timeStringProperty}" />
+              </p:column>
+              <p:column headerText="LocalTime (23:59)" footerText="LocalTime (23:59)">
+                  <h:outputText value="#{row.localTimeProperty}" />
+              </p:column>
+              <p:column headerText="String time (24:01)" footerText="String time (24:01)">
+                  <h:outputText value="#{row.extendedTimeStringProperty}" />
+              </p:column>
+              <p:column headerText="LocalTime with fraction (23:59:30.123)" footerText="LocalTime with fraction (23:59:30.123)">
+                  <h:outputText value="#{row.localTimeWithFractionProperty}" />
+              </p:column>
+              <p:column headerText="String time (24:00)" footerText="String time (24:00)">
+                  <h:outputText value="#{row.boundaryTimeStringProperty}" />
+              </p:column>
+              <p:column headerText="String time (1500:00)" footerText="String time (1500:00)">
+                  <h:outputText value="#{row.longTimeStringProperty}" />
+              </p:column>
           </p:treeTable>
       </h:form>
     </h:body>
