@@ -65,9 +65,6 @@
   <build>
     <plugins>
       <plugin>
-        <artifactId>maven-war-plugin</artifactId>
-      </plugin>
-      <plugin>
         <groupId>org.wildfly.plugins</groupId>
         <artifactId>wildfly-jar-maven-plugin</artifactId>
         <version>${wildfly-jar-maven-plugin.version}</version>
