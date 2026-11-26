@@ -100,7 +100,13 @@ class TreeBasicTest extends AbstractPrimePageTest {
             "exportable component",
             "exportable component(value null)",
             "Composite Component",
-            "Composite + Normal Component"
+            "Composite + Normal Component",
+            "String time (1:00)",
+            "LocalTime (23:59)",
+            "String time (24:01)",
+            "LocalTime with fraction (23:59:30.123)",
+            "String time (24:00)",
+            "String time (1500:00)"
         );
 
         Row headerRow = sheet.getRow(0);
@@ -139,7 +145,8 @@ class TreeBasicTest extends AbstractPrimePageTest {
                 () -> assertCell("exportable value holder", parentNodeRow1.getCell(13), CellType.STRING, ValueType.STRING, "Export text1", Cell::getStringCellValue),
                 () -> assertCell("exportable value holder(value null)", parentNodeRow1.getCell(14), CellType.STRING, ValueType.STRING, "Export text2", Cell::getStringCellValue),
                 () -> assertCell("Composite Component", parentNodeRow1.getCell(15), CellType.STRING, ValueType.STRING, "foo bar", Cell::getStringCellValue),
-                () -> assertCell("Composite + Normal Component", parentNodeRow1.getCell(16), CellType.STRING, ValueType.STRING, "foo bar (note)", Cell::getStringCellValue)
+                () -> assertCell("Composite + Normal Component", parentNodeRow1.getCell(16), CellType.STRING, ValueType.STRING, "foo bar (note)", Cell::getStringCellValue),
+                () -> assertTimeValues(parentNodeRow1, parentRecord1)
             ),
             () -> assertAll("Child node row 2",
                 () -> assertEquals(1, childNodeRow2.getCell(0).getCellStyle().getIndention(), "indention"),
@@ -159,7 +166,8 @@ class TreeBasicTest extends AbstractPrimePageTest {
                 () -> assertCell("exportable value holder", childNodeRow2.getCell(13), CellType.STRING, ValueType.STRING, "Export text1", Cell::getStringCellValue),
                 () -> assertCell("exportable value holder(value null)", childNodeRow2.getCell(14), CellType.STRING, ValueType.STRING, "Export text2", Cell::getStringCellValue),
                 () -> assertCell("Composite Component", childNodeRow2.getCell(15), CellType.STRING, ValueType.STRING, "foo bar", Cell::getStringCellValue),
-                () -> assertCell("Composite + Normal Component", childNodeRow2.getCell(16), CellType.STRING, ValueType.STRING, "foo bar (note)", Cell::getStringCellValue)
+                () -> assertCell("Composite + Normal Component", childNodeRow2.getCell(16), CellType.STRING, ValueType.STRING, "foo bar (note)", Cell::getStringCellValue),
+                () -> assertTimeValues(childNodeRow2, childRecord1)
             ),
             () -> assertAll("Parent node row 3",
                 () -> assertEquals(0, parentNodeRow3.getCell(0).getCellStyle().getIndention(), "indention"),
@@ -179,7 +187,8 @@ class TreeBasicTest extends AbstractPrimePageTest {
                 () -> assertCell("exportable value holder", parentNodeRow3.getCell(13), CellType.STRING, ValueType.STRING, "Export text1", Cell::getStringCellValue),
                 () -> assertCell("exportable value holder(value null)", parentNodeRow3.getCell(14), CellType.STRING, ValueType.STRING, "Export text2", Cell::getStringCellValue),
                 () -> assertCell("Composite Component", parentNodeRow3.getCell(15), CellType.STRING, ValueType.STRING, "foo bar", Cell::getStringCellValue),
-                () -> assertCell("Composite + Normal Component", parentNodeRow3.getCell(16), CellType.STRING, ValueType.STRING, "foo bar (note)", Cell::getStringCellValue)
+                () -> assertCell("Composite + Normal Component", parentNodeRow3.getCell(16), CellType.STRING, ValueType.STRING, "foo bar (note)", Cell::getStringCellValue),
+                () -> assertTimeValues(parentNodeRow3, parentRecord2)
             ),
             () -> assertAll("Child node row 4",
                 () -> assertEquals(1, childNodeRow4.getCell(0).getCellStyle().getIndention(), "indention"),
@@ -199,7 +208,8 @@ class TreeBasicTest extends AbstractPrimePageTest {
                 () -> assertCell("exportable value holder", childNodeRow4.getCell(13), CellType.STRING, ValueType.STRING, "Export text1", Cell::getStringCellValue),
                 () -> assertCell("exportable value holder(value null)", childNodeRow4.getCell(14), CellType.STRING, ValueType.STRING, "Export text2", Cell::getStringCellValue),
                 () -> assertCell("Composite Component", childNodeRow4.getCell(15), CellType.STRING, ValueType.STRING, "foo bar", Cell::getStringCellValue),
-                () -> assertCell("Composite + Normal Component", childNodeRow4.getCell(16), CellType.STRING, ValueType.STRING, "foo bar (note)", Cell::getStringCellValue)
+                () -> assertCell("Composite + Normal Component", childNodeRow4.getCell(16), CellType.STRING, ValueType.STRING, "foo bar (note)", Cell::getStringCellValue),
+                () -> assertTimeValues(childNodeRow4, childRecord2)
             ),
             () -> {
                 List<Executable> assertions = new ArrayList<>();
@@ -211,6 +221,18 @@ class TreeBasicTest extends AbstractPrimePageTest {
                 }
                 assertAll("Footer row", assertions.toArray(Executable[]::new));
             }
+        );
+    }
+
+    private void assertTimeValues(Row row, DataTypeCheck dataTypeCheck) {
+        assertAll("Time values",
+            () -> assertCell("String time cell", row.getCell(17), CellType.NUMERIC, ValueType.TIME, 1.0 / 24, Cell::getNumericCellValue),
+            () -> assertCell("LocalTime cell", row.getCell(18), CellType.NUMERIC, ValueType.TIME, 1439.0 / 1440, Cell::getNumericCellValue),
+            () -> assertCell("Extended string time cell", row.getCell(19), CellType.NUMERIC, ValueType.TIME, 1.0 + 1.0 / 1440, Cell::getNumericCellValue),
+            () -> assertCell("LocalTime with fractional seconds cell", row.getCell(20), CellType.NUMERIC, ValueType.TIME, dataTypeCheck.getLocalTimeWithFractionProperty().toNanoOfDay() / 86_400_000_000_000d, Cell::getNumericCellValue),
+            () -> assertCell("24:00 string time cell", row.getCell(21), CellType.NUMERIC, ValueType.TIME, 1.0, Cell::getNumericCellValue),
+            () -> assertCell("1500:00 string time cell", row.getCell(22), CellType.NUMERIC, ValueType.TIME, 1500.0 / 24, Cell::getNumericCellValue),
+            () -> assertEquals("[h]:mm", row.getCell(19).getCellStyle().getDataFormatString(), "extended time format is incorrect")
         );
     }
 
