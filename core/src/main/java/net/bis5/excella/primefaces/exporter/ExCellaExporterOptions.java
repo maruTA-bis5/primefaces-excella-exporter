@@ -67,7 +67,7 @@ public class ExCellaExporterOptions extends ExcelOptions {
 
     /**
      * Returns the separator used between component values exported into the same column cell.
-     * The default is {@link Constants#SPACE}, a single half-width space.
+     * The default is a single space.
      *
      * @return the column value separator
      */
@@ -77,7 +77,7 @@ public class ExCellaExporterOptions extends ExcelOptions {
 
     /**
      * Sets the separator used between component values exported into the same column cell.
-     * The default is {@link Constants#SPACE}, a single half-width space. An empty string is allowed and used as-is.
+     * The default is a single space. An empty string is allowed and used as-is.
      *
      * @param columnValueSeparator the separator to use
      * @throws NullPointerException if {@code columnValueSeparator} is {@code null}

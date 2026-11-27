@@ -32,6 +32,11 @@ class ColumnValueSeparatorTest {
         List<UIComponentWithCompositeParent> components = Arrays.asList(new TestComponent("first"),
                 new TestComponent("second"));
 
+        assertEquals("first second",
+                exporter.getExCellaColumnValue(null, null, column, components, true).getValue());
+        assertEquals("first",
+                exporter.getExCellaColumnValue(null, null, column, components, false).getValue());
+
         options.setColumnValueSeparator(", ");
         assertEquals("first, second",
                 exporter.getExCellaColumnValue(null, null, column, components, true).getValue());
