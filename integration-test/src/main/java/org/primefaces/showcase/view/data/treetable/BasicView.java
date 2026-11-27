@@ -46,6 +46,12 @@ public class BasicView implements Serializable {
         return options;
     }
 
+    public ExCellaExporterOptions getColumnValueSeparatorOptions() {
+        ExCellaExporterOptions options = new ExCellaExporterOptions();
+        options.setColumnValueSeparator(", ");
+        return options;
+    }
+
     private List<TreeNode<DataTypeCheck>> selection;
 
     public List<TreeNode<DataTypeCheck>> getSelection() {
