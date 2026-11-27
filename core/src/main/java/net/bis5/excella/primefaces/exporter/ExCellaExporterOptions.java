@@ -13,6 +13,7 @@ import java.util.function.Function;
 
 import org.apache.poi.ss.usermodel.Workbook;
 import org.primefaces.component.export.ExcelOptions;
+import org.primefaces.util.Constants;
 
 import net.bis5.excella.primefaces.exporter.listener.BeforeWriteResponseListener;
 
@@ -61,6 +62,29 @@ public class ExCellaExporterOptions extends ExcelOptions {
 
     public void setDataColumnsTag(String dataColumnsTag) {
         this.dataColumnsTag = dataColumnsTag;
+    }
+
+    private String columnValueSeparator = Constants.SPACE;
+
+    /**
+     * Returns the separator used between component values exported into the same column cell.
+     * The default is a single space.
+     *
+     * @return the column value separator
+     */
+    public String getColumnValueSeparator() {
+        return columnValueSeparator;
+    }
+
+    /**
+     * Sets the separator used between component values exported into the same column cell.
+     * The default is a single space. An empty string is allowed and used as-is.
+     *
+     * @param columnValueSeparator the separator to use
+     * @throws NullPointerException if {@code columnValueSeparator} is {@code null}
+     */
+    public void setColumnValueSeparator(String columnValueSeparator) {
+        this.columnValueSeparator = Objects.requireNonNull(columnValueSeparator, "columnValueSeparator must not be null");
     }
 
     private String headersTag;

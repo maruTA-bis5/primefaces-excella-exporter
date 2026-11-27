@@ -349,7 +349,7 @@ interface ExCellaExporter<T extends UITable<?>> {
                 String joined = values.stream()
                         .limit(!joinComponents ? 1 : values.size())
                         .map(Object::toString)
-                        .collect(Collectors.joining(Constants.SPACE));
+                        .collect(Collectors.joining(getExporterOptions().getColumnValueSeparator()));
                 return joined.isEmpty() ? ColumnValue.of(null) : ColumnValue.of(joined);
             }
             return ColumnValue.of(values.get(0));
