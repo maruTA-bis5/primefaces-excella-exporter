@@ -9,6 +9,7 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.primefaces.selenium.AbstractPrimePage;
@@ -38,7 +39,7 @@ class TreeTablePasswordExportTest extends AbstractPrimePageTest {
 
     @Test
     void exportsSelectedRowsWithEachPasswordPolicy(Page page) throws IOException {
-        page.firstNode.click();
+        page.firstNode.findElement(By.cssSelector(".ui-chkbox-box")).click();
         PrimeSelenium.wait(1000);
 
         clickAndAssertExport(page.selectionDefault, "password-treetable-selection-default.xlsx", 1, false, "", " ");

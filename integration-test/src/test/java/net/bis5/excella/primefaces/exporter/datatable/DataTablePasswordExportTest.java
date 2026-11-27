@@ -39,7 +39,7 @@ class DataTablePasswordExportTest extends AbstractPrimePageTest {
 
     @Test
     void exportsSelectedRowsWithEachPasswordPolicy(Page page) throws IOException {
-        page.tableBody.findElement(By.cssSelector("tr")).click();
+        page.tableBody.findElement(By.cssSelector("tr td:nth-child(2)")).click();
         PrimeSelenium.wait(1000);
 
         clickAndAssertExport(page.selectionDefault, "password-datatable-selection-default.xlsx", 1, false, "", " ");

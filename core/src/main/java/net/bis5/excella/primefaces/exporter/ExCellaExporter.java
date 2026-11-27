@@ -401,7 +401,19 @@ interface ExCellaExporter<T extends UITable<?>> {
         return false;
     }
 
-    private Object exportPasswordAwareComponentValue(FacesContext context, UIComponent component) {
+    /**
+     * Exports values from a component subtree containing Password components, replacing Password values
+     * according to the configured exporter options. This default method can be overridden to customize
+     * how Password-containing component subtrees are exported.
+     *
+     * @param context the current Faces context
+     * @param component the component whose value-holding descendants are exported
+     * @return the exported value, or {@code null} if the subtree has no exportable values
+     */
+    default Object exportPasswordAwareComponentValue(FacesContext context, UIComponent component) {
+        // TableExporter#getComponentValue recurses without calling exportValue, so container-wrapped
+        // Password components need this separate path; unlike String-returning exportValue, Object
+        // preserves the type of a single child value.
         List<Object> values = extractValueHoldingChildren(context, component)
                 .map(child -> exportObjectValue(context, child))
                 .filter(Objects::nonNull)
