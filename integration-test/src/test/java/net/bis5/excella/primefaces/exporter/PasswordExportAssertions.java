@@ -56,7 +56,7 @@ public final class PasswordExportAssertions {
             assertText(row, 15, textValue);
             assertText(row, 16, masked ? combinedValue(textValue, replacement, separator) : null);
             assertText(row, 17, textValue);
-            assertText(row, 18, masked ? null : textValue);
+            assertText(row, 18, null);
         }
 
         Row footer = sheet.getRow(dataRowCount + 1);
