@@ -306,31 +306,46 @@ interface ExCellaExporter<T extends UITable<?>> {
     private List<UIComponentWithCompositeParent> extractValueHoldingChildren(FacesContext context, UIColumn column) {
         return column.getChildren().stream()
             .filter(UIComponent::isRendered)
-            .flatMap(child -> extractValueHoldingChildren(context, child))
+            .flatMap(child -> extractValueHoldingChildren(context, child, false))
             .collect(Collectors.toList());
     }
 
-    private Stream<UIComponentWithCompositeParent> extractValueHoldingChildren(FacesContext context, UIComponent parent) {
+    private Stream<UIComponentWithCompositeParent> extractValueHoldingChildren(FacesContext context, UIComponent parent,
+            boolean traverseAllContainers) {
         if (UIComponent.isCompositeComponent(parent)) {
-            return extractCompositeChildren(context, parent);
+            return extractCompositeChildren(context, parent, traverseAllContainers);
         }
         if (parent instanceof Link || parent instanceof ValueHolder || isComponentUIInstructions(parent)) {
             return Stream.of(new UIComponentWithCompositeParent(parent));
         } else if (parent instanceof CellEditor) {
             return extractCellEditorOutput(parent);
-        } else if (!getExporterOptions().isExportPassword() && parent.isRendered() && containsPassword(parent)) {
+        } else if (shouldTraversePasswordContainer(parent, traverseAllContainers)) {
             return extractPasswordContainerChildren(context, parent);
         }
         return Stream.empty();
     }
 
-    private Stream<UIComponentWithCompositeParent> extractCompositeChildren(FacesContext context, UIComponent parent) {
-        UIComponent compositeFacet = parent.getFacet(UIComponent.COMPOSITE_FACET_NAME);
-        if (compositeFacet == null) {
-            return Stream.empty();
+    private boolean shouldTraversePasswordContainer(UIComponent parent, boolean traverseAllContainers) {
+        return !getExporterOptions().isExportPassword()
+                && parent.isRendered()
+                && (traverseAllContainers || containsPassword(parent));
+    }
+
+    private Stream<UIComponentWithCompositeParent> extractCompositeChildren(FacesContext context, UIComponent parent,
+            boolean traverseAllContainers) {
+        List<UIComponentWithCompositeParent> children;
+        parent.pushComponentToEL(context, null);
+        try {
+            UIComponent compositeFacet = parent.getFacet(UIComponent.COMPOSITE_FACET_NAME);
+            children = compositeFacet == null
+                    ? new ArrayList<>()
+                    : compositeFacet.getChildren().stream()
+                            .flatMap(child -> extractValueHoldingChildren(context, child, traverseAllContainers))
+                            .collect(Collectors.toList());
+        } finally {
+            parent.popComponentFromEL(context);
         }
-        return compositeFacet.getChildren().stream()
-                .flatMap(child -> extractValueHoldingChildren(context, child))
+        return children.stream()
                 .map(child -> child.isInCompositeComponent()
                         ? child
                         : new UIComponentWithCompositeParent(child.getComponent(), parent));
@@ -347,8 +362,10 @@ interface ExCellaExporter<T extends UITable<?>> {
     private Stream<UIComponentWithCompositeParent> extractPasswordContainerChildren(FacesContext context,
             UIComponent parent) {
         return Stream.concat(
-                parent.getFacets().values().stream().flatMap(child -> extractValueHoldingChildren(context, child)),
-                parent.getChildren().stream().flatMap(child -> extractValueHoldingChildren(context, child)));
+                parent.getFacets().values().stream()
+                        .flatMap(child -> extractValueHoldingChildren(context, child, true)),
+                parent.getChildren().stream()
+                        .flatMap(child -> extractValueHoldingChildren(context, child, true)));
     }
 
     private boolean containsPasswordInColumn(UIColumn column) {
@@ -429,7 +446,7 @@ interface ExCellaExporter<T extends UITable<?>> {
         // TableExporter#getComponentValue recurses without calling exportValue, so container-wrapped
         // Password components need this separate path; unlike String-returning exportValue, Object
         // preserves the type of a single child value.
-        List<Object> values = extractValueHoldingChildren(context, component)
+        List<Object> values = extractValueHoldingChildren(context, component, false)
                 .map(child -> exportObjectValue(context, child))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());

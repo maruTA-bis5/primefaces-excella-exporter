@@ -23,6 +23,7 @@ public final class PasswordExportAssertions {
         assertText(sheet.getRow(0), 0, passwordValue("header-password", masked, replacement));
         assertText(sheet.getRow(0), 1, "Field password");
         assertText(sheet.getRow(0), 2, "Ordinary header");
+        assertText(sheet.getRow(0), 16, "Nested ordinary text and password");
         if (masked) {
             assertText(sheet.getRow(0), 15, "wrapped-header" + separator + replacement);
         } else {
@@ -51,12 +52,14 @@ public final class PasswordExportAssertions {
             assertText(row, 13, masked ? "export-value" : rawPassword);
             assertText(row, 14, masked ? "export-function" : rawPassword);
             assertText(row, 15, textValue);
+            assertText(row, 16, masked ? combinedValue(textValue, replacement, separator) : null);
         }
 
         Row footer = sheet.getRow(dataRowCount + 1);
         assertText(footer, 0, passwordValue("footer-password", masked, replacement));
         assertText(footer, 1, null);
         assertText(footer, 2, "Ordinary footer");
+        assertText(footer, 16, null);
         if (masked) {
             assertText(footer, 15, "wrapped-footer" + separator + replacement);
         } else {
