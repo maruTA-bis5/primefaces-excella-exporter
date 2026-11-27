@@ -88,6 +88,34 @@ class TreeBasicTest extends AbstractPrimePageTest {
         }
     }
 
+    @Test
+    void exportExcellaWithColumnValueSeparatorAjax(Page page) throws EncryptedDocumentException, IOException {
+        page.commandLinkColumnValueSeparatorAjax.click();
+        PrimeSelenium.wait(1000);
+
+        assertColumnValueSeparator("tt-cars-column-value-separator-ajax.xlsx");
+    }
+
+    @Test
+    void exportExcellaWithColumnValueSeparatorNonAjax(Page page) throws EncryptedDocumentException, IOException {
+        page.commandLinkColumnValueSeparatorNonAjax.getRoot().click();
+
+        assertColumnValueSeparator("tt-cars-column-value-separator-non-ajax.xlsx");
+    }
+
+    private void assertColumnValueSeparator(String fileName) throws EncryptedDocumentException, IOException {
+        Path localFile = Download.downloadFileToLocal(fileName);
+        try (Workbook workbook = WorkbookFactory.create(localFile.toFile(), null, true)) {
+            Sheet sheet = workbook.getSheetAt(0);
+            for (int rowIndex = 1; rowIndex <= 4; rowIndex++) {
+                Row dataRow = sheet.getRow(rowIndex);
+                assertAll("Column value separator row " + rowIndex,
+                        () -> assertEquals("foo, bar", dataRow.getCell(15).getStringCellValue()),
+                        () -> assertEquals("foo, bar, (note)", dataRow.getCell(16).getStringCellValue()));
+            }
+        }
+    }
+
     private void assertFileContent(DataTypeCheck parentRecord1, DataTypeCheck childRecord1, DataTypeCheck parentRecord2, DataTypeCheck childRecord2, String fileName) throws EncryptedDocumentException, IOException {
         Path localFile = Download.downloadFileToLocal(fileName);
         try (Workbook workbook = WorkbookFactory.create(localFile.toFile(), null, true)) {
@@ -261,6 +289,12 @@ class TreeBasicTest extends AbstractPrimePageTest {
 
         @FindBy(id = "form:excellaExportDataFormatOverride")
         CommandLink commandLinkDataFormatOverride;
+
+        @FindBy(id = "form:excellaExportColumnValueSeparatorNonAjax")
+        CommandLink commandLinkColumnValueSeparatorNonAjax;
+
+        @FindBy(id = "form:excellaExportColumnValueSeparatorAjax")
+        CommandLink commandLinkColumnValueSeparatorAjax;
 
         @Override
         public String getLocation() {
