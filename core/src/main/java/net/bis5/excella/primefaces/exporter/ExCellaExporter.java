@@ -384,6 +384,10 @@ interface ExCellaExporter<T extends UITable<?>> {
         if (component instanceof Password) {
             return true;
         }
+        if (component instanceof CellEditor) {
+            UIComponent output = component.getFacet("output");
+            return output != null && containsPassword(output);
+        }
         for (UIComponent facet : component.getFacets().values()) {
             if (containsPassword(facet)) {
                 return true;
@@ -403,6 +407,10 @@ interface ExCellaExporter<T extends UITable<?>> {
         }
         if (component instanceof Password) {
             return true;
+        }
+        if (component instanceof CellEditor) {
+            UIComponent output = component.getFacet("output");
+            return output != null && containsRenderedPassword(context, output);
         }
         if (UIComponent.isCompositeComponent(component)) {
             component.pushComponentToEL(context, null);
