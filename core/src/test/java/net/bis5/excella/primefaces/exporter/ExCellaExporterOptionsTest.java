@@ -1,0 +1,42 @@
+package net.bis5.excella.primefaces.exporter;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.junit.jupiter.api.Test;
+
+class ExCellaExporterOptionsTest {
+
+    @Test
+    void dataFormatOverridesSurviveSerialization() throws IOException, ClassNotFoundException {
+        ExCellaExporterOptions options = new ExCellaExporterOptions();
+        options.setOverrideDataType(ValueType.INTEGER, (short) 42);
+        options.setOverrideDataType(ValueType.STRING, "@");
+
+        byte[] serializedOptions;
+        try (ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+                ObjectOutputStream output = new ObjectOutputStream(bytes)) {
+            output.writeObject(options);
+            output.flush();
+            serializedOptions = bytes.toByteArray();
+        }
+
+        ExCellaExporterOptions restoredOptions;
+        try (ObjectInputStream input = new ObjectInputStream(new ByteArrayInputStream(serializedOptions))) {
+            restoredOptions = (ExCellaExporterOptions) input.readObject();
+        }
+
+        try (Workbook workbook = new XSSFWorkbook()) {
+            assertEquals((short) 42, restoredOptions.getOverrideDataFormat(ValueType.INTEGER, workbook));
+            assertEquals(workbook.createDataFormat().getFormat("@"),
+                    restoredOptions.getOverrideDataFormat(ValueType.STRING, workbook));
+        }
+    }
+}

@@ -1,6 +1,7 @@
 package net.bis5.excella.primefaces.exporter;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -20,7 +21,7 @@ import net.bis5.excella.primefaces.exporter.listener.BeforeWriteResponseListener
  */
 public class ExCellaExporterOptions extends ExcelOptions {
 
-    private final Map<ValueType, Function<Workbook, Short>> overrideDataTypeForValueType = new EnumMap<>(ValueType.class);
+    private final Map<ValueType, DataFormatResolver> overrideDataTypeForValueType = new EnumMap<>(ValueType.class);
 
     private Path templatePath;
 
@@ -123,8 +124,12 @@ public class ExCellaExporterOptions extends ExcelOptions {
     }
 
     Short getOverrideDataFormat(ValueType valueType, Workbook workbook) {
-        Function<Workbook, Short> dataFormat = overrideDataTypeForValueType.get(valueType);
+        DataFormatResolver dataFormat = overrideDataTypeForValueType.get(valueType);
         return dataFormat == null ? null : dataFormat.apply(workbook);
+    }
+
+    @FunctionalInterface
+    private interface DataFormatResolver extends Function<Workbook, Short>, Serializable {
     }
 
     private final List<BeforeWriteResponseListener> beforeWriteResponseListeners = new ArrayList<>();
