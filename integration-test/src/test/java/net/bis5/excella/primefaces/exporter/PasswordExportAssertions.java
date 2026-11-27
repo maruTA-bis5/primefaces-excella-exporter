@@ -21,8 +21,9 @@ public final class PasswordExportAssertions {
         assertEquals(dataRowCount + 1, sheet.getLastRowNum(), "exported row count is incorrect");
 
         assertText(sheet.getRow(0), 0, passwordValue("header-password", masked, replacement));
-        assertText(sheet.getRow(0), 1, "Ordinary header");
-        assertText(sheet.getRow(0), 14,
+        assertText(sheet.getRow(0), 1, "Field password");
+        assertText(sheet.getRow(0), 2, "Ordinary header");
+        assertText(sheet.getRow(0), 15,
                 masked ? "wrapped-header" + separator + replacement : null);
 
         for (int rowIndex = 1; rowIndex <= dataRowCount; rowIndex++) {
@@ -32,26 +33,28 @@ public final class PasswordExportAssertions {
             Row row = sheet.getRow(rowIndex);
 
             assertText(row, 0, rawPassword);
-            assertText(row, 1, textValue);
-            assertText(row, 2, combinedValue(textValue, rawPassword, separator));
-            assertText(row, 3, masked ? replacement : null);
-            assertText(row, 4, rawPassword);
+            assertText(row, 1, rawPassword);
+            assertText(row, 2, textValue);
+            assertText(row, 3, combinedValue(textValue, rawPassword, separator));
+            assertText(row, 4, masked ? replacement : null);
             assertText(row, 5, rawPassword);
             assertText(row, 6, rawPassword);
-            assertText(row, 7, masked ? combinedValue(textValue, replacement, separator) : null);
-            assertText(row, 8, null);
+            assertText(row, 7, rawPassword);
+            assertText(row, 8, masked ? combinedValue(textValue, replacement, separator) : null);
             assertText(row, 9, null);
             assertText(row, 10, null);
             assertText(row, 11, null);
-            assertText(row, 12, masked ? "export-value" : rawPassword);
-            assertText(row, 13, masked ? "export-function" : rawPassword);
-            assertText(row, 14, textValue);
+            assertText(row, 12, null);
+            assertText(row, 13, masked ? "export-value" : rawPassword);
+            assertText(row, 14, masked ? "export-function" : rawPassword);
+            assertText(row, 15, textValue);
         }
 
         Row footer = sheet.getRow(dataRowCount + 1);
         assertText(footer, 0, passwordValue("footer-password", masked, replacement));
-        assertText(footer, 1, "Ordinary footer");
-        assertText(footer, 14,
+        assertText(footer, 1, null);
+        assertText(footer, 2, "Ordinary footer");
+        assertText(footer, 15,
                 masked ? "wrapped-footer" + separator + replacement : null);
     }
 

@@ -644,7 +644,10 @@ interface ExCellaExporter<T extends UITable<?>> {
     ExportConfiguration getExportConfiguration();
 
     default ExCellaExporterOptions getExporterOptions() {
-        return Objects.requireNonNullElse((ExCellaExporterOptions)getExportConfiguration().getOptions(), new ExCellaExporterOptions());
+        Object options = getExportConfiguration().getOptions();
+        return options instanceof ExCellaExporterOptions
+                ? (ExCellaExporterOptions) options
+                : new ExCellaExporterOptions();
     }
 
     default Object getFacetColumnValue(FacesContext context, UIColumn column, ExCellaExporter.ColumnType columnType) {
