@@ -223,10 +223,12 @@ class ColumnValueSeparatorTest {
 
         @Override
         public void encodeAll(FacesContext context) throws IOException {
+            throw new UnsupportedOperationException();
         }
 
         @Override
         public void renderChildren(FacesContext context) throws IOException {
+            throw new UnsupportedOperationException();
         }
 
         @Override
@@ -361,6 +363,7 @@ class ColumnValueSeparatorTest {
 
         @Override
         public void setFilterValueToValueHolder(FacesContext context, Object filterValue) {
+            throw new UnsupportedOperationException();
         }
 
         @Override
