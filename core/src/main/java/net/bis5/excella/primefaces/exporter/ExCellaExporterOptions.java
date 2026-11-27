@@ -86,6 +86,52 @@ public class ExCellaExporterOptions extends ExcelOptions {
         this.columnValueSeparator = Objects.requireNonNull(columnValueSeparator, "columnValueSeparator must not be null");
     }
 
+    private boolean exportPassword = true;
+
+    /**
+     * Returns whether values from PrimeFaces Password components are exported as-is.
+     * The default is {@code true} for backward compatibility in 6.x and will change in a future version.
+     * Set this property explicitly when relying on a particular behavior.
+     *
+     * @return whether Password values are exported
+     */
+    public boolean isExportPassword() {
+        return exportPassword;
+    }
+
+    /**
+     * Sets whether values from PrimeFaces Password components are exported as-is.
+     * When {@code false}, Password values are replaced with {@link #getPasswordReplacement()}.
+     * Set this property explicitly when relying on a particular behavior.
+     *
+     * @param exportPassword whether Password values are exported as-is
+     */
+    public void setExportPassword(boolean exportPassword) {
+        this.exportPassword = exportPassword;
+    }
+
+    private String passwordReplacement = "";
+
+    /**
+     * Returns the replacement string used when Password values are not exported.
+     * The default is an empty string.
+     *
+     * @return the Password replacement string
+     */
+    public String getPasswordReplacement() {
+        return passwordReplacement;
+    }
+
+    /**
+     * Sets the replacement string used when Password values are not exported.
+     *
+     * @param passwordReplacement the replacement string to use
+     * @throws NullPointerException if {@code passwordReplacement} is {@code null}
+     */
+    public void setPasswordReplacement(String passwordReplacement) {
+        this.passwordReplacement = Objects.requireNonNull(passwordReplacement, "passwordReplacement must not be null");
+    }
+
     private String headersTag;
 
     public String getHeadersTag() {
