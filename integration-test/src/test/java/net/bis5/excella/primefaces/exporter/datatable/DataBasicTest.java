@@ -73,6 +73,31 @@ public class DataBasicTest extends AbstractPrimePageTest {
         }
     }
 
+    @Test
+    void exportExcellaWithColumnValueSeparatorAjax(Page page) throws EncryptedDocumentException, IOException {
+        page.commandLinkColumnValueSeparatorAjax.click();
+        PrimeSelenium.wait(1000);
+
+        assertColumnValueSeparator("cars-column-value-separator-ajax.xlsx");
+    }
+
+    @Test
+    void exportExcellaWithColumnValueSeparatorNonAjax(Page page) throws EncryptedDocumentException, IOException {
+        page.commandLinkColumnValueSeparatorNonAjax.getRoot().click();
+
+        assertColumnValueSeparator("cars-column-value-separator-non-ajax.xlsx");
+    }
+
+    private void assertColumnValueSeparator(String outputFileName) throws EncryptedDocumentException, IOException {
+        Path localFile = Download.downloadFileToLocal(outputFileName);
+        try (Workbook workbook = WorkbookFactory.create(localFile.toFile(), null, true)) {
+            Row dataRow = workbook.getSheetAt(0).getRow(1);
+            assertAll("Column value separator",
+                    () -> assertEquals("foo, bar", dataRow.getCell(15).getStringCellValue()),
+                    () -> assertEquals("foo, bar, (note)", dataRow.getCell(16).getStringCellValue()));
+        }
+    }
+
     private void assertFileContent(DataTypeCheck record, String outputFileName) throws EncryptedDocumentException, IOException {
         Path localFile = Download.downloadFileToLocal(outputFileName);
         try (Workbook workbook = WorkbookFactory.create(localFile.toFile(), null, true)) {
@@ -173,6 +198,12 @@ public class DataBasicTest extends AbstractPrimePageTest {
 
         @FindBy(id = "form:excellaExportDataFormatOverride")
         CommandLink commandLinkDataFormatOverride;
+
+        @FindBy(id = "form:excellaExportColumnValueSeparatorNonAjax")
+        CommandLink commandLinkColumnValueSeparatorNonAjax;
+
+        @FindBy(id = "form:excellaExportColumnValueSeparatorAjax")
+        CommandLink commandLinkColumnValueSeparatorAjax;
 
         @Override
         public String getLocation() {

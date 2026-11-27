@@ -44,6 +44,18 @@
               <p:dataExporter type="excella" target="tbl" fileName="tt-cars-data-format-override"
                   options="#{ttBasicView.dataFormatOverrideOptions}" />
           </p:commandLink>
+          <br />
+          <p:commandLink id="excellaExportColumnValueSeparatorNonAjax" ajax="false">
+              <h:outputLabel>ExCella Reports (custom column value separator, non-Ajax)</h:outputLabel>
+              <p:dataExporter type="excella" target="tbl" fileName="tt-cars-column-value-separator-non-ajax"
+                  options="#{ttBasicView.columnValueSeparatorOptions}" />
+          </p:commandLink>
+          <br />
+          <p:commandLink id="excellaExportColumnValueSeparatorAjax" ajax="true">
+              <h:outputLabel>ExCella Reports (custom column value separator, Ajax)</h:outputLabel>
+              <p:dataExporter type="excella" target="tbl" fileName="tt-cars-column-value-separator-ajax"
+                  options="#{ttBasicView.columnValueSeparatorOptions}" />
+          </p:commandLink>
 
           <p:treeTable id="tbl" var="row" value="#{ttBasicView.root}">
               <p:column headerText="String" footerText="String">
