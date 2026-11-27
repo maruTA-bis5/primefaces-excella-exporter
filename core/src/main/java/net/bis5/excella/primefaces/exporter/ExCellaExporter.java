@@ -336,6 +336,9 @@ interface ExCellaExporter<T extends UITable<?>> {
         List<UIComponentWithCompositeParent> children;
         parent.pushComponentToEL(context, null);
         try {
+            if (!parent.isRendered()) {
+                return Stream.empty();
+            }
             UIComponent compositeFacet = parent.getFacet(UIComponent.COMPOSITE_FACET_NAME);
             children = compositeFacet == null
                     ? new ArrayList<>()
