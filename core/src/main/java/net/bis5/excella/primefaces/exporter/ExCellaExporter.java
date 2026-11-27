@@ -305,7 +305,7 @@ interface ExCellaExporter<T extends UITable<?>> {
 
     private List<UIComponentWithCompositeParent> extractValueHoldingChildren(FacesContext context, UIColumn column) {
         return column.getChildren().stream()
-            .filter(child -> getExporterOptions().isExportPassword() || child.isRendered())
+            .filter(UIComponent::isRendered)
             .flatMap(child -> extractValueHoldingChildren(context, child))
             .collect(Collectors.toList());
     }
