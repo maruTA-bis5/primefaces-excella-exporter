@@ -3,6 +3,7 @@ package org.primefaces.showcase.view.data;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 import javax.faces.view.ViewScoped;
 import javax.inject.Named;
@@ -26,7 +27,7 @@ public class PasswordExportView implements Serializable {
 
     private final TreeNode<PasswordRow> treeRoot = new DefaultTreeNode<>();
 
-    private List<TreeNode<PasswordRow>> treeSelection;
+    private TreeNode<PasswordRow>[] treeSelection;
 
     public PasswordExportView() {
         new DefaultTreeNode<>(new PasswordRow("tree-1", "tree-password-1", "tree-text-1"), treeRoot);
@@ -66,11 +67,11 @@ public class PasswordExportView implements Serializable {
         return treeRoot;
     }
 
-    public List<TreeNode<PasswordRow>> getTreeSelection() {
+    public TreeNode<PasswordRow>[] getTreeSelection() {
         return treeSelection;
     }
 
-    public void setTreeSelection(List<TreeNode<PasswordRow>> treeSelection) {
+    public void setTreeSelection(TreeNode<PasswordRow>[] treeSelection) {
         this.treeSelection = treeSelection;
     }
 
@@ -88,6 +89,7 @@ public class PasswordExportView implements Serializable {
     }
 
     public String passwordExportFunction(UIColumn column) {
+        Objects.requireNonNull(column, "column must not be null");
         return "export-function";
     }
 
