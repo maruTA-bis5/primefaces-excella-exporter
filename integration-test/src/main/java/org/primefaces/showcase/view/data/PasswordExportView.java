@@ -38,6 +38,22 @@ public class PasswordExportView implements Serializable {
         return dataRows;
     }
 
+    public String getHeaderPassword() {
+        return "header-password";
+    }
+
+    public String getFooterPassword() {
+        return "footer-password";
+    }
+
+    public String getNestedHeaderPassword() {
+        return "nested-header-password";
+    }
+
+    public String getNestedFooterPassword() {
+        return "nested-footer-password";
+    }
+
     public PasswordRow getDataSelection() {
         return dataSelection;
     }
