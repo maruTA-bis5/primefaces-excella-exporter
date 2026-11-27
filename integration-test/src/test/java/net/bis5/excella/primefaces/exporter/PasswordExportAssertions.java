@@ -23,8 +23,11 @@ public final class PasswordExportAssertions {
         assertText(sheet.getRow(0), 0, passwordValue("header-password", masked, replacement));
         assertText(sheet.getRow(0), 1, "Field password");
         assertText(sheet.getRow(0), 2, "Ordinary header");
-        assertText(sheet.getRow(0), 15,
-                masked ? "wrapped-header" + separator + replacement : null);
+        if (masked) {
+            assertText(sheet.getRow(0), 15, "wrapped-header" + separator + replacement);
+        } else {
+            assertHtmlPanelGroupString(sheet.getRow(0), 15);
+        }
 
         for (int rowIndex = 1; rowIndex <= dataRowCount; rowIndex++) {
             String rowSuffix = Integer.toString(rowIndex);
@@ -54,8 +57,11 @@ public final class PasswordExportAssertions {
         assertText(footer, 0, passwordValue("footer-password", masked, replacement));
         assertText(footer, 1, null);
         assertText(footer, 2, "Ordinary footer");
-        assertText(footer, 15,
-                masked ? "wrapped-footer" + separator + replacement : null);
+        if (masked) {
+            assertText(footer, 15, "wrapped-footer" + separator + replacement);
+        } else {
+            assertHtmlPanelGroupString(footer, 15);
+        }
     }
 
     private static String rawPasswordForRow(String prefix, int rowIndex) {
@@ -92,5 +98,13 @@ public final class PasswordExportAssertions {
         assertNotNull(cell, () -> "Cell[" + columnIndex + "] is missing");
         assertEquals(CellType.STRING, cell.getCellType(), "cell type is incorrect");
         assertEquals(expected, cell.getStringCellValue(), "Cell[" + columnIndex + "] value is incorrect");
+    }
+
+    private static void assertHtmlPanelGroupString(Row row, int columnIndex) {
+        Cell cell = row == null ? null : row.getCell(columnIndex);
+        assertNotNull(cell, () -> "Cell[" + columnIndex + "] is missing");
+        assertEquals(CellType.STRING, cell.getCellType(), "cell type is incorrect");
+        assertTrue(cell.getStringCellValue().contains("HtmlPanelGroup@"),
+                () -> "Cell[" + columnIndex + "] should contain HtmlPanelGroup@");
     }
 }
