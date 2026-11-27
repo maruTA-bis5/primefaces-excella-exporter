@@ -4,10 +4,12 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -38,6 +40,134 @@ import org.openxmlformats.schemas.spreadsheetml.x2006.main.CTXf;
 import org.openxmlformats.schemas.spreadsheetml.x2006.main.STPatternType;
 
 class StyleUpdateListenerTest {
+
+    @Test
+    void shortDataFormatOverrideLeavesOtherValueTypesUnchanged() throws IOException {
+        try (XSSFWorkbook workbook = new XSSFWorkbook()) {
+            ExCellaExporterOptions options = new ExCellaExporterOptions();
+            options.setOverrideDataType(ValueType.INTEGER, (short) 42);
+            Sheet sheet = workbook.createSheet("Sheet");
+            var row = sheet.createRow(0);
+            Cell integerCell = row.createCell(0);
+            Cell dateCell = row.createCell(1);
+
+            Map<String, List<Object>> values = Map.of(
+                    "integer", List.of(42),
+                    "date", List.of(LocalDate.of(2026, 1, 1)));
+            update(workbook, sheet, values,
+                    new Object[] {"$R[]{integer}", "$R[]{date}"}, options);
+
+            assertEquals((short) 42, integerCell.getCellStyle().getDataFormat());
+            assertEquals(ValueType.DATE.getFormat(workbook), dateCell.getCellStyle().getDataFormat());
+        }
+    }
+
+    @Test
+    void stringDataFormatOverrideWorksForXssfAndHssf() throws IOException {
+        ExCellaExporterOptions options = new ExCellaExporterOptions();
+        options.setOverrideDataType(ValueType.DATE, "yyyy-MM-dd");
+
+        assertStringDataFormatOverride(new XSSFWorkbook(), options);
+        assertStringDataFormatOverride(new HSSFWorkbook(), options);
+    }
+
+    @Test
+    void stringDataFormatOverrideAppliesToPlainStringColumn() throws IOException {
+        try (XSSFWorkbook workbook = new XSSFWorkbook()) {
+            ExCellaExporterOptions options = new ExCellaExporterOptions();
+            options.setOverrideDataType(ValueType.STRING, "@");
+            Sheet sheet = workbook.createSheet("Sheet");
+            Cell cell = sheet.createRow(0).createCell(0);
+
+            update(workbook, sheet, List.of("text"), options);
+
+            assertEquals("@", cell.getCellStyle().getDataFormatString());
+        }
+    }
+
+    @Test
+    void plainStringColumnPreservesItsTemplateFormatWithoutAnOverride() throws IOException {
+        try (XSSFWorkbook workbook = new XSSFWorkbook()) {
+            Sheet sheet = workbook.createSheet("Sheet");
+            CellStyle templateStyle = workbook.createCellStyle();
+            short templateFormat = workbook.createDataFormat().getFormat("0.0000");
+            templateStyle.setDataFormat(templateFormat);
+            Cell cell = sheet.createRow(0).createCell(0);
+            cell.setCellStyle(templateStyle);
+
+            update(workbook, sheet, List.of("text"));
+
+            assertEquals(templateFormat, cell.getCellStyle().getDataFormat());
+            assertEquals(templateStyle.getIndex(), cell.getCellStyle().getIndex());
+        }
+    }
+
+    @Test
+    void mixedColumnsPreferNonStringTypesAndAllNullColumnsAreSkipped() throws IOException {
+        try (XSSFWorkbook workbook = new XSSFWorkbook()) {
+            Sheet sheet = workbook.createSheet("Sheet");
+            short templateFormat = workbook.createDataFormat().getFormat("0.0000");
+            CellStyle templateStyle = workbook.createCellStyle();
+            templateStyle.setDataFormat(templateFormat);
+            for (int rowIndex = 0; rowIndex < 2; rowIndex++) {
+                var row = sheet.createRow(rowIndex);
+                row.createCell(0);
+                row.createCell(1).setCellStyle(templateStyle);
+            }
+
+            Map<String, List<Object>> values = Map.of(
+                    "mixed", Arrays.asList(123, "text"),
+                    "allNull", Arrays.asList(null, null));
+            update(workbook, sheet, values,
+                    new Object[] {"$R[]{mixed}", "$R[]{allNull}"}, new ExCellaExporterOptions());
+
+            for (int rowIndex = 0; rowIndex < 2; rowIndex++) {
+                var row = sheet.getRow(rowIndex);
+                assertEquals(ValueType.INTEGER.getFormat(workbook), row.getCell(0).getCellStyle().getDataFormat());
+                assertEquals(templateFormat, row.getCell(1).getCellStyle().getDataFormat());
+            }
+        }
+    }
+
+    @Test
+    void nullStringDataFormatClearsAnOverride() throws IOException {
+        try (XSSFWorkbook workbook = new XSSFWorkbook()) {
+            ExCellaExporterOptions options = new ExCellaExporterOptions();
+            options.setOverrideDataType(ValueType.DATE, "yyyy-MM-dd");
+            options.setOverrideDataType(ValueType.DATE, (String) null);
+            Sheet sheet = workbook.createSheet("Sheet");
+            Cell cell = sheet.createRow(0).createCell(0);
+
+            update(workbook, sheet, List.of(LocalDate.of(2026, 1, 1)), options);
+
+            assertEquals(ValueType.DATE.getFormat(workbook), cell.getCellStyle().getDataFormat());
+        }
+    }
+
+    @Test
+    void nullValueTypeIsRejectedForBothSetterOverloads() {
+        ExCellaExporterOptions options = new ExCellaExporterOptions();
+
+        assertThrows(NullPointerException.class, () -> options.setOverrideDataType(null, (short) 42));
+        assertThrows(NullPointerException.class, () -> options.setOverrideDataType(null, "yyyy-MM-dd"));
+    }
+
+    @Test
+    void laterOverrideReplacesAnEarlierOverrideOfEitherType() throws IOException {
+        try (XSSFWorkbook workbook = new XSSFWorkbook()) {
+            ExCellaExporterOptions options = new ExCellaExporterOptions();
+
+            options.setOverrideDataType(ValueType.INTEGER, (short) 42);
+            options.setOverrideDataType(ValueType.INTEGER, "#,##0.00");
+            assertEquals("#,##0.00",
+                    ValueType.initStyles(workbook, options).get(ValueType.INTEGER).getDataFormatString());
+
+            options.setOverrideDataType(ValueType.INTEGER, "#,##0.000");
+            options.setOverrideDataType(ValueType.INTEGER, (short) 45);
+            assertEquals((short) 45,
+                    ValueType.initStyles(workbook, options).get(ValueType.INTEGER).getDataFormat());
+        }
+    }
 
     @Test
     void noFillHasAnExplicitPatternAndDoesNotChangeTheSourceStyle() throws Exception {
@@ -216,7 +346,7 @@ class StyleUpdateListenerTest {
                 tags[i] = "$R[]{" + keys[i] + "}";
             }
             StyleUpdateListener listener = new StyleUpdateListener(new ReportSheet("Sheet"), values,
-                    "data", "headers", "footers", keys.length, tags);
+                    "data", "headers", "footers", keys.length, tags, new ExCellaExporterOptions());
             listener.preBookParse(workbook, null);
             listener.postParse(sheet, null, new SheetData("Sheet"));
 
@@ -269,7 +399,7 @@ class StyleUpdateListenerTest {
             first.setCellStyle(source);
             second.setCellStyle(source);
             StyleUpdateListener listener = new StyleUpdateListener(new ReportSheet("Sheet"), Map.of(),
-                    "data", "headers", "footers", 1, new Object[0]);
+                    "data", "headers", "footers", 1, new Object[0], new ExCellaExporterOptions());
             listener.preBookParse(workbook, null);
 
             listener.setCellIndentation(first, (short) 2);
@@ -373,7 +503,7 @@ class StyleUpdateListenerTest {
             Cell cell = sheet.createRow(0).createCell(0);
             cell.setCellStyle(source);
             StyleUpdateListener listener = new StyleUpdateListener(new ReportSheet("Sheet"), Map.of(),
-                    "data", "headers", "footers", 1, new Object[0]);
+                    "data", "headers", "footers", 1, new Object[0], new ExCellaExporterOptions());
             listener.preBookParse(workbook, null);
             int styleCountBeforeUpdate = workbook.getNumCellStyles();
 
@@ -388,9 +518,35 @@ class StyleUpdateListenerTest {
     private static void update(Workbook workbook, Sheet sheet, List<Object> values) {
         ReportSheet reportSheet = new ReportSheet("Sheet");
         StyleUpdateListener listener = new StyleUpdateListener(reportSheet, Map.of("value", values),
-                "data", "headers", "footers", 1, new Object[] {"$R[]{value}"});
+                "data", "headers", "footers", 1, new Object[] {"$R[]{value}"}, new ExCellaExporterOptions());
         listener.preBookParse(workbook, null);
         listener.postParse(sheet, null, new SheetData("Sheet"));
+    }
+
+    private static void update(Workbook workbook, Sheet sheet, List<Object> values,
+            ExCellaExporterOptions options) {
+        update(workbook, sheet, Map.of("value", values), new Object[] {"$R[]{value}"}, options);
+    }
+
+    private static void update(Workbook workbook, Sheet sheet, Map<String, List<Object>> values,
+            Object[] columnDataParams, ExCellaExporterOptions options) {
+        ReportSheet reportSheet = new ReportSheet("Sheet");
+        StyleUpdateListener listener = new StyleUpdateListener(reportSheet, values,
+                "data", "headers", "footers", columnDataParams.length, columnDataParams, options);
+        listener.preBookParse(workbook, null);
+        listener.postParse(sheet, null, new SheetData("Sheet"));
+    }
+
+    private static void assertStringDataFormatOverride(Workbook workbook, ExCellaExporterOptions options)
+            throws IOException {
+        try (Workbook closeableWorkbook = workbook) {
+            Sheet sheet = closeableWorkbook.createSheet("Sheet");
+            Cell cell = sheet.createRow(0).createCell(0);
+
+            update(closeableWorkbook, sheet, List.of(LocalDate.of(2026, 1, 1)), options);
+
+            assertEquals("yyyy-MM-dd", cell.getCellStyle().getDataFormatString());
+        }
     }
 
     private static CTPatternFill patternFill(XSSFWorkbook workbook, XSSFCellStyle style) {

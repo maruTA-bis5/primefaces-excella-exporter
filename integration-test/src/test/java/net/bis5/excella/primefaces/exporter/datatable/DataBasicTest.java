@@ -60,6 +60,19 @@ public class DataBasicTest extends AbstractPrimePageTest {
         assertFileContent(record, "cars-non-ajax.xlsx");
     }
 
+    @Test
+    void exportExcellaWithDataFormatOverride(Page page) throws EncryptedDocumentException, IOException {
+        page.commandLinkDataFormatOverride.getRoot().click();
+
+        Path localFile = Download.downloadFileToLocal("cars-data-format-override.xlsx");
+        try (Workbook workbook = WorkbookFactory.create(localFile.toFile(), null, true)) {
+            Sheet sheet = workbook.getSheetAt(0);
+            assertEquals("#,##0.00", sheet.getRow(1).getCell(6).getCellStyle().getDataFormatString());
+            assertEquals(ValueType.DECIMAL.getFormat(workbook),
+                    sheet.getRow(1).getCell(8).getCellStyle().getDataFormat());
+        }
+    }
+
     private void assertFileContent(DataTypeCheck record, String outputFileName) throws EncryptedDocumentException, IOException {
         Path localFile = Download.downloadFileToLocal(outputFileName);
         try (Workbook workbook = WorkbookFactory.create(localFile.toFile(), null, true)) {
@@ -157,6 +170,9 @@ public class DataBasicTest extends AbstractPrimePageTest {
 
         @FindBy(id = "form:excellaExportAjax")
         CommandLink commandLinkAjax;
+
+        @FindBy(id = "form:excellaExportDataFormatOverride")
+        CommandLink commandLinkDataFormatOverride;
 
         @Override
         public String getLocation() {

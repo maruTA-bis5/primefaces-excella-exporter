@@ -33,9 +33,18 @@ import javax.inject.Named;
 import org.primefaces.model.DefaultTreeNode;
 import org.primefaces.model.TreeNode;
 
+import net.bis5.excella.primefaces.exporter.ExCellaExporterOptions;
+import net.bis5.excella.primefaces.exporter.ValueType;
+
 @Named("ttBasicView")
 @ViewScoped
 public class BasicView implements Serializable {
+
+    public ExCellaExporterOptions getDataFormatOverrideOptions() {
+        ExCellaExporterOptions options = new ExCellaExporterOptions();
+        options.setOverrideDataType(ValueType.INTEGER, "#,##0.00");
+        return options;
+    }
 
     private List<TreeNode<DataTypeCheck>> selection;
 
