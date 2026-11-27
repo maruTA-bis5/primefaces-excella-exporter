@@ -75,6 +75,19 @@ class TreeBasicTest extends AbstractPrimePageTest {
         assertFileContent(parentRecord1, childRecord1, parentRecord2, childRecord2, "tt-cars-non-ajax.xlsx");
     }
 
+    @Test
+    void exportExcellaWithDataFormatOverride(Page page) throws EncryptedDocumentException, IOException {
+        page.commandLinkDataFormatOverride.getRoot().click();
+
+        Path localFile = Download.downloadFileToLocal("tt-cars-data-format-override.xlsx");
+        try (Workbook workbook = WorkbookFactory.create(localFile.toFile(), null, true)) {
+            Sheet sheet = workbook.getSheetAt(0);
+            assertEquals("#,##0.00", sheet.getRow(1).getCell(6).getCellStyle().getDataFormatString());
+            assertEquals(ValueType.DECIMAL.getFormat(workbook),
+                    sheet.getRow(1).getCell(8).getCellStyle().getDataFormat());
+        }
+    }
+
     private void assertFileContent(DataTypeCheck parentRecord1, DataTypeCheck childRecord1, DataTypeCheck parentRecord2, DataTypeCheck childRecord2, String fileName) throws EncryptedDocumentException, IOException {
         Path localFile = Download.downloadFileToLocal(fileName);
         try (Workbook workbook = WorkbookFactory.create(localFile.toFile(), null, true)) {
@@ -245,6 +258,9 @@ class TreeBasicTest extends AbstractPrimePageTest {
 
         @FindBy(id = "form:excellaExportAjax")
         CommandLink commandLinkAjax;
+
+        @FindBy(id = "form:excellaExportDataFormatOverride")
+        CommandLink commandLinkDataFormatOverride;
 
         @Override
         public String getLocation() {

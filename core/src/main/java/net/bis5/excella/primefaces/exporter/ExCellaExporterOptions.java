@@ -1,10 +1,17 @@
 package net.bis5.excella.primefaces.exporter;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
+
+import org.apache.poi.ss.usermodel.Workbook;
 import org.primefaces.component.export.ExcelOptions;
 
 import net.bis5.excella.primefaces.exporter.listener.BeforeWriteResponseListener;
@@ -13,6 +20,8 @@ import net.bis5.excella.primefaces.exporter.listener.BeforeWriteResponseListener
  * ExCella exporter options
  */
 public class ExCellaExporterOptions extends ExcelOptions {
+
+    private final Map<ValueType, DataFormatResolver> overrideDataTypeForValueType = new EnumMap<>(ValueType.class);
 
     private Path templatePath;
 
@@ -86,6 +95,41 @@ public class ExCellaExporterOptions extends ExcelOptions {
      */
     public boolean isThrowExceptionWhenNoData() {
         return throwExceptionWhenNoData;
+    }
+
+    /**
+     * Override the default data format for a value type.
+     * @param valueType the value type to override
+     * @param dataFormat the workbook data format index to use
+     */
+    public void setOverrideDataType(ValueType valueType, short dataFormat) {
+        Objects.requireNonNull(valueType, "valueType must not be null");
+        overrideDataTypeForValueType.put(valueType, w -> dataFormat);
+    }
+
+    /**
+     * Override the default data format for a value type with a format string.
+     * The format string is resolved against the workbook being exported.
+     * @param valueType the value type to override
+     * @param dataFormat the Excel data format string, or {@code null} to clear the override
+     */
+    public void setOverrideDataType(ValueType valueType, String dataFormat) {
+        Objects.requireNonNull(valueType, "valueType must not be null");
+        if (dataFormat == null) {
+            overrideDataTypeForValueType.remove(valueType);
+        } else {
+            overrideDataTypeForValueType.put(valueType,
+                    w -> w.getCreationHelper().createDataFormat().getFormat(dataFormat));
+        }
+    }
+
+    Short getOverrideDataFormat(ValueType valueType, Workbook workbook) {
+        DataFormatResolver dataFormat = overrideDataTypeForValueType.get(valueType);
+        return dataFormat == null ? null : dataFormat.apply(workbook);
+    }
+
+    @FunctionalInterface
+    private interface DataFormatResolver extends Function<Workbook, Short>, Serializable {
     }
 
     private final List<BeforeWriteResponseListener> beforeWriteResponseListeners = new ArrayList<>();
