@@ -288,11 +288,9 @@ interface ExCellaExporter<T extends UITable<?>> {
         String columnKey = "data" + colIndex;
 
         Object exportValue;
-        List<UIComponentWithCompositeParent> valueHoldingChildren = extractValueHoldingChildren(column);
-        boolean hasRenderedPassword = valueHoldingChildren.stream()
-                .filter(UIComponentWithCompositeParent::isRendered)
-                .anyMatch(c -> hasRenderedPassword(c.getComponent()));
-        if (hasRenderedPassword
+        List<UIComponentWithCompositeParent> valueHoldingChildren = extractValueHoldingChildren(context, column);
+        boolean containsPassword = !getExporterOptions().isExportPassword() && containsPasswordInColumn(column);
+        if (containsPassword
                 && (column.getExportValue() != null || column.getExportFunction() != null || LangUtils.isNotBlank(column.getField()))) {
             exportValue = getExCellaColumnValue(context, table, column, valueHoldingChildren, true).getValue();
         } else if (valueHoldingChildren.size() == 1) {
@@ -305,55 +303,106 @@ interface ExCellaExporter<T extends UITable<?>> {
         values.add(exportValue);
     }
 
-    private List<UIComponentWithCompositeParent> extractValueHoldingChildren(UIColumn column) {
+    private List<UIComponentWithCompositeParent> extractValueHoldingChildren(FacesContext context, UIColumn column) {
         return column.getChildren().stream()
-            .filter(UIComponent::isRendered)
-            .flatMap(this::extractValueHoldingChildren)
+            .filter(child -> getExporterOptions().isExportPassword() || child.isRendered())
+            .flatMap(child -> extractValueHoldingChildren(context, child))
             .collect(Collectors.toList());
     }
 
-    private Stream<UIComponentWithCompositeParent> extractValueHoldingChildren(UIComponent parent) {
+    private Stream<UIComponentWithCompositeParent> extractValueHoldingChildren(FacesContext context, UIComponent parent) {
         if (UIComponent.isCompositeComponent(parent)) {
             UIComponent compositeFacet = parent.getFacet(UIComponent.COMPOSITE_FACET_NAME);
             if (compositeFacet == null) {
                 return Stream.empty();
             }
             return compositeFacet.getChildren().stream()
-                .flatMap(this::extractValueHoldingChildren)
+                .flatMap(child -> extractValueHoldingChildren(context, child))
                 .map(c -> c.isInCompositeComponent() ? c : new UIComponentWithCompositeParent(c.getComponent(), parent));
         }
         if (parent instanceof Link || parent instanceof ValueHolder || isComponentUIInstructions(parent)) {
             return Stream.of(new UIComponentWithCompositeParent(parent));
         } else if (parent instanceof CellEditor) {
+            if (!getExporterOptions().isExportPassword() && !parent.isRendered()) {
+                return Stream.empty();
+            }
             UIComponent output = parent.getFacet("output");
             return output == null ? Stream.empty() : Stream.of(new UIComponentWithCompositeParent(output));
-        } else if (hasRenderedPassword(parent)) {
+        } else if (!getExporterOptions().isExportPassword() && parent.isRendered() && containsPassword(parent)) {
             return Stream.concat(
-                    parent.getFacets().values().stream().flatMap(this::extractValueHoldingChildren),
-                    parent.getChildren().stream().flatMap(this::extractValueHoldingChildren));
+                    parent.getFacets().values().stream().flatMap(child -> extractValueHoldingChildren(context, child)),
+                    parent.getChildren().stream().flatMap(child -> extractValueHoldingChildren(context, child)));
         }
         return Stream.empty();
     }
 
-    private boolean hasRenderedPassword(UIComponent component) {
-        return findRenderedPasswords(component).findAny().isPresent();
+    private boolean containsPasswordInColumn(UIColumn column) {
+        for (UIComponent child : column.getChildren()) {
+            if (containsPassword(child)) {
+                return true;
+            }
+        }
+        return false;
     }
 
-    private Stream<Password> findRenderedPasswords(UIComponent component) {
+    private boolean containsPassword(UIComponent component) {
+        if (component instanceof Password) {
+            return true;
+        }
+        for (UIComponent facet : component.getFacets().values()) {
+            if (containsPassword(facet)) {
+                return true;
+            }
+        }
+        for (UIComponent child : component.getChildren()) {
+            if (containsPassword(child)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean containsRenderedPassword(FacesContext context, UIComponent component) {
         if (!component.isRendered()) {
-            return Stream.empty();
+            return false;
         }
         if (component instanceof Password) {
-            return Stream.of((Password)component);
+            return true;
         }
-        return Stream.concat(
-                component.getFacets().values().stream().flatMap(this::findRenderedPasswords),
-                component.getChildren().stream().flatMap(this::findRenderedPasswords));
+        if (UIComponent.isCompositeComponent(component)) {
+            component.pushComponentToEL(context, null);
+            try {
+                return containsRenderedPasswordInComposite(context, component);
+            } finally {
+                component.popComponentFromEL(context);
+            }
+        }
+        return containsRenderedPasswordInChildren(context, component, null);
+    }
+
+    private boolean containsRenderedPasswordInComposite(FacesContext context, UIComponent component) {
+        UIComponent compositeFacet = component.getFacet(UIComponent.COMPOSITE_FACET_NAME);
+        return (compositeFacet != null && containsRenderedPassword(context, compositeFacet))
+                || containsRenderedPasswordInChildren(context, component, UIComponent.COMPOSITE_FACET_NAME);
+    }
+
+    private boolean containsRenderedPasswordInChildren(FacesContext context, UIComponent component, String excludedFacet) {
+        for (Map.Entry<String, UIComponent> facet : component.getFacets().entrySet()) {
+            if (!Objects.equals(excludedFacet, facet.getKey())
+                    && containsRenderedPassword(context, facet.getValue())) {
+                return true;
+            }
+        }
+        for (UIComponent child : component.getChildren()) {
+            if (containsRenderedPassword(context, child)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private Object exportPasswordAwareComponentValue(FacesContext context, UIComponent component) {
-        List<Object> values = extractValueHoldingChildren(component)
-                .filter(UIComponentWithCompositeParent::isRendered)
+        List<Object> values = extractValueHoldingChildren(context, component)
                 .map(child -> exportObjectValue(context, child))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
@@ -369,7 +418,7 @@ interface ExCellaExporter<T extends UITable<?>> {
     }
 
     default ColumnValue getExCellaColumnValue(FacesContext context, T table, UIColumn column, boolean joinComponents) {
-        List<UIComponentWithCompositeParent> valueHoldingComponents = extractValueHoldingChildren(column);
+        List<UIComponentWithCompositeParent> valueHoldingComponents = extractValueHoldingChildren(context, column);
         return getExCellaColumnValue(context, table, column, valueHoldingComponents, joinComponents);
     }
 
@@ -383,32 +432,48 @@ interface ExCellaExporter<T extends UITable<?>> {
             return ColumnValue.of(exportFunction.invoke(context.getELContext(), new Object[]{column}));
         }
         else if (LangUtils.isNotBlank(column.getField())) {
-            if (!getExporterOptions().isExportPassword()
-                    && valueHoldingComponents.stream()
-                            .filter(UIComponentWithCompositeParent::isRendered)
-                            .anyMatch(c -> hasRenderedPassword(c.getComponent()))) {
-                return ColumnValue.of(getExporterOptions().getPasswordReplacement());
+            if (!getExporterOptions().isExportPassword() && containsPasswordInColumn(column)) {
+                if (containsRenderedPasswordInColumn(context, column)) {
+                    return ColumnValue.of(getExporterOptions().getPasswordReplacement());
+                }
+                return getColumnValueFromComponents(context, valueHoldingComponents, joinComponents, true);
             }
             String value = table.getConvertedFieldValue(context, column);
             return ColumnValue.of(value);
         }
         else {
             // modified: 1. extract composite component, 2. use exportObjectValue instead of TableExporter.getColumnValue
-            List<Object> values = valueHoldingComponents.stream()
-                .filter(UIComponentWithCompositeParent::isRendered)
-                .map(c -> exportObjectValue(context, c))
+            return getColumnValueFromComponents(context, valueHoldingComponents, joinComponents, false);
+        }
+    }
+
+    private boolean containsRenderedPasswordInColumn(FacesContext context, UIColumn column) {
+        for (UIComponent child : column.getChildren()) {
+            if (containsRenderedPassword(context, child)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private ColumnValue getColumnValueFromComponents(FacesContext context,
+            List<UIComponentWithCompositeParent> valueHoldingComponents, boolean joinComponents, boolean blankWhenEmpty) {
+        List<Object> values = valueHoldingComponents.stream()
+                .map(component -> exportObjectValue(context, component))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
-            boolean collectAsString = joinComponents || values.size() > 1;
-            if (collectAsString) {
-                String joined = values.stream()
-                        .limit(!joinComponents ? 1 : values.size())
-                        .map(Object::toString)
-                        .collect(Collectors.joining(getExporterOptions().getColumnValueSeparator()));
-                return joined.isEmpty() ? ColumnValue.of(null) : ColumnValue.of(joined);
-            }
-            return ColumnValue.of(values.get(0));
+        if (blankWhenEmpty && values.isEmpty()) {
+            return ColumnValue.of(null);
         }
+        boolean collectAsString = joinComponents || values.size() > 1;
+        if (collectAsString) {
+            String joined = values.stream()
+                    .limit(!joinComponents ? 1 : values.size())
+                    .map(Object::toString)
+                    .collect(Collectors.joining(getExporterOptions().getColumnValueSeparator()));
+            return joined.isEmpty() ? ColumnValue.of(null) : ColumnValue.of(joined);
+        }
+        return ColumnValue.of(values.get(0));
     }
 
     default Entry<String, List<Object>> normalizeValues(Entry<String, List<Object>> entry) {
@@ -465,18 +530,16 @@ interface ExCellaExporter<T extends UITable<?>> {
     }
 
     default Object exportObjectValue(FacesContext context, UIComponentWithCompositeParent component) {
-        if (!component.isRendered()) {
-            return null;
-        }
-        if (!getExporterOptions().isExportPassword() && component.getComponent() instanceof Password) {
-            return getExporterOptions().getPasswordReplacement();
-        }
         if (component.isInCompositeComponent()) {
-            component.getCompositeParent().pushComponentToEL(context, null);
+            UIComponent compositeParent = component.getCompositeParent();
+            compositeParent.pushComponentToEL(context, null);
             try {
+                if (!compositeParent.isRendered()) {
+                    return null;
+                }
                 return exportObjectValue(context, component.getComponent());
             } finally {
-                component.getCompositeParent().popComponentFromEL(context);
+                compositeParent.popComponentFromEL(context);
             }
         } else {
             return exportObjectValue(context, component.getComponent());
@@ -516,7 +579,7 @@ interface ExCellaExporter<T extends UITable<?>> {
             UIComponent output = component.getFacet("output");
             return output == null ? null : exportObjectValue(context, output);
         }
-        if (hasRenderedPassword(component)) {
+        if (!getExporterOptions().isExportPassword() && containsPassword(component)) {
             return exportPasswordAwareComponentValue(context, component);
         }
         return exportValue(context, component);
@@ -586,7 +649,7 @@ interface ExCellaExporter<T extends UITable<?>> {
         if (value != null) {
             return (value);
         } else if (FacetUtils.shouldRenderFacet(facet)) {
-            if (hasRenderedPassword(facet)) {
+            if (!getExporterOptions().isExportPassword() && containsPassword(facet)) {
                 return exportPasswordAwareComponentValue(context, facet);
             }
             return exportValue(context, facet);

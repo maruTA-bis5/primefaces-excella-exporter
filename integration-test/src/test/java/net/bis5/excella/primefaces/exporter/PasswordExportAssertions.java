@@ -22,8 +22,8 @@ public final class PasswordExportAssertions {
 
         assertText(sheet.getRow(0), 0, passwordValue("header-password", masked, replacement));
         assertText(sheet.getRow(0), 1, "Ordinary header");
-        assertText(sheet.getRow(0), 12,
-                "wrapped-header" + separator + passwordValue("nested-header-password", masked, replacement));
+        assertText(sheet.getRow(0), 14,
+                masked ? "wrapped-header" + separator + replacement : null);
 
         for (int rowIndex = 1; rowIndex <= dataRowCount; rowIndex++) {
             String rowSuffix = Integer.toString(rowIndex);
@@ -34,23 +34,25 @@ public final class PasswordExportAssertions {
             assertText(row, 0, rawPassword);
             assertText(row, 1, textValue);
             assertText(row, 2, combinedValue(textValue, rawPassword, separator));
-            assertText(row, 3, rawPassword);
+            assertText(row, 3, masked ? replacement : null);
             assertText(row, 4, rawPassword);
             assertText(row, 5, rawPassword);
             assertText(row, 6, rawPassword);
-            assertText(row, 7, combinedValue(textValue, rawPassword, separator));
+            assertText(row, 7, masked ? combinedValue(textValue, replacement, separator) : null);
             assertText(row, 8, null);
             assertText(row, 9, null);
-            assertText(row, 10, "export-value");
-            assertText(row, 11, "export-function");
-            assertText(row, 12, textValue);
+            assertText(row, 10, null);
+            assertText(row, 11, null);
+            assertText(row, 12, masked ? "export-value" : rawPassword);
+            assertText(row, 13, masked ? "export-function" : rawPassword);
+            assertText(row, 14, textValue);
         }
 
         Row footer = sheet.getRow(dataRowCount + 1);
         assertText(footer, 0, passwordValue("footer-password", masked, replacement));
         assertText(footer, 1, "Ordinary footer");
-        assertText(footer, 12,
-                "wrapped-footer" + separator + passwordValue("nested-footer-password", masked, replacement));
+        assertText(footer, 14,
+                masked ? "wrapped-footer" + separator + replacement : null);
     }
 
     private static String rawPasswordForRow(String prefix, int rowIndex) {

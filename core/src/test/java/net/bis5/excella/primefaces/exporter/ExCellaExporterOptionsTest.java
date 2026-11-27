@@ -1,6 +1,7 @@
 package net.bis5.excella.primefaces.exporter;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -46,7 +47,7 @@ class ExCellaExporterOptionsTest {
         options.setExportPassword(false);
         options.setPasswordReplacement("***");
 
-        assertEquals(false, options.isExportPassword());
+        assertFalse(options.isExportPassword());
         assertEquals("***", options.getPasswordReplacement());
     }
 
