@@ -46,7 +46,7 @@ public final class PasswordExportAssertions {
             assertText(row, 8, masked ? combinedValue(textValue, replacement, separator) : null);
             assertText(row, 9, null);
             assertText(row, 10, null);
-            assertText(row, 11, null);
+            assertText(row, 11, masked ? null : rawPassword);
             assertText(row, 12, null);
             assertText(row, 13, masked ? "export-value" : rawPassword);
             assertText(row, 14, masked ? "export-function" : rawPassword);
