@@ -155,7 +155,8 @@ public class DataTableExcellaExporter extends DataTableExporter<ReportBook, ExCe
     }
 
     private String dataTag() {
-        return Objects.requireNonNullElse(getDataColumnsTag(), DEFAULT_DATA_COLUMNS_TAG);
+        String dataColumnsTag = getDataColumnsTag();
+        return dataColumnsTag != null ? dataColumnsTag : DEFAULT_DATA_COLUMNS_TAG;
     }
 
     @Override

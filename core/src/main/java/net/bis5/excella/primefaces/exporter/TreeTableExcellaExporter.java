@@ -219,7 +219,8 @@ public class TreeTableExcellaExporter extends TreeTableExporter<ReportBook, ExCe
     }
 
     private String dataTag() {
-        return nonNull(getDataColumnsTag(), DEFAULT_DATA_COLUMNS_TAG);
+        String dataColumnsTag = getDataColumnsTag();
+        return dataColumnsTag != null ? dataColumnsTag : DEFAULT_DATA_COLUMNS_TAG;
     }
 
     @Override
@@ -241,8 +242,10 @@ public class TreeTableExcellaExporter extends TreeTableExporter<ReportBook, ExCe
 
         int columnSize = columnHeader.size();
 
-        String headersTagName = nonNull(getHeadersTag(), DEFAULT_HEADERS_TAG);
-        String footersTagName = nonNull(getFootersTag(), DEFAULT_FOOTERS_TAG);
+        String headersTag = getHeadersTag();
+        String headersTagName = headersTag != null ? headersTag : DEFAULT_HEADERS_TAG;
+        String footersTag = getFootersTag();
+        String footersTagName = footersTag != null ? footersTag : DEFAULT_FOOTERS_TAG;
         reportSheet.addParam(ColRepeatParamParser.DEFAULT_TAG, headersTagName, columnHeader.toArray());
         reportSheet.addParam(ColRepeatParamParser.DEFAULT_TAG, footersTagName, columnFooter.toArray());
         listeners.add(new StyleUpdateListener(reportSheet, dataContainer, dataTag(), headersTagName, footersTagName,
