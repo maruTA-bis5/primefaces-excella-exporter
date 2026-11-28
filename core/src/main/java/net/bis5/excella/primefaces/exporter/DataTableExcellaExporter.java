@@ -15,6 +15,7 @@ import org.bbreak.excella.reports.model.ReportBook;
 import org.bbreak.excella.reports.model.ReportSheet;
 import org.bbreak.excella.reports.tag.ColRepeatParamParser;
 import org.bbreak.excella.reports.tag.RowRepeatParamParser;
+import org.jspecify.annotations.Nullable;
 import org.primefaces.component.api.DynamicColumn;
 import org.primefaces.component.api.UIColumn;
 import org.primefaces.component.api.UITable;
@@ -36,11 +37,11 @@ public class DataTableExcellaExporter extends DataTableExporter<ReportBook, ExCe
 
     private static final String DEFAULT_FOOTERS_TAG = "footers";
 
-    private TemplateType templateType;
+    private @Nullable TemplateType templateType;
 
     private List<ReportProcessListener> listeners = new ArrayList<>();
 
-    private ReportSheet currentSheet;
+    private @Nullable ReportSheet currentSheet;
 
     public DataTableExcellaExporter() {
         super(new ExCellaExporterOptions(), ALL_FACETS, true);
@@ -52,7 +53,7 @@ public class DataTableExcellaExporter extends DataTableExporter<ReportBook, ExCe
     }
 
     @Override
-    public TemplateType getTemplateType() {
+    public @Nullable TemplateType getTemplateType() {
         return templateType;
     }
 
@@ -99,20 +100,22 @@ public class DataTableExcellaExporter extends DataTableExporter<ReportBook, ExCe
     }
 
     @Override
+    // NullAway: currentSheet is set by exportTable before cells are exported.
+    @SuppressWarnings("NullAway")
     protected void exportCellValue(FacesContext context, DataTable table, UIColumn col, ColumnValue value, int index) {
-        Map<String, List<Object>> dataContainer = getDataContainer(currentSheet);
+        Map<String, List<@Nullable Object>> dataContainer = getDataContainer(currentSheet);
         addCellValue(context, dataContainer, table, index, col);
     }
 
-    private String getDataColumnsTag() {
+    private @Nullable String getDataColumnsTag() {
         return getExporterOptions().getDataColumnsTag();
     }
 
-    private String getHeadersTag() {
+    private @Nullable String getHeadersTag() {
         return getExporterOptions().getHeadersTag();
     }
 
-    private String getFootersTag() {
+    private @Nullable String getFootersTag() {
         return getExporterOptions().getFootersTag();
     }
 
@@ -152,11 +155,12 @@ public class DataTableExcellaExporter extends DataTableExporter<ReportBook, ExCe
     }
 
     private String dataTag() {
-        return Objects.requireNonNullElse(getDataColumnsTag(), DEFAULT_DATA_COLUMNS_TAG);
+        String dataColumnsTag = getDataColumnsTag();
+        return dataColumnsTag != null ? dataColumnsTag : DEFAULT_DATA_COLUMNS_TAG;
     }
 
     @Override
-    public void setExportParameters(ReportSheet reportSheet, List<Object> columnHeader, List<Object> columnFooter, Map<String, List<Object>> dataContainer) {
+    public void setExportParameters(ReportSheet reportSheet, List<@Nullable Object> columnHeader, List<@Nullable Object> columnFooter, Map<String, List<@Nullable Object>> dataContainer) {
         Object[] columnDataParams = dataContainer.keySet().stream().map(k -> "$R[]{" + k + "}").toArray();
         reportSheet.addParam(ColRepeatParamParser.DEFAULT_TAG, dataTag(), columnDataParams);
 
@@ -165,8 +169,10 @@ public class DataTableExcellaExporter extends DataTableExporter<ReportBook, ExCe
             .map(this::normalizeValues)
             .forEach(e -> reportSheet.addParam(RowRepeatParamParser.DEFAULT_TAG, e.getKey(), e.getValue().toArray()));
 
-        String headersTagName = Objects.requireNonNullElse(getHeadersTag(), DEFAULT_HEADERS_TAG);
-        String footersTagName = Objects.requireNonNullElse(getFootersTag(), DEFAULT_FOOTERS_TAG);
+        String headersTag = getHeadersTag();
+        String headersTagName = headersTag != null ? headersTag : DEFAULT_HEADERS_TAG;
+        String footersTag = getFootersTag();
+        String footersTagName = footersTag != null ? footersTag : DEFAULT_FOOTERS_TAG;
         reportSheet.addParam(ColRepeatParamParser.DEFAULT_TAG, headersTagName, columnHeader.toArray());
         reportSheet.addParam(ColRepeatParamParser.DEFAULT_TAG, footersTagName, columnFooter.toArray());
 
@@ -180,7 +186,7 @@ public class DataTableExcellaExporter extends DataTableExporter<ReportBook, ExCe
     }
 
     @Override
-    public void exportFacet(FacesContext context, DataTable table, ExCellaExporter.ColumnType columnType, ReportSheet reportSheet, List<Object> facetColumns) {
+    public void exportFacet(FacesContext context, DataTable table, ExCellaExporter.ColumnType columnType, ReportSheet reportSheet, List<@Nullable Object> facetColumns) {
 
         ColumnGroup group = table.getColumnGroup(columnType.facet());
         if (group != null && group.isRendered()) {
@@ -214,7 +220,7 @@ public class DataTableExcellaExporter extends DataTableExporter<ReportBook, ExCe
     }
 
     private void exportFrozenScrollableGroup(FacesContext context, DataTable table, ExCellaExporter.ColumnType columnType,
-            ColumnGroup frozenGroup, ColumnGroup scrollableGroup, ReportSheet reportSheet, List<Object> facetColumns) {
+            ColumnGroup frozenGroup, ColumnGroup scrollableGroup, ReportSheet reportSheet, List<@Nullable Object> facetColumns) {
 
         for (UIComponent child : frozenGroup.getChildren()) {
             if (child instanceof org.primefaces.component.row.Row) {

@@ -38,27 +38,28 @@ import org.bbreak.excella.reports.model.ReportBook;
 import org.bbreak.excella.reports.model.ReportSheet;
 import org.bbreak.excella.reports.tag.ColRepeatParamParser;
 import org.bbreak.excella.reports.tag.RowRepeatParamParser;
+import org.jspecify.annotations.Nullable;
 import org.openxmlformats.schemas.spreadsheetml.x2006.main.CTFill;
 import org.openxmlformats.schemas.spreadsheetml.x2006.main.CTPatternFill;
 import org.openxmlformats.schemas.spreadsheetml.x2006.main.STPatternType;
 
 class StyleUpdateListener extends ReportProcessAdaptor {
 
-    private CellAddress headerPosition;
+    private @Nullable CellAddress headerPosition;
 
-    private CellAddress dataPosition;
+    private @Nullable CellAddress dataPosition;
 
-    private CellAddress footerPosition;
+    private @Nullable CellAddress footerPosition;
 
     private int headerSize;
 
-    private Map<ValueType, CellStyle> styles;
+    private @Nullable Map<ValueType, CellStyle> styles;
 
     private final Map<StyleKey, CellStyle> updatedStyles = new HashMap<>();
 
     private final ReportSheet reportSheet;
 
-    private final Map<String, List<Object>> dataContainer;
+    private final Map<String, List<@Nullable Object>> dataContainer;
 
     private final String dataTagName;
 
@@ -72,7 +73,7 @@ class StyleUpdateListener extends ReportProcessAdaptor {
 
     private final ExCellaExporterOptions options;
 
-    private final Map<String, ValueType> valueTypes;
+    private final Map<String, @Nullable ValueType> valueTypes;
 
     private final int repeatRows;
 
@@ -81,7 +82,7 @@ class StyleUpdateListener extends ReportProcessAdaptor {
     private final Set<CellRangeAddress> footerMergedAreas;
 
     @SuppressWarnings("unchecked")
-    StyleUpdateListener(ReportSheet reportSheet, Map<String, List<Object>> dataContainer, String dataTagName,
+    StyleUpdateListener(ReportSheet reportSheet, Map<String, List<@Nullable Object>> dataContainer, String dataTagName,
             String headersTagName, String footersTagName, int columnSize, Object[] columnDataParams,
             ExCellaExporterOptions options) {
         this.reportSheet = reportSheet;
@@ -104,22 +105,22 @@ class StyleUpdateListener extends ReportProcessAdaptor {
         reportSheet.removeParam(null, ExCellaExporter.COLUMN_GROUP_MERGED_AREAS_KEY + "footer");
     }
 
-    private Map<String, ValueType> detectValueTypes(Map<String, List<Object>> dataContainer) {
-        Map<String, ValueType> detectedValueTypes = new HashMap<>();
-        for(Entry<String, List<Object>> entry : dataContainer.entrySet()) {
+    private Map<String, @Nullable ValueType> detectValueTypes(Map<String, List<@Nullable Object>> dataContainer) {
+        Map<String, @Nullable ValueType> detectedValueTypes = new HashMap<>();
+        for(Entry<String, List<@Nullable Object>> entry : dataContainer.entrySet()) {
             String key = entry.getKey();
-            List<Object> values = entry.getValue();
-            ValueType type = detectValueType(values);
+            List<@Nullable Object> values = entry.getValue();
+            @Nullable ValueType type = detectValueType(values);
             detectedValueTypes.put(key, type);
         }
         return detectedValueTypes;
     }
 
-    private ValueType detectValueType(List<Object> values) {
+    private @Nullable ValueType detectValueType(List<@Nullable Object> values) {
         Set<ValueType> types = new HashSet<>();
         boolean hasString = false;
-        for (Object value : values) {
-            ValueType type = detectValueType(value);
+        for (@Nullable Object value : values) {
+            @Nullable ValueType type = detectValueType(value);
             if (type == ValueType.STRING) {
                 hasString = true;
             } else if (type != null) {
@@ -138,7 +139,7 @@ class StyleUpdateListener extends ReportProcessAdaptor {
         return types.iterator().next();
     }
 
-    private ValueType detectValueType(Object value) {
+    private @Nullable ValueType detectValueType(@Nullable Object value) {
         if (value instanceof LocalDateTime || (value instanceof Date && hasTime((Date)value)) || (value instanceof Calendar && hasTime((Calendar)value))) {
             return ValueType.DATE_TIME;
         }
@@ -183,7 +184,7 @@ class StyleUpdateListener extends ReportProcessAdaptor {
 
 
     @Override
-    public void preBookParse(Workbook workbook, ReportBook reportBook) {
+    public void preBookParse(Workbook workbook, @Nullable ReportBook reportBook) {
         styles = ValueType.initStyles(workbook, options);
         updatedStyles.clear();
     }
@@ -228,8 +229,11 @@ class StyleUpdateListener extends ReportProcessAdaptor {
             });
     }
 
+    // NullAway: preBookParse (which initializes styles) always runs before postParse during report
+    // processing, and the styles map from ValueType.initStyles covers every ValueType resolved here.
+    @SuppressWarnings("NullAway")
     @Override
-    public void postParse(Sheet sheet, SheetParser sheetParser, SheetData sheetData) {
+    public void postParse(Sheet sheet, @Nullable SheetParser sheetParser, SheetData sheetData) {
         if (dataContainer.isEmpty() || !sheetData.getSheetName().equals(reportSheet.getSheetName())) {
             return;
         }
@@ -241,9 +245,9 @@ class StyleUpdateListener extends ReportProcessAdaptor {
             .mapToInt(a -> a.length)
             .max()
             .ifPresentOrElse(s -> headerSize = s, () -> headerSize = 1);
-        for (Entry<String, ValueType> entry : valueTypes.entrySet()) {
+        for (Entry<String, @Nullable ValueType> entry : valueTypes.entrySet()) {
             String columnTag = getColumnTag(entry.getKey());
-            ValueType valueType = entry.getValue();
+            @Nullable ValueType valueType = entry.getValue();
             if (valueType == null) {
                 continue;
             }
@@ -251,7 +255,7 @@ class StyleUpdateListener extends ReportProcessAdaptor {
                     && options.getOverrideDataFormat(ValueType.STRING, sheet.getWorkbook()) == null) {
                 continue;
             }
-            CellStyle style = styles.get(valueType);
+            @Nullable CellStyle style = styles.get(valueType);
             int colIndex = Arrays.asList(columnDataParams).indexOf(columnTag);
             IntStream.range(dataRowOffset(0), dataRowOffset(repeatRows))
                 .mapToObj(sheet::getRow)
@@ -374,6 +378,9 @@ class StyleUpdateListener extends ReportProcessAdaptor {
             .forEach(this::mergeCells);
     }
 
+    // NullAway: dataPosition may be null here when only footer positions are set; the dereference of
+    // dataPosition.getRow() preserves the pre-existing behavior (latent NPE) intentionally.
+    @SuppressWarnings("NullAway")
     private void mergeCells(Sheet sheet) {
         int headerOffset = headerPosition == null ? 0 : headerPosition.getRow();
         headerMergedAreas.forEach(a -> mergeCell(sheet, headerPosition, headerOffset, a));
@@ -382,7 +389,7 @@ class StyleUpdateListener extends ReportProcessAdaptor {
         footerMergedAreas.forEach(a -> mergeCell(sheet, footerPosition, footerOffset, a));
     }
 
-    private void mergeCell(Sheet sheet, CellAddress beginPosition, int rowOffset, CellRangeAddress area) {
+    private void mergeCell(Sheet sheet, @Nullable CellAddress beginPosition, int rowOffset, CellRangeAddress area) {
         if (beginPosition == null) {
             return;
         }

@@ -32,6 +32,8 @@ class ColumnValueSeparatorTest {
         assertColumnValueSeparators(new TestTreeTableExcellaExporter(options), options);
     }
 
+    // NullAway: null context/table are never dereferenced on the stub column's export path.
+    @SuppressWarnings("NullAway")
     private void assertColumnValueSeparators(ExCellaExporter<?> exporter, ExCellaExporterOptions options) {
         UIColumn column = createColumn();
         List<UIComponentWithCompositeParent> components = Arrays.asList(new TestComponent("first"),
@@ -55,6 +57,8 @@ class ColumnValueSeparatorTest {
         return new TestColumn();
     }
 
+    // NullAway: TestColumnはUIColumnのテスト用スタブであり、各メソッドは未使用のダミー値(null/0/false)を返すのみ。
+    @SuppressWarnings("NullAway")
     private static class TestColumn implements UIColumn {
         @Override
         public String resolveField(FacesContext context, ValueExpression valueExpression) {
@@ -408,6 +412,8 @@ class ColumnValueSeparatorTest {
         }
     }
 
+    // NullAway: TestComponent is a stub holding the export value; the wrapped UIComponent is an unused dummy (null).
+    @SuppressWarnings("NullAway")
     private static class TestComponent extends UIComponentWithCompositeParent {
         private final String value;
 

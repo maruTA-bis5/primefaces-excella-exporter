@@ -1,2 +1,4 @@
 # When shell scripts end in CRLF, bash gives a cryptic error message
 *.sh text eol=lf
+# Maven parses jvm.config tokens; trailing \r from CRLF breaks them
+.mvn/jvm.config text eol=lf

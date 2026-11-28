@@ -7,6 +7,7 @@ import java.util.regex.Pattern;
 
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.jspecify.annotations.Nullable;
 
 public enum ValueType {
     STRING(w -> w.createDataFormat().getFormat("General")),
@@ -33,7 +34,7 @@ public enum ValueType {
         return initStyles(workbook, null);
     }
 
-    static Map<ValueType, CellStyle> initStyles(Workbook workbook, ExCellaExporterOptions options) {
+    static Map<ValueType, CellStyle> initStyles(Workbook workbook, @Nullable ExCellaExporterOptions options) {
         EnumMap<ValueType, CellStyle> styles = new EnumMap<>(ValueType.class);
         for (ValueType valueType : values()) {
             CellStyle style = workbook.createCellStyle();
