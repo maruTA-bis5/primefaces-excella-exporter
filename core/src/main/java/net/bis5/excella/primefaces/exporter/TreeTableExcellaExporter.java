@@ -369,18 +369,26 @@ public class TreeTableExcellaExporter extends TreeTableExporter<ReportBook, ExCe
     }
 
     protected static TreeNode<?> findNodeByRowKey(TreeNode<?> node, String rowKey) {
+        TreeNode<?> foundNode = findNodeByRowKeyOrNull(node, rowKey);
+        if (foundNode == null) {
+            throw new IllegalArgumentException("Node for rowKey " + rowKey + " is not found");
+        }
+        return foundNode;
+    }
+
+    private static @Nullable TreeNode<?> findNodeByRowKeyOrNull(TreeNode<?> node, String rowKey) {
         if (node.getRowKey().equals(rowKey)) {
             return node;
         }
         if (node.getChildren() != null) {
             for (TreeNode<?> childNode : node.getChildren()) {
-                TreeNode<?> foundNode = findNodeByRowKey(childNode, rowKey);
+                TreeNode<?> foundNode = findNodeByRowKeyOrNull(childNode, rowKey);
                 if (foundNode != null) {
                     return foundNode;
                 }
             }
         }
-        throw new IllegalArgumentException("Node for rowKey " + rowKey + " is not found");
+        return null;
     }
 
     protected static Pair<TreeNode<?>, Integer> traverseTreeNode(TreeNode<?> node, int dataRowIndex) {
