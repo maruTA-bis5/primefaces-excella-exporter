@@ -10,6 +10,8 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 
+import org.jspecify.annotations.Nullable;
+
 public final class PasswordExportAssertions {
 
     private PasswordExportAssertions() {
@@ -67,7 +69,7 @@ public final class PasswordExportAssertions {
         }
     }
 
-    private static String rawPasswordForRow(String prefix, int rowIndex) {
+    private static @Nullable String rawPasswordForRow(String prefix, int rowIndex) {
         switch (rowIndex) {
         case 1:
             return prefix + "-password-1";
@@ -80,15 +82,15 @@ public final class PasswordExportAssertions {
         }
     }
 
-    private static String passwordValue(String rawPassword, boolean masked, String replacement) {
+    private static @Nullable String passwordValue(@Nullable String rawPassword, boolean masked, String replacement) {
         return masked ? replacement : rawPassword;
     }
 
-    private static String combinedValue(String text, String password, String separator) {
+    private static String combinedValue(String text, @Nullable String password, String separator) {
         return password == null ? text : text + separator + password;
     }
 
-    private static void assertText(Row row, int columnIndex, String expected) {
+    private static void assertText(Row row, int columnIndex, @Nullable String expected) {
         Cell cell = row == null ? null : row.getCell(columnIndex);
         if (expected == null || expected.isEmpty()) {
             assertTrue(cell == null
