@@ -68,6 +68,7 @@ import net.bis5.excella.primefaces.exporter.util.UIComponentWithCompositeParent;
 interface ExCellaExporter<T extends UITable<?>> {
 
     String COLUMN_GROUP_MERGED_AREAS_KEY = "HEADER_MERGED_AREAS_KEY";
+    String CELL_EDITOR_OUTPUT_FACET = "output";
 
     URL DEFAULT_TEMPLATE_URL = ExCellaExporter.class.getResource("/DefaultTemplate.xlsx");
     String DEFAULT_TEMPLATE_SHEET_NAME = "DATA";
@@ -358,7 +359,7 @@ interface ExCellaExporter<T extends UITable<?>> {
         if (!getExporterOptions().isExportPassword() && !parent.isRendered()) {
             return Stream.empty();
         }
-        UIComponent output = parent.getFacet("output");
+        UIComponent output = parent.getFacet(CELL_EDITOR_OUTPUT_FACET);
         return output == null ? Stream.empty() : Stream.of(new UIComponentWithCompositeParent(output));
     }
 
@@ -385,7 +386,7 @@ interface ExCellaExporter<T extends UITable<?>> {
             return true;
         }
         if (component instanceof CellEditor) {
-            UIComponent output = component.getFacet("output");
+            UIComponent output = component.getFacet(CELL_EDITOR_OUTPUT_FACET);
             return output != null && containsPassword(output);
         }
         for (UIComponent facet : component.getFacets().values()) {
@@ -409,7 +410,7 @@ interface ExCellaExporter<T extends UITable<?>> {
             return true;
         }
         if (component instanceof CellEditor) {
-            UIComponent output = component.getFacet("output");
+            UIComponent output = component.getFacet(CELL_EDITOR_OUTPUT_FACET);
             return output != null && containsRenderedPassword(context, output);
         }
         if (UIComponent.isCompositeComponent(component)) {
@@ -614,7 +615,7 @@ interface ExCellaExporter<T extends UITable<?>> {
             ValueHolder valueHolder = (ValueHolder)component;
             return getComponentValue(context, valueHolder);
         } else if (component instanceof CellEditor) {
-            UIComponent output = component.getFacet("output");
+            UIComponent output = component.getFacet(CELL_EDITOR_OUTPUT_FACET);
             return output == null ? null : exportObjectValue(context, output);
         }
         if (!getExporterOptions().isExportPassword() && containsPassword(component)) {
