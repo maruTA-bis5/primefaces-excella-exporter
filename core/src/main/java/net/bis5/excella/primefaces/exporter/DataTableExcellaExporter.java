@@ -169,8 +169,10 @@ public class DataTableExcellaExporter extends DataTableExporter<ReportBook, ExCe
             .map(this::normalizeValues)
             .forEach(e -> reportSheet.addParam(RowRepeatParamParser.DEFAULT_TAG, e.getKey(), e.getValue().toArray()));
 
-        String headersTagName = Objects.requireNonNullElse(getHeadersTag(), DEFAULT_HEADERS_TAG);
-        String footersTagName = Objects.requireNonNullElse(getFootersTag(), DEFAULT_FOOTERS_TAG);
+        String headersTag = getHeadersTag();
+        String headersTagName = headersTag != null ? headersTag : DEFAULT_HEADERS_TAG;
+        String footersTag = getFootersTag();
+        String footersTagName = footersTag != null ? footersTag : DEFAULT_FOOTERS_TAG;
         reportSheet.addParam(ColRepeatParamParser.DEFAULT_TAG, headersTagName, columnHeader.toArray());
         reportSheet.addParam(ColRepeatParamParser.DEFAULT_TAG, footersTagName, columnFooter.toArray());
 
