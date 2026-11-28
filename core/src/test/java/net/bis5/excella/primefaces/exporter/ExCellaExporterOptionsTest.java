@@ -16,6 +16,8 @@ class ExCellaExporterOptionsTest {
         assertEquals(" ", options.getColumnValueSeparator());
     }
 
+    // NullAway: deliberately passes null to verify the runtime NPE contract.
+    @SuppressWarnings("NullAway")
     @Test
     void rejectsNullColumnValueSeparator() {
         ExCellaExporterOptions options = new ExCellaExporterOptions();
@@ -51,6 +53,8 @@ class ExCellaExporterOptionsTest {
         assertEquals("***", options.getPasswordReplacement());
     }
 
+    // NullAway: deliberately passes null to verify the runtime NPE contract.
+    @SuppressWarnings("NullAway")
     @Test
     void rejectsNullPasswordReplacement() {
         ExCellaExporterOptions options = new ExCellaExporterOptions();

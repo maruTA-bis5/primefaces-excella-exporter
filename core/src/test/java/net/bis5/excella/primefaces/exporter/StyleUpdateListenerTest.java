@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -33,6 +34,7 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.apache.poi.xssf.usermodel.extensions.XSSFCellFill;
 import org.bbreak.excella.core.SheetData;
 import org.bbreak.excella.reports.model.ReportSheet;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 import org.openxmlformats.schemas.spreadsheetml.x2006.main.CTFill;
 import org.openxmlformats.schemas.spreadsheetml.x2006.main.CTPatternFill;
@@ -51,7 +53,7 @@ class StyleUpdateListenerTest {
             Cell integerCell = row.createCell(0);
             Cell dateCell = row.createCell(1);
 
-            Map<String, List<Object>> values = Map.of(
+            Map<String, List<@Nullable Object>> values = Map.of(
                     "integer", List.of(42),
                     "date", List.of(LocalDate.of(2026, 1, 1)));
             update(workbook, sheet, values,
@@ -115,7 +117,7 @@ class StyleUpdateListenerTest {
                 row.createCell(1).setCellStyle(templateStyle);
             }
 
-            Map<String, List<Object>> values = Map.of(
+            Map<String, List<@Nullable Object>> values = Map.of(
                     "mixed", Arrays.asList(123, "text"),
                     "allNull", Arrays.asList(null, null));
             update(workbook, sheet, values,
@@ -144,6 +146,8 @@ class StyleUpdateListenerTest {
         }
     }
 
+    // NullAway: deliberately passes null to verify the runtime NPE contract of the setters.
+    @SuppressWarnings("NullAway")
     @Test
     void nullValueTypeIsRejectedForBothSetterOverloads() {
         ExCellaExporterOptions options = new ExCellaExporterOptions();
@@ -159,13 +163,15 @@ class StyleUpdateListenerTest {
 
             options.setOverrideDataType(ValueType.INTEGER, (short) 42);
             options.setOverrideDataType(ValueType.INTEGER, "#,##0.00");
-            assertEquals("#,##0.00",
-                    ValueType.initStyles(workbook, options).get(ValueType.INTEGER).getDataFormatString());
+            var style = ValueType.initStyles(workbook, options).get(ValueType.INTEGER);
+            assertNotNull(style);
+            assertEquals("#,##0.00", style.getDataFormatString());
 
             options.setOverrideDataType(ValueType.INTEGER, "#,##0.000");
             options.setOverrideDataType(ValueType.INTEGER, (short) 45);
-            assertEquals((short) 45,
-                    ValueType.initStyles(workbook, options).get(ValueType.INTEGER).getDataFormat());
+            style = ValueType.initStyles(workbook, options).get(ValueType.INTEGER);
+            assertNotNull(style);
+            assertEquals((short) 45, style.getDataFormat());
         }
     }
 
@@ -328,7 +334,7 @@ class StyleUpdateListenerTest {
     void allSupportedValueFormatsKeepNoFillSafe() throws Exception {
         try (XSSFWorkbook workbook = new XSSFWorkbook()) {
             Sheet sheet = workbook.createSheet("Sheet");
-            Map<String, List<Object>> values = Map.of(
+            Map<String, List<@Nullable Object>> values = Map.of(
                     "yearMonth", List.of(YearMonth.of(2026, 1)),
                     "date", List.of(LocalDate.of(2026, 1, 1)),
                     "dateTime", List.of(LocalDateTime.of(2026, 1, 1, 12, 30)),
@@ -445,7 +451,7 @@ class StyleUpdateListenerTest {
     void unchangedHssfStylesDoNotConsumeTheStyleLimit() throws Exception {
         try (Workbook workbook = new HSSFWorkbook()) {
             Sheet sheet = workbook.createSheet("Sheet");
-            List<Object> values = new ArrayList<>();
+            List<@Nullable Object> values = new ArrayList<>();
             int sourceStyleCount = 3900;
             for (int i = 0; i < sourceStyleCount; i++) {
                 CellStyle source = workbook.createCellStyle();
@@ -467,7 +473,7 @@ class StyleUpdateListenerTest {
     void changedHssfStylesReuseEquivalentStylesNearTheStyleLimit() throws Exception {
         try (Workbook workbook = new HSSFWorkbook()) {
             Sheet sheet = workbook.createSheet("Sheet");
-            List<Object> values = new ArrayList<>();
+            List<@Nullable Object> values = new ArrayList<>();
             for (int i = 0; i < 3900; i++) {
                 CellStyle source = workbook.createCellStyle();
                 source.setBorderTop(i == 3899 ? BorderStyle.THICK : BorderStyle.THIN);
@@ -515,7 +521,7 @@ class StyleUpdateListenerTest {
         }
     }
 
-    private static void update(Workbook workbook, Sheet sheet, List<Object> values) {
+    private static void update(Workbook workbook, Sheet sheet, List<@Nullable Object> values) {
         ReportSheet reportSheet = new ReportSheet("Sheet");
         StyleUpdateListener listener = new StyleUpdateListener(reportSheet, Map.of("value", values),
                 "data", "headers", "footers", 1, new Object[] {"$R[]{value}"}, new ExCellaExporterOptions());
@@ -523,12 +529,12 @@ class StyleUpdateListenerTest {
         listener.postParse(sheet, null, new SheetData("Sheet"));
     }
 
-    private static void update(Workbook workbook, Sheet sheet, List<Object> values,
+    private static void update(Workbook workbook, Sheet sheet, List<@Nullable Object> values,
             ExCellaExporterOptions options) {
         update(workbook, sheet, Map.of("value", values), new Object[] {"$R[]{value}"}, options);
     }
 
-    private static void update(Workbook workbook, Sheet sheet, Map<String, List<Object>> values,
+    private static void update(Workbook workbook, Sheet sheet, Map<String, List<@Nullable Object>> values,
             Object[] columnDataParams, ExCellaExporterOptions options) {
         ReportSheet reportSheet = new ReportSheet("Sheet");
         StyleUpdateListener listener = new StyleUpdateListener(reportSheet, values,

@@ -26,6 +26,7 @@ import org.bbreak.excella.reports.model.ReportBook;
 import org.bbreak.excella.reports.model.ReportSheet;
 import org.bbreak.excella.reports.tag.ColRepeatParamParser;
 import org.bbreak.excella.reports.tag.RowRepeatParamParser;
+import org.jspecify.annotations.Nullable;
 import org.primefaces.component.api.DynamicColumn;
 import org.primefaces.component.api.UIColumn;
 import org.primefaces.component.api.UITable;
@@ -49,23 +50,23 @@ public class TreeTableExcellaExporter extends TreeTableExporter<ReportBook, ExCe
 
     private final List<ReportProcessListener> listeners = new ArrayList<>();
 
-    private TemplateType templateType;
+    private @Nullable TemplateType templateType;
 
-    private ReportSheet currentSheet;
+    private @Nullable ReportSheet currentSheet;
 
     public TreeTableExcellaExporter() {
         super(new ExCellaExporterOptions(), ALL_FACETS, true);
     }
 
-    private String getDataColumnsTag() {
+    private @Nullable String getDataColumnsTag() {
         return getExporterOptions().getDataColumnsTag();
     }
 
-    private String getHeadersTag() {
+    private @Nullable String getHeadersTag() {
         return getExporterOptions().getHeadersTag();
     }
 
-    private String getFootersTag() {
+    private @Nullable String getFootersTag() {
         return getExporterOptions().getFootersTag();
     }
 
@@ -75,7 +76,7 @@ public class TreeTableExcellaExporter extends TreeTableExporter<ReportBook, ExCe
     }
 
     @Override
-    public TemplateType getTemplateType() {
+    public @Nullable TemplateType getTemplateType() {
         return templateType;
     }
 
@@ -222,12 +223,13 @@ public class TreeTableExcellaExporter extends TreeTableExporter<ReportBook, ExCe
     }
 
     @Override
-    public void setExportParameters(ReportSheet reportSheet, List<Object> columnHeader, List<Object> columnFooter,
-            Map<String, List<Object>> dataContainer) {
+    public void setExportParameters(ReportSheet reportSheet, List<@Nullable Object> columnHeader, List<@Nullable Object> columnFooter,
+            Map<String, List<@Nullable Object>> dataContainer) {
 
-        List<Integer> levels = nonNull(dataContainer.remove(TREE_LEVEL_KEY), Collections.<Object>emptyList())
+        List<@Nullable Object> treeLevels = dataContainer.remove(TREE_LEVEL_KEY);
+        List<Integer> levels = (treeLevels != null ? treeLevels : Collections.<Integer>emptyList())
             .stream()
-            .map(Integer.class::cast)
+            .map(o -> (Integer) o)
             .collect(Collectors.toList());
         Object[] columnDataParams = dataContainer.keySet().stream().map(k -> "$R[]{" + k + "}").toArray();
         reportSheet.addParam(ColRepeatParamParser.DEFAULT_TAG, dataTag(), columnDataParams);
@@ -246,7 +248,7 @@ public class TreeTableExcellaExporter extends TreeTableExporter<ReportBook, ExCe
         listeners.add(new StyleUpdateListener(reportSheet, dataContainer, dataTag(), headersTagName, footersTagName,
                 columnSize, columnDataParams, getExporterOptions()) {
             @Override
-            public void postParse(Sheet sheet, SheetParser sheetParser, SheetData sheetData) {
+            public void postParse(Sheet sheet, @Nullable SheetParser sheetParser, SheetData sheetData) {
                 super.postParse(sheet, sheetParser, sheetData);
 
                 if (!reportSheet.getSheetName().equals(sheetData.getSheetName())) {
@@ -275,7 +277,7 @@ public class TreeTableExcellaExporter extends TreeTableExporter<ReportBook, ExCe
     }
 
     @Override
-    public void exportFacet(FacesContext context, TreeTable table, ExCellaExporter.ColumnType columnType, ReportSheet reportSheet, List<Object> facetColumns) {
+    public void exportFacet(FacesContext context, TreeTable table, ExCellaExporter.ColumnType columnType, ReportSheet reportSheet, List<@Nullable Object> facetColumns) {
         ColumnGroup group = table.getColumnGroup(columnType.facet());
         if (group != null && group.isRendered()) {
             exportColumnGroup(context, table, group, columnType, reportSheet, facetColumns);
@@ -329,8 +331,10 @@ public class TreeTableExcellaExporter extends TreeTableExporter<ReportBook, ExCe
         exportRow(context, table, node, level, -1);
     }
 
+    // NullAway: currentSheet is set by exportTable before rows are exported.
+    @SuppressWarnings("NullAway")
     private void exportRow(FacesContext context, TreeTable table, TreeNode<?> node, int level, int rowIndex) {
-        Map<String, List<Object>> dataContainer = getDataContainer(currentSheet);
+        Map<String, List<@Nullable Object>> dataContainer = getDataContainer(currentSheet);
         dataContainer.computeIfAbsent(TREE_LEVEL_KEY, ignore -> new ArrayList<>()).add(level);
 
         if (rowIndex == -1) {
@@ -380,7 +384,7 @@ public class TreeTableExcellaExporter extends TreeTableExporter<ReportBook, ExCe
         return Objects.requireNonNull(traverseTreeNode(node, new MutableInt(dataRowIndex + 1), 0), () -> "Node for dataRowIndex " + dataRowIndex + " is not found");
     }
 
-    protected static Pair<TreeNode<?>, Integer> traverseTreeNode(TreeNode<?> node, MutableInt rowIndex, int level) {
+    protected static @Nullable Pair<TreeNode<?>, Integer> traverseTreeNode(TreeNode<?> node, MutableInt rowIndex, int level) {
 
         int index = rowIndex.getValue();
         rowIndex.decrement();
@@ -389,7 +393,7 @@ public class TreeTableExcellaExporter extends TreeTableExporter<ReportBook, ExCe
         }
 
         if (node.getChildren() != null) {
-            Pair<TreeNode<?>, Integer> returnNode = null;
+            @Nullable Pair<TreeNode<?>, Integer> returnNode = null;
             for (TreeNode<?> childNode : node.getChildren()) {
                 returnNode = traverseTreeNode(childNode, rowIndex, level + 1);
                 if (returnNode != null) {
@@ -452,8 +456,10 @@ public class TreeTableExcellaExporter extends TreeTableExporter<ReportBook, ExCe
     }
 
     @Override
+    // NullAway: currentSheet is set by exportTable before cells are exported.
+    @SuppressWarnings("NullAway")
     protected void exportCellValue(FacesContext context, TreeTable table, UIColumn col, ColumnValue value, int index) {
-        Map<String, List<Object>> dataContainer = getDataContainer(currentSheet);
+        Map<String, List<@Nullable Object>> dataContainer = getDataContainer(currentSheet);
         addCellValue(context, dataContainer, table, index, col);
     }
 

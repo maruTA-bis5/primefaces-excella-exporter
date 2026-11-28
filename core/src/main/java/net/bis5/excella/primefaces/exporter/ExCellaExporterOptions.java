@@ -11,6 +11,8 @@ import java.util.Objects;
 import java.util.function.Function;
 
 import org.apache.poi.ss.usermodel.Workbook;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 import org.primefaces.component.export.ExcelOptions;
 import org.primefaces.util.Constants;
 
@@ -19,13 +21,14 @@ import net.bis5.excella.primefaces.exporter.listener.BeforeWriteResponseListener
 /**
  * ExCella exporter options
  */
+@NullMarked
 public class ExCellaExporterOptions extends ExcelOptions {
 
     private final Map<ValueType, Function<Workbook, Short>> overrideDataTypeForValueType = new EnumMap<>(ValueType.class);
 
-    private Path templatePath;
+    private @Nullable Path templatePath;
 
-    public Path getTemplatePath() {
+    public @Nullable Path getTemplatePath() {
         return templatePath;
     }
 
@@ -33,9 +36,9 @@ public class ExCellaExporterOptions extends ExcelOptions {
         this.templatePath = templatePath;
     }
 
-    private URL templateUrl;
+    private @Nullable URL templateUrl;
 
-    public URL getTemplateUrl() {
+    public @Nullable URL getTemplateUrl() {
         return templateUrl;
     }
 
@@ -43,9 +46,9 @@ public class ExCellaExporterOptions extends ExcelOptions {
         this.templateUrl = templateUrl;
     }
 
-    private String templateSheetName;
+    private @Nullable String templateSheetName;
 
-    public String getTemplateSheetName() {
+    public @Nullable String getTemplateSheetName() {
         return templateSheetName;
     }
 
@@ -53,9 +56,9 @@ public class ExCellaExporterOptions extends ExcelOptions {
         this.templateSheetName = templateSheetName;
     }
 
-    private String dataColumnsTag;
+    private @Nullable String dataColumnsTag;
 
-    public String getDataColumnsTag() {
+    public @Nullable String getDataColumnsTag() {
         return dataColumnsTag;
     }
 
@@ -132,9 +135,9 @@ public class ExCellaExporterOptions extends ExcelOptions {
         this.passwordReplacement = Objects.requireNonNull(passwordReplacement, "passwordReplacement must not be null");
     }
 
-    private String headersTag;
+    private @Nullable String headersTag;
 
-    public String getHeadersTag() {
+    public @Nullable String getHeadersTag() {
         return headersTag;
     }
 
@@ -142,9 +145,9 @@ public class ExCellaExporterOptions extends ExcelOptions {
         this.headersTag = headersTag;
     }
 
-    private String footersTag;
+    private @Nullable String footersTag;
 
-    public String getFootersTag() {
+    public @Nullable String getFootersTag() {
         return footersTag;
     }
 
@@ -182,7 +185,7 @@ public class ExCellaExporterOptions extends ExcelOptions {
      * @param valueType the value type to override
      * @param dataFormat the Excel data format string, or {@code null} to clear the override
      */
-    public void setOverrideDataType(ValueType valueType, String dataFormat) {
+    public void setOverrideDataType(ValueType valueType, @Nullable String dataFormat) {
         Objects.requireNonNull(valueType, "valueType must not be null");
         if (dataFormat == null) {
             overrideDataTypeForValueType.remove(valueType);
@@ -192,7 +195,7 @@ public class ExCellaExporterOptions extends ExcelOptions {
         }
     }
 
-    Short getOverrideDataFormat(ValueType valueType, Workbook workbook) {
+    @Nullable Short getOverrideDataFormat(ValueType valueType, Workbook workbook) {
         Function<Workbook, Short> dataFormat = overrideDataTypeForValueType.get(valueType);
         return dataFormat == null ? null : dataFormat.apply(workbook);
     }
