@@ -588,7 +588,7 @@ interface ExCellaExporter<T extends UITable<?>> {
         }
     }
 
-    default String exportColumnByFunction(FacesContext context, UIColumn column) {
+    default @Nullable String exportColumnByFunction(FacesContext context, UIColumn column) {
         MethodExpression exportFunction = column.getExportFunction();
         return (String) exportFunction.invoke(context.getELContext(), new Object[]{column});
     }
